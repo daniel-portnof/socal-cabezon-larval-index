@@ -8,6 +8,7 @@ This analysis uses sdmTMB to fit several models to CalCOFI ichthyoplankton surve
 ### Notes:
 - I am not as familiar with cross-validation techniques as I am with AIC, so I ran the model fit comparisons (sections 6 + 7) on the AIC best fit model (cab_fit1, Delta-Gamma full AR1 spatial + spatiotemporal). I intend to run the CV best fit (cab_fit2, Tweedie full AR1 spatial + spatiotemporal) as well, but am curious what others would suggest.
 - On a similar note, these are all model fits that I built myself with the help of an LLM. They may not reflect the best construction, and I look to others for opinions on how to better optimize the models. For example, I had assumed an AR1 fit would be appropriate, but Brice and I also concluded that if spatiotemporal random effects are not very explanatory beyond the spatial field itself, perhaps a better approach would be to model a spatial-only fit and extend the data time series if autocorrelation is unnecessary. This would perhaps be a next step if, as the analysis so far would suggest, there is no significant correlation revealed between the constructed index and the STAR outputs.
+- In diagnosing the chosen model, most of the residuals look OK to me, but I'm not entirely sure how to interpret the spatial field residual map. I see some possible years where residuals are denser, but overall there doesn't appear to be a lot of patterning, which I assume is what we'd want to see.
 
 ## Repository Contents
 
