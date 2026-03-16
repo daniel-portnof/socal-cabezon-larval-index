@@ -89,7 +89,7 @@ STAR_SSB_plot
 
 # 1. DATA QC + EXPLORATION ------------------------------------------------
 
-cabezon <- read.csv("cabezon_calcofi_data.csv")
+cabezon <- read.csv("manta cabezon data for Dan.csv")
 
 str(cabezon)
 
