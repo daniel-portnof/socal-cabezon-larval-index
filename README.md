@@ -21,10 +21,6 @@ This analysis uses sdmTMB to fit several models to CalCOFI ichthyoplankton surve
 ## Requirements
 
 **R Version:** 4.4.3 (2025-02-28 ucrt)
-**Platform:** x86_64-w64-mingw32/x64
-Running under: Windows 11 x64 (build 26200)
-
-Matrix products: default
 
 ### Key packages
 - `sdmTMB` 1.0.0
