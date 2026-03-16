@@ -1,42 +1,59 @@
 # socal-cabezon-larval-index
-Using sdmTMB to derive a larval abundance index from CalCOFI data to be compared with existing federal stock metrics for cabezon in Southern California.
+Using sdmTMB to derive a larval abundance index from CalCOFI data to be compared with existing federal stock metrics for cabezon (*Scorpaenichthys marmoratus*) in Southern California.
 
-R version 4.4.3 (2025-02-28 ucrt)
-Platform: x86_64-w64-mingw32/x64
+## Overview
+
+This analysis uses sdmTMB to fit several models to CalCOFI ichthyoplankton survey data (1981-2015) and use best/most parsimonious fit to generate a standardized larval abundance index. The index is then evaluated against STAR outputs (specifically recruitment deviations, age-0 recruits, and SSB) to assess utility as an alternative, novel predictor of stock health indicators.
+
+### Notes:
+- I am not as familiar with cross-validation techniques as I am with AIC, so I ran the model fit comparisons (sections 6 + 7) on the AIC best fit model (cab_fit1, Delta-Gamma full AR1 spatial + spatiotemporal). I intend to run the CV best fit (cab_fit2, Tweedie full AR1 spatial + spatiotemporal) as well, but am curious what others would suggest.
+- On a similar note, these are all model fits that I built myself with the help of an LLM. They may not reflect the best construction, and I look to others for opinions on how to better optimize the models. For example, I had assumed an AR1 fit would be appropriate, but Brice and I also concluded that if spatiotemporal variation is simply not as strong a predictor, perhaps a better approach would be to model a spatial-only fit and extend the time series since temporal effects will be less germane. This would perhaps be a next step if, as the analysis so far would suggest, there is no significant correlation revealed between the novel constructed index and the STAR outputs.
+
+## Repository Contents
+
+| File / Folder | Description |
+|---|---|
+| `cabezon_primary_analysis.Rmd` | Full analysis with narrative — knit to reproduce report |
+| `cabezon_primary_analysis.R` | Same code as .Rmd, for running as a standalone script |
+| `cabezon_calcofi_data.csv` | CalCOFI larval survey data (1981–2015) |
+| `Cab_SCS_BC_STAR/` | Stock Synthesis model outputs (STAR panel assessment) |
+
+## Requirements
+
+**R Version:** 4.4.3 (2025-02-28 ucrt)
+**Platform:** x86_64-w64-mingw32/x64
 Running under: Windows 11 x64 (build 26200)
 
 Matrix products: default
 
+### Key packages
+- `sdmTMB` 1.0.0
+- `tidyverse` 2.0.0 (includes `ggplot2`, `dplyr`, `tidyr`, `readr`, `tibble`, `stringr`, `forcats`, `purrr`)
+- `sf` 1.0-23
+- `rnaturalearth` / `rnaturalearthdata` 1.1.0 / 1.0.0
+- `maps` 3.4.3
+- `here` 1.0.2
+- `r4ss` 1.44.0
+- `lubridate` 1.9.4
 
-locale:
-[1] LC_COLLATE=English_United States.utf8  LC_CTYPE=English_United States.utf8   
-[3] LC_MONETARY=English_United States.utf8 LC_NUMERIC=C                          
-[5] LC_TIME=English_United States.utf8    
+Install all at once:
+```r
+install.packages(c("sdmTMB", "tidyverse", "sf", "rnaturalearth", 
+                   "rnaturalearthdata", "maps", "here", "r4ss", "lubridate"))
+```
 
-time zone: America/Los_Angeles
-tzcode source: internal
+## How to Run
 
-attached base packages:
-[1] stats     graphics  grDevices utils     datasets  methods   base     
+1. Clone or download this repo
+2. Set your working directory to the root of the repo (the folder containing the `.R`, `.Rmd`, and `.csv` files, as well as `Cab_SCS_BC_STAR/`)
+3. Open either `cabezon_primary_analysis.R` (run as script) or `cabezon_primary_analysis.Rmd` (knit to document)
+4. The script reads Stock Synthesis outputs directly from `Cab_SCS_BC_STAR/` using the `r4ss` package. Shouldn't need any additional setup beyond setting the working directory.
 
-other attached packages:
- [1] maps_3.4.3              rnaturalearthdata_1.0.0 rnaturalearth_1.1.0     sf_1.0-23              
- [5] sdmTMB_1.0.0            here_1.0.2              r4ss_1.44.0             lubridate_1.9.4        
- [9] forcats_1.0.0           stringr_1.6.0           dplyr_1.1.4             purrr_1.0.4            
-[13] readr_2.1.6             tidyr_1.3.1             tibble_3.2.1            ggplot2_4.0.1          
-[17] tidyverse_2.0.0        
+## Data Sources
 
-loaded via a namespace (and not attached):
- [1] gtable_0.3.6       TMB_1.9.19         xfun_0.51          lattice_0.22-6     tzdb_0.5.0        
- [6] Rdpack_2.6.6       vctrs_0.6.5        tools_4.4.3        generics_0.1.3     proxy_0.4-27      
-[11] pkgconfig_2.0.3    Matrix_1.7-2       KernSmooth_2.23-26 RColorBrewer_1.1-3 S7_0.2.1          
-[16] assertthat_0.2.1   lifecycle_1.0.4    fmesher_0.6.1      compiler_4.4.3     farver_2.1.2      
-[21] textshaping_1.0.0  htmltools_0.5.8.1  class_7.3-23       yaml_2.3.10        crayon_1.5.3      
-[26] pillar_1.10.1      rsconnect_1.6.1    classInt_0.4-11    reformulas_0.4.4   nlme_3.1-167      
-[31] tidyselect_1.2.1   digest_0.6.37      stringi_1.8.7      labeling_0.4.3     splines_4.4.3     
-[36] rprojroot_2.1.1    fastmap_1.2.0      grid_4.4.3         cli_3.6.4          magrittr_2.0.3    
-[41] e1071_1.7-16       corpcor_1.6.10     withr_3.0.2        scales_1.4.0       timechange_0.3.0  
-[46] rmarkdown_2.29     hms_1.1.3          kableExtra_1.4.0   coda_0.19-4.1      evaluate_1.0.3    
-[51] knitr_1.50         rbibutils_2.4.1    viridisLite_0.4.2  mgcv_1.9-1         rlang_1.1.5       
-[56] Rcpp_1.0.14        glue_1.8.0         DBI_1.2.3          xml2_1.3.8         svglite_2.2.2     
-[61] rstudioapi_0.17.1  R6_2.6.1           systemfonts_1.3.2  units_1.0-0       
+**CalCOFI ichthyoplankton survey:** `cabezon_calcofi_data.csv`
+- Thanks to Andrew for pulling these data!
+
+**STAR Stock Assessment:** `Cab_SCS_BC_STAR/` 
+- SS outputs from the STAR panel assessment for Southern California.
+- Thanks to Julia for pulling this!
