@@ -884,7 +884,7 @@ ccf(larvae_detrended, ssb_detrended,
 
 # Extras
 
-```{r Extras}
+```{r Extras, error = TRUE}
 
 world <- ne_coastline(scale = "medium", returnclass = "sf")
 
