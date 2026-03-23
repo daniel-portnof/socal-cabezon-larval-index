@@ -47,3 +47,5 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+.DS_Store
+cabezon_calcofi_data.csv
