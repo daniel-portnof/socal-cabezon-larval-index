@@ -182,7 +182,7 @@ ggplot(annual_cab_summary, aes(x = year, y = mean_larvae)) +
   labs(
     x = "Year",
     y = expression("Mean larvae per 100 m"^3),
-    title = "Annual Mean Larval Abundance",
+    title = "Annual Mean Larval Observations",
     subtitle = expression("Ribbon shows " %+-% " 1 SE")
   ) +
   theme_bw()
@@ -554,7 +554,7 @@ set.seed(my.seed)
 
 #---- 5.a. Build mesh
 library(fmesher)
-cabezon <- sdmTMB::add_utm_columns(cabezon, ll_names = c("longitude", "latitude"))
+#cabezon <- sdmTMB::add_utm_columns(cabezon, ll_names = c("longitude", "latitude"))
 
 mesh <- fm_mesh_2d(
   loc = cabezon[,c("X","Y")],
@@ -569,6 +569,20 @@ plot(cab_mesh); title("SPDE Mesh for Cabezon CalCOFI analysis")
 
 # Add year factor variable
 cabezon$fyear <- as.factor(cabezon$year)
+
+# NULL Delta-Gamma model
+
+cab_null <- sdmTMB(
+  larvae_100m3 ~ 0 + fyear,
+  data = cabezon,
+  mesh = cab_mesh,
+  time = "year",
+  family = delta_gamma(),
+  spatial = "off",
+  spatiotemporal = "off",
+  offset = NULL,
+  extra_time = 1982
+)
 
 # Delta-Gamma: fixed year effect + iid: 
 cab_fit01 <- sdmTMB(
@@ -707,6 +721,7 @@ sanity(cab_fit2a)
 
 #---- 5.c. Cross validation
 
+cv_null <- sdmTMB_cv(cab_null$call$formula, cabezon, cab_mesh, delta_gamma(), k_folds = 5)
 cv_m01 <- sdmTMB_cv(cab_fit01$call$formula, cabezon, cab_mesh, delta_gamma(), k_folds = 5)
 cv_m02 <- sdmTMB_cv(cab_fit02$call$formula, cabezon, cab_mesh, delta_gamma(), k_folds = 5)
 cv_m03 <- sdmTMB_cv(cab_fit03$call$formula, cabezon, cab_mesh, delta_gamma(), k_folds = 5)
@@ -721,6 +736,7 @@ cv_m2a <- sdmTMB_cv(cab_fit2a$call$formula, cabezon, cab_mesh, tweedie(), k_fold
 
 cv_table <- data.frame(
   fit_name = c(
+    "cab_null",
     "cab_fit01",
     "cab_fit02",
     "cab_fit03",
@@ -732,6 +748,7 @@ cv_table <- data.frame(
     "cab_fit2a"
   ),
   model = c(
+    "Delta-Gamma NULL",
     "Delta-Gamma spatial + spatiotemporal IID + fixed year effect",
     "Delta-Gamma spatial + fixed year effect - spatiotemporal",
     "Delta-Gamma: fixed year effect + iid delta",
@@ -743,6 +760,7 @@ cv_table <- data.frame(
     "Tweedie spatial"
   ),
   AIC = c(
+    AIC(cab_null),
     AIC(cab_fit01),
     AIC(cab_fit02),
     AIC(cab_fit03),
@@ -755,6 +773,7 @@ cv_table <- data.frame(
   ),
     delta_AIC = NA,
     CV = c(
+      cv_null$sum_loglik,
       cv_m01$sum_loglik,
       cv_m02$sum_loglik,
       cv_m03$sum_loglik,
