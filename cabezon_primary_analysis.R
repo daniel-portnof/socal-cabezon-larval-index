@@ -1,19 +1,6 @@
----
-title: "Cabezon sdmTMB"
-author: "Dan Portnof"
-date: "2026-02-25"
-output: word_document
----
 
+# 0. LOAD IN AND STAR REPORT VIEW -----------------------------------------
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-# 0. LOAD IN AND STAR REPORT VIEW
-
-```{r STAR report}
-# ---- 0. LOAD IN AND STAR REPORT VIEW
 
 #Load packages
 library(tidyverse)
@@ -97,18 +84,14 @@ STAR_SSB_plot <- ggplot(data=STAR_SSB, aes(x=year, ymin=ssblower, ymax=ssbupper)
 
 STAR_SSB_plot
 
-```
 
-# 1. DATA QC + EXPLORATION
 
-```{r 1. DATA QC}
-#---- DATA QC + EXPLORATION
+
+# 1. DATA QC + EXPLORATION ------------------------------------------------
 
 cabezon <- read.csv("cabezon_calcofi_data.csv")
 
 str(cabezon)
-
-# ---- 1. DATA QC + EXPLORATION
 
 # Check for how many observations per ...
 
@@ -130,7 +113,7 @@ cabezon %>%
   group_by(year) %>%
   summarize(n_stations = n_distinct(line.station))
 table(cabezon$line.station, cabezon$year)
-  # Pretty steady coverage, especially post-1989 
+# Pretty steady coverage, especially post-1989 
 
 # Check the spatial grid for a quick visual
 ggplot(cabezon, aes(longitude, latitude)) +
@@ -140,17 +123,15 @@ ggplot(cabezon, aes(longitude, latitude)) +
 cabezon %>%
   mutate(zero = larvae_100m3 == 0) %>%
   count(zero)
-  # Roughly ~85% zeros
+# Roughly ~85% zeros
 
 # Raw distribution visual
 plot(cabezon$volume_sampled, cabezon$larvae_100m3)
 
-```
 
-# 2. DATA EXPLORATION & SUMMARY STATISTICS
 
-```{r 2. DATA EXPLORATION & SUMMARY STATISTICS}
-#---- 2. DATA EXPLORATION & SUMMARY STATISTICS
+
+# 2. DATA EXPLORATION & SUMMARY STATISTICS --------------------------------
 
 # Composite station column (combines line + station)
 cabezon <- cabezon %>%
@@ -276,13 +257,12 @@ plot_data <- plot_data %>%
     group_var == "Season" ~ factor(level, levels = c("winter", "spring", "summer", "fall")),
     T ~ factor(level)
   ))
-```
 
-# 3. STAR COMPARISONS & INITIAL CCFs
 
-```{r 3. STAR COMPARISONS & INITIAL CCFs}
 
-#---- 3. STAR COMPARISONS & INITIAL CCFs
+
+# 3. STAR COMPARISONS & INITIAL CCFs --------------------------------------
+
 
 # Join CalCOFI abundance to STAR age-0 recruits and recdevs
 STAR_age0_calcofi <- left_join(STAR_age0, annual_cab_summary, by = "year") 
@@ -333,13 +313,12 @@ obs_age0 <- STAR_age0_calcofi %>%
 ccf(obs_age0$mean_larvae, obs_age0$value,
     lag.max = 10,
     main = "CCF: Larvae vs. Age-0 Recruits (observed years only")
-```
 
-# 4. DATA VISUALIZATION
 
-```{r 4. DATA VISUALIZATION}
 
-# ---- 4. DATA VISUALIZATION
+
+# 4. DATA VISUALIZATION ------------------------------------------------------
+
 
 #---- 4.a. Station map for visual reference
 
@@ -380,7 +359,7 @@ ggplot() +
     panel.grid    = element_line(color = "grey92")
   )
 
-# ---- 4.b. Annual average larval observations
+# ---- 4.b. Annual average larval abundance
 
 ggplot(annual_cab_summary, aes(x = year, y = mean_larvae)) +
   geom_ribbon(aes(ymin = mean_larvae - se, ymax = mean_larvae + se),
@@ -390,7 +369,7 @@ ggplot(annual_cab_summary, aes(x = year, y = mean_larvae)) +
   labs(
     x = "Year",
     y = expression("Mean larvae per 100 m"^3),
-    title = "Annual Mean Larval Observations",
+    title = "Annual Mean Larval Abundance",
     subtitle = expression("Ribbon shows " %+-% " 1 SE")
   ) +
   theme_bw()
@@ -543,77 +522,21 @@ cabezon %>%
   labs(title    = "Cabezon Larval Abundance by Station and Season",
        subtitle = "Positive tows only; white = no positive tows recorded",
        x = NULL, y = "South \u2190 Station \u2192 North")
-```
 
-# 5. sdmTMB MODEL FITTING
 
-```{r 5. sdmTMB MODEL FITTING}
 
-#---- 5. sdmTMB MODEL FITTING
-set.seed(my.seed)
+# 5. sdmTMB MODEL FITTING ----------------------------------------------------
 
 #---- 5.a. Build mesh
-library(fmesher)
-cabezon <- sdmTMB::add_utm_columns(cabezon, ll_names = c("longitude", "latitude"))
-
-mesh <- fm_mesh_2d(
-  loc = cabezon[,c("X","Y")],
-  cutoff = 20,
-  max.edge = c(75, 150),
-  offset = c(45, 120)
+cab_mesh <- make_mesh(
+  cabezon,
+  xy_cols = c("longitude", "latitude"),
+  cutoff = 0.15
 )
-cab_mesh <- make_mesh(data = cabezon, c("X", "Y"), mesh = mesh)
+
 plot(cab_mesh); title("SPDE Mesh for Cabezon CalCOFI analysis")
 
 #---- 5.b. Fit candidate models
-
-# Add year factor variable
-cabezon$fyear <- as.factor(cabezon$year)
-
-# Delta-Gamma: fixed year effect + iid: 
-cab_fit01 <- sdmTMB(
-  larvae_100m3 ~ 0 + fyear,
-  data = cabezon,
-  mesh = cab_mesh,
-  time = "year",
-  family = delta_gamma(),
-  spatial = list("on", "on"),
-  spatiotemporal = list("iid", "iid"),
-  offset = NULL,
-  extra_time = 1982
-)
-
-sanity(cab_fit01)
-
-# Delta-Gamma: fixed year effect - spatiotemporal:
-cab_fit02 <- sdmTMB(
-  larvae_100m3 ~ 0 + fyear,
-  data = cabezon,
-  mesh = cab_mesh,
-  time = "year",
-  family = delta_gamma(),
-  spatial = list("on", "on"),
-  spatiotemporal = list("off", "off"),
-  offset = NULL,
-  extra_time = 1982
-)
-
-sanity(cab_fit02)
-
-# Delta-Gamma: fixed year effect + iid delta:
-cab_fit03 <- sdmTMB(
-  larvae_100m3 ~ 0 + fyear,
-  data = cabezon,
-  mesh = cab_mesh,
-  time = "year",
-  family = delta_gamma(),
-  spatial = list("on", "on"),
-  spatiotemporal = list("iid", "off"),
-  offset = NULL,
-  extra_time = 1982
-)
-
-sanity(cab_fit03)
 
 # Delta-Gamma: full AR1 spatial + spatiotemporal 
 cab_fit1 <- sdmTMB(
@@ -624,8 +547,7 @@ cab_fit1 <- sdmTMB(
   family = delta_gamma(),
   spatial = list("on", "on"),
   spatiotemporal = list("ar1", "ar1"),
-  offset = NULL,
-  extra_time = 1982
+  offset = NULL
 )
 
 sanity(cab_fit1)
@@ -639,8 +561,7 @@ cab_fit1a <- sdmTMB(
   family = delta_gamma(),
   spatial = list("on", "on"),
   spatiotemporal = list("off", "off"),
-  offset = NULL,
-  extra_time = 1982
+  offset = NULL
 )
 
 sanity(cab_fit1a)
@@ -654,8 +575,7 @@ cab_fit1b <- sdmTMB(
   family = delta_gamma(),
   spatial = list("on", "on"),
   spatiotemporal = list("ar1", "off"),
-  offset = NULL,
-  extra_time = 1982
+  offset = NULL
 )
 
 sanity(cab_fit1b)
@@ -669,8 +589,7 @@ cab_fit1c <- sdmTMB(
   family = delta_gamma(),
   spatial = list("on", "on"),
   spatiotemporal = list("off", "ar1"),
-  offset = NULL,
-  extra_time = 1982
+  offset = NULL
 )
 
 sanity(cab_fit1c)
@@ -684,8 +603,7 @@ cab_fit2 <- sdmTMB(
   family = tweedie(),
   spatial = "on",
   spatiotemporal = "ar1",
-  offset = NULL,
-  extra_time = 1982
+  offset = NULL
 )
 
 sanity(cab_fit2)
@@ -699,17 +617,13 @@ cab_fit2a <- sdmTMB(
   family = tweedie(),
   spatial = "on",
   spatiotemporal = "off",
-  offset = NULL,
-  extra_time = 1982
+  offset = NULL
 )
 
 sanity(cab_fit2a)
 
 #---- 5.c. Cross validation
 
-cv_m01 <- sdmTMB_cv(cab_fit01$call$formula, cabezon, cab_mesh, delta_gamma(), k_folds = 5)
-cv_m02 <- sdmTMB_cv(cab_fit02$call$formula, cabezon, cab_mesh, delta_gamma(), k_folds = 5)
-cv_m03 <- sdmTMB_cv(cab_fit03$call$formula, cabezon, cab_mesh, delta_gamma(), k_folds = 5)
 cv_m1 <- sdmTMB_cv(cab_fit1$call$formula, cabezon, cab_mesh, delta_gamma(),k_folds = 5)
 cv_m1a <- sdmTMB_cv(cab_fit1a$call$formula, cabezon, cab_mesh, delta_gamma(), k_folds = 5)
 cv_m1b <- sdmTMB_cv(cab_fit1b$call$formula, cabezon, cab_mesh, delta_gamma(), k_folds = 5)
@@ -721,9 +635,6 @@ cv_m2a <- sdmTMB_cv(cab_fit2a$call$formula, cabezon, cab_mesh, tweedie(), k_fold
 
 cv_table <- data.frame(
   fit_name = c(
-    "cab_fit01",
-    "cab_fit02",
-    "cab_fit03",
     "cab_fit1",
     "cab_fit1a",
     "cab_fit1b",
@@ -732,9 +643,6 @@ cv_table <- data.frame(
     "cab_fit2a"
   ),
   model = c(
-    "Delta-Gamma spatial + spatiotemporal IID + fixed year effect",
-    "Delta-Gamma spatial + fixed year effect - spatiotemporal",
-    "Delta-Gamma: fixed year effect + iid delta",
     "Delta-Gamma spatial + spatiotemporal AR1",
     "Delta-Gamma spatial",
     "Delta-Gamma spatiotemporal Delta AR1",
@@ -743,9 +651,6 @@ cv_table <- data.frame(
     "Tweedie spatial"
   ),
   AIC = c(
-    AIC(cab_fit01),
-    AIC(cab_fit02),
-    AIC(cab_fit03),
     AIC(cab_fit1),
     AIC(cab_fit1a),
     AIC(cab_fit1b),
@@ -753,20 +658,17 @@ cv_table <- data.frame(
     AIC(cab_fit2),
     AIC(cab_fit2a)
   ),
-    delta_AIC = NA,
-    CV = c(
-      cv_m01$sum_loglik,
-      cv_m02$sum_loglik,
-      cv_m03$sum_loglik,
-      cv_m1$sum_loglik,
-      cv_m1a$sum_loglik,
-      cv_m1b$sum_loglik,
-      cv_m1c$sum_loglik,
-      cv_m2$sum_loglik,
-      cv_m2a$sum_loglik
-    ),
-    delta_CV = NA
-  )
+  delta_AIC = NA,
+  CV = c(
+    cv_m1$sum_loglik,
+    cv_m1a$sum_loglik,
+    cv_m1b$sum_loglik,
+    cv_m1c$sum_loglik,
+    cv_m2$sum_loglik,
+    cv_m2a$sum_loglik
+  ),
+  delta_CV = NA
+)
 
 cv_table$delta_AIC <- cv_table$AIC - min(cv_table$AIC)
 cv_table$delta_CV <- cv_table$CV - min(cv_table$CV)
@@ -780,13 +682,11 @@ cv_table
 tidy(cab_fit1, effects = "ran_pars")
 tidy(cab_fit2, effects = "ran_pars")
 
-```
 
-# 6. cab_fit1 full D-G MODEL DIAGNOSTICS & ABUNDANCE INDEX
 
-```{r 6. cab_fit1 full D-G MODEL DIAGNOSTICS & ABUNDANCE INDEX}
 
-#---- 6. cab_fit1 full D-G MODEL DIAGNOSTICS & ABUNDANCE INDEX
+# 6. cab_fit1 full D-G MODEL DIAGNOSTICS & ABUNDANCE INDEX ----------------
+
 
 #---- 6.a. Calibration summaries
 
@@ -912,155 +812,12 @@ ggplot(cab_index_obs, aes(x = year, y = est)) +
   geom_line() +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.3) +
   labs(y = "Estimated abundance index", x = "Year", title = "Abundance Index: Observed Station Grid")
-```
-
-# 6.5. cab_fit01 D-G MODEL DIAGNOSTICS & ABUNDANCE INDEX
-
-```{r 6.5. cab_fit01 D-G MODEL DIAGNOSTICS & ABUNDANCE INDEX}
-
-#---- 6.5. cab_fit01 D-G MODEL DIAGNOSTICS & ABUNDANCE INDEX
-
-#---- 6.a. Calibration summaries
-
-pred_obs01 <- predict(cab_fit01, type = "response")
-
-# Overall mean calibration
-pred_obs01 %>%
-  summarise(
-    obs_mean = mean(larvae_100m3, na.rm = TRUE),
-    pred_mean = mean(est, na.rm = TRUE),
-    obs_occ = mean(larvae_100m3 > 0, na.rm = TRUE),
-    pred_occ = mean(est1, na.rm = TRUE),
-    obs_pos_mean = mean(larvae_100m3[larvae_100m3 > 0], na.rm = TRUE),
-    pred_pos_mean = mean(est2, na.rm = TRUE)
-  )
-
-# Binomial calibration; i.e. predicted presence probability vs. observed presence rate
-pred_obs01$presence <- pred_obs01$larvae_100m3 > 0
-
-calibration_summary <- pred_obs01 %>%
-  mutate(prob_bin = cut(est1, breaks = seq(0, 1, by = 0.1))) %>%
-  group_by(prob_bin) %>%
-  summarise(
-    mean_pred = mean(est1),
-    observed = mean(presence),
-    n = n()
-  )
-
-plot(calibration_summary$mean_pred, calibration_summary$observed,
-     xlab = "Predicted presence probability",
-     ylab = "Observed presence frequency")
-abline(0,1,lty=2)
-
-#---- 6.b. Predicted vs. observed plots
-
-# Raw scale comparison
-plot(
-  x = pred_obs01$est,
-  y = cabezon$larvae_100m3,
-  xlab = "Predicted",
-  ylab = "Observed"
-)
-abline(0, 1, lty = 2)
-
-# Log scale comparison
-plot(log1p(pred_obs01$est), log1p(cabezon$larvae_100m3),
-     xlab = "log(Predicted + 1)", ylab = "log(Observed + 1)")
-abline(0, 1, lty = 2)
-
-# Gamma (positive density) component only
-pos_idx <- cabezon$larvae_100m3 > 0
-plot(log(pred_obs01$est2[pos_idx]), log(cabezon$larvae_100m3[pos_idx]),
-     xlab = "log(Predicted positive abundance)",
-     ylab = "log(Observed positive abundance)")
-abline(0, 1, lty = 2)
-
-#---- 6.c. Randomized quantile residuals
-
-rq_res <- residuals(cab_fit01, type = "mle-mvn")
-
-# QQ plot
-qqnorm(rq_res)
-qqline(rq_res)
-
-# Spatial residual map by year (kind of hard to see)
-pred_obs01$rq_resid <- rq_res
-
-ggplot(pred_obs01, aes(x = X, y = Y, color = rq_resid)) +
-  geom_point() +
-  scale_color_gradient2() +
-  facet_wrap(~ year)
-
-#---- 6.d. Temporal calibration
-
-# Are predictions tracking temporal trends?
-pred_obs01 %>%
-  group_by(year) %>%
-  summarize(
-    obs = mean(larvae_100m3),
-    pred = mean(est)
-  ) %>%
-  ggplot(aes(x = year)) +
-  geom_line(aes(y = obs), color = "black") +
-  geom_line(aes(y = pred), color = "blue", linetype = "dashed")
-
-#---- 6.e. Abundance index construction
-# Note! The index uncertainty here was far too wide using a regular spatial grid, probably because interpolation over years with no CalCOFI coverage was causing inflation. I kept that plot in for reference, but 4.f. (observed station grid) is probably preferred for diagnosis.
-
-names(cabezon)
-cab_mesh$xy_cols
-
-head(cabezon$X)
-nrow(cabezon)
-
-exists("cabezon")
-is.data.frame(cabezon)
-identical(names(cabezon)[23:24], c("X", "Y"))
-min(cabezon$X)
-max(cabezon$X)
-
-pred_grid <- expand.grid(
-  X = seq(min(cabezon$X), max(cabezon$X), by = 5),
-  Y = seq(min(cabezon$Y), max(cabezon$Y), by = 5)
-) %>%
-  tidyr::crossing(year = as.integer(sort(unique(cabezon$year)))) %>%
-  mutate(fyear = as.factor(year))
-
-cab_map <- predict(cab_fit01, newdata = pred_grid, return_tmb_object = T)
-cab_index <- get_index(cab_map, area = 0.05^2, bias_correct = T)
-
-ggplot(cab_index, aes(x = year, y = est)) +
-  geom_line() +
-  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.3) +
-  labs(y = "Estimated abundance index", x = "Year", title = "Abundance Index: Regular Grid (Inflated by Interpolation)")
-
-#---- 6.f. Abundance index: constrained to observed station grid (probably preferred)
-
-pred_grid_obs <- cabezon %>%
-  dplyr::select(X, Y, year, fyear) %>%
-  distinct()
-
-cab_map_obs <- predict(cab_fit01,
-                       newdata = pred_grid_obs,
-                       return_tmb_object = T)
-
-cab_index_obs <- get_index(cab_map_obs,
-                           area = 1,
-                           bias_correct = T)
-
-ggplot(cab_index_obs, aes(x = year, y = est)) +
-  geom_line() +
-  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.3) +
-  labs(y = "Estimated abundance index", x = "Year", title = "Abundance Index: Observed Station Grid")
-
-```
 
 
-# 7. STAR COMPARISONS & CCFs TO cab_fit1 full D-G MODEL RUN
 
-```{r 7. STAR COMPARISONS & CCFs TO cab_fit1 full D-G MODEL RUN}
 
-#---- 7. STAR COMPARISONS & CCFs TO cab_fit1 full D-G MODEL RUN
+# STAR COMPARISONS & CCFs TO cab_fit1 FULL D-G MODEL RUN ------------------
+
 
 # Create one data frame to house all STAR + larval index data
 # Note! For these comparisons, we move forward with the constrained 6.f. abundnance index, assuming it's more stable.
@@ -1097,150 +854,3 @@ ssb_detrended <- residuals(lm(value ~ year, data = combined_obs))
 ccf(larvae_detrended, ssb_detrended, 
     lag.max = 10,
     main = "CCF: Restricted Larval Index vs. SSB (detrended)")
-```
-
-
-# 7.5. STAR COMPARISONS & CCFs TO cab_fit01 D-G MODEL RUN
-
-```{r 7.5. STAR COMPARISONS & CCFs TO cab_fit01 D-G MODEL RUN}
-
-#---- 7.5. STAR COMPARISONS & CCFs TO cab_fit01 D-G MODEL RUN
-
-# Create one data frame to house all STAR + larval index data
-# Note! For these comparisons, we move forward with the constrained 6.f. abundnance index, assuming it's more stable.
-combined <- cab_index_obs %>%
-  dplyr::select(year, est) %>%
-  rename(larvae_index = est) %>%
-  left_join(STAR_SSB, by = "year") %>%
-  left_join(STAR_recdevs, by = "year") %>%
-  left_join(STAR_age0, by = "year")
-
-# Filter to observed years
-combined_obs <- combined %>%
-  filter(!is.na(larvae_index) | is.na(value))
-
-# CCF: Restricted larval index vs. age-0 recruits
-ccf(cab_index_obs$est, STAR_age0_calcofi$value,
-    lag.max = 10,
-    main = "CCF: Restricted Larval Index vs. Age-0 Recruits")
-
-# CCF: Restricted larval index vs. recruitment deviations
-ccf(cab_index_obs$est, STAR_recdevs_calcofi$value,
-    lag.max = 10,
-    main = "CCF: Restricted Larval Index vs. Recruitment Deviations")
-
-# Nothing really :( when we try against SSB, we get some strong signal, but this is probably due to a shared declining trend. We'll try to parse that.
-# CCF: Restricted larval index vs. SSB
-ccf(STAR_SSB$value, cab_index_obs$est,
-    lag.max = 10,
-    main = "CCF: Restricted Larval Index vs. Spawning Stock Biomass (raw)")
-
-larvae_detrended <- residuals(lm(larvae_index ~ year, data = combined_obs))
-ssb_detrended <- residuals(lm(value ~ year, data = combined_obs))
-
-ccf(larvae_detrended, ssb_detrended, 
-    lag.max = 10,
-    main = "CCF: Restricted Larval Index vs. SSB (detrended)")
-```
-
-# Extras
-
-```{r Extras, error = TRUE}
-
-world <- ne_coastline(scale = "medium", returnclass = "sf")
-
-# ── In-sample predictions ─────────────────────────────────────────────────────
-
-# Delta-Gamma: est1 = occurrence prob, est2 = positive catch rate, combined = est1 * est2
-pred_dg <- predict(cab_fit1, type = "response")
-pred_dg$est_combined <- pred_dg$est1 * pred_dg$est2
-
-# Tweedie: est is the combined expected value in response scale
-pred_tw <- predict(cab_fit2, type = "response")
-
-# Attach predicted values to observed data
-obs_dg <- cabezon %>% mutate(predicted = pred_dg$est_combined, observed = larvae_100m3)
-obs_tw <- cabezon %>% mutate(predicted = pred_tw$est,           observed = larvae_100m3)
-
-# ── Grid predictions for spatial maps ─────────────────────────────────────────
-
-# Delta-Gamma (cab_map already exists; add combined column)
-cab_map_df <- cab_map$data %>%
-  mutate(est_combined = est1 * est2)
-
-plot_spatial_fit(cab_map_df, "est_combined", cabezon, "Delta-Gamma")
-
-# Tweedie grid predictions
-cab_map_tw <- predict(cab_fit2, newdata = pred_grid, type = "response")
-
-# ── 1. Predicted vs. Observed scatter plots ───────────────────────────────────
-
-scatter_dg <- ggplot(obs_dg, aes(x = predicted, y = observed)) +
-  geom_point(alpha = 0.35, size = 1.2) +
-  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red", linewidth = 0.8) +
-  scale_x_continuous(trans = "log1p", labels = scales::comma) +
-  scale_y_continuous(trans = "log1p", labels = scales::comma) +
-  labs(
-    title = "Delta-Gamma: Predicted vs. Observed",
-    x = expression("Predicted larvae per 100 m"^3),
-    y = expression("Observed larvae per 100 m"^3)
-  ) +
-  theme_bw()
-
-scatter_tw <- ggplot(obs_tw, aes(x = predicted, y = observed)) +
-  geom_point(alpha = 0.35, size = 1.2) +
-  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red", linewidth = 0.8) +
-  scale_x_continuous(trans = "log1p", labels = scales::comma) +
-  scale_y_continuous(trans = "log1p", labels = scales::comma) +
-  labs(
-    title = "Tweedie: Predicted vs. Observed",
-    x = expression("Predicted larvae per 100 m"^3),
-    y = expression("Observed larvae per 100 m"^3)
-  ) +
-  theme_bw()
-
-scatter_dg
-scatter_tw
-
-# ── 2. Faceted spatial maps: predicted surface + observed points ───────────────
-
-plot_spatial_fit <- function(grid_preds, est_col, obs_data, model_name) {
-  ggplot() +
-    geom_raster(
-      data = grid_preds,
-      aes(x = longitude, y = latitude, fill = log1p(.data[[est_col]])),
-      interpolate = TRUE
-    ) +
-    geom_sf(data = world, color = "gray30", fill = "gray85", linewidth = 0.3) +
-    geom_point(
-      data = obs_data,
-      aes(x = longitude, y = latitude, size = log1p(larvae_100m3)),
-      shape = 21, fill = "white", color = "black", stroke = 0.3, alpha = 0.75
-    ) +
-    scale_fill_viridis_c(
-      name = expression(log(1 + hat(y))),
-      option = "plasma",
-      na.value = NA
-    ) +
-    scale_size_continuous(
-      name = expression(log(1 + y)),
-      range = c(0.3, 3.5)
-    ) +
-    coord_sf(xlim = x_limits, ylim = y_limits, expand = FALSE) +
-    facet_wrap(~ year) +
-    labs(title = paste(model_name, "— Predicted Surface & Observed Points")) +
-    theme_bw(base_size = 9) +
-    theme(
-      strip.text     = element_text(size = 7),
-      axis.text      = element_text(size = 6),
-      legend.title   = element_text(size = 8),
-      legend.key.height = unit(0.6, "cm")
-    )
-}
-
-plot_spatial_fit(cab_map_df, "est_combined", cabezon, "Delta-Gamma")
-plot_spatial_fit(cab_map_tw, "est",          cabezon, "Tweedie")
-
-```
-
-
