@@ -584,6 +584,8 @@ cab_null <- sdmTMB(
   extra_time = 1982
 )
 
+sanity(cab_null)
+
 # Delta-Gamma: fixed year effect + iid: 
 cab_fit01 <- sdmTMB(
   larvae_100m3 ~ 0 + fyear,
@@ -599,7 +601,7 @@ cab_fit01 <- sdmTMB(
 
 sanity(cab_fit01)
 
-# Delta-Gamma: fixed year effect - spatiotemporal:
+# Delta-Gamma: fixed year effect - spatiotemporal: # Is this the best fit for a fixed year effect? Our sanity checks tell us that in models with both a fixed year effect and spatiotemporal fields cause the fields to collapse, suggesting maybe that any temporal variation is adequately captured by the fixed year effect already.
 cab_fit02 <- sdmTMB(
   larvae_100m3 ~ 0 + fyear,
   data = cabezon,
