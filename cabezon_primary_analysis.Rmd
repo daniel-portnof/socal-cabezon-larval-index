@@ -894,16 +894,12 @@ pred_obs %>%
 #---- 6.e. Abundance index construction
 # Note! The index uncertainty here was far too wide using a regular spatial grid, probably because interpolation over years with no CalCOFI coverage was causing inflation. I kept that plot in for reference, but 4.f. (observed station grid) is probably preferred for diagnosis.
 
-cab_mesh$mesh$loc[1:5, ]
-
-x_limits <- c(-122, -117)
-y_limits <- c(31, 36)
-
 pred_grid <- expand.grid(
-  longitude = seq(x_limits[1], x_limits[2], by = 0.05),
-  latitude = seq(y_limits[1], y_limits[2], by = 0.05)
+  X = seq(min(cabezon$X), max(cabezon$X), by = 5),
+  Y = seq(min(cabezon$Y), max(cabezon$Y), by = 5)
 ) %>%
-  tidyr::crossing(year = as.integer(sort(unique(cabezon$year))))
+  tidyr::crossing(year = as.integer(sort(unique(cabezon$year)))) %>%
+  mutate(fyear = as.factor(year))
 
 cab_map <- predict(cab_fit1, newdata = pred_grid, return_tmb_object = T)
 cab_index <- get_index(cab_map, area = 0.05^2, bias_correct = T)
@@ -916,7 +912,7 @@ ggplot(cab_index, aes(x = year, y = est)) +
 #---- 6.f. Abundance index: constrained to observed station grid (probably preferred)
 
 pred_grid_obs <- cabezon %>%
-  dplyr::select(longitude, latitude, year) %>%
+  dplyr::select(X, Y, year) %>%
   distinct()
 
 cab_map_obs <- predict(cab_fit1,
@@ -1025,18 +1021,6 @@ pred_obs01 %>%
 
 #---- 6.e. Abundance index construction
 # Note! The index uncertainty here was far too wide using a regular spatial grid, probably because interpolation over years with no CalCOFI coverage was causing inflation. I kept that plot in for reference, but 4.f. (observed station grid) is probably preferred for diagnosis.
-
-names(cabezon)
-cab_mesh$xy_cols
-
-head(cabezon$X)
-nrow(cabezon)
-
-exists("cabezon")
-is.data.frame(cabezon)
-identical(names(cabezon)[23:24], c("X", "Y"))
-min(cabezon$X)
-max(cabezon$X)
 
 pred_grid <- expand.grid(
   X = seq(min(cabezon$X), max(cabezon$X), by = 5),
