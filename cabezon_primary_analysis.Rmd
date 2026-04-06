@@ -939,7 +939,7 @@ ggplot(cab_index_obs, aes(x = year, y = est)) +
 
 #---- 6.5. cab_fit01 D-G MODEL DIAGNOSTICS & ABUNDANCE INDEX
 
-#---- 6.a. Calibration summaries
+#---- 6.5.a. Calibration summaries
 
 pred_obs_sp <- predict(cab_fit01, type = "response")
 
@@ -971,7 +971,7 @@ plot(calibration_summary_sp$mean_pred, calibration_summary_sp$observed,
      ylab = "Observed presence frequency")
 abline(0,1,lty=2)
 
-#---- 6.b. Predicted vs. observed plots
+#---- 6.5.b. Predicted vs. observed plots
 
 # Raw scale comparison
 plot(
@@ -994,7 +994,7 @@ plot(log(pred_obs_sp$est2[pos_idx_sp]), log(cabezon$larvae_100m3[pos_idx_sp]),
      ylab = "log(Observed positive abundance)")
 abline(0, 1, lty = 2)
 
-#---- 6.c. Randomized quantile residuals
+#---- 6.5.c. Randomized quantile residuals
 
 rq_res_sp <- residuals(cab_fit01, type = "mle-mvn")
 
@@ -1010,7 +1010,7 @@ ggplot(pred_obs_sp, aes(x = X, y = Y, color = rq_resid)) +
   scale_color_gradient2() +
   facet_wrap(~ year)
 
-#---- 6.d. Temporal calibration
+#---- 6.5.d. Temporal calibration
 
 # Are predictions tracking temporal trends?
 pred_obs_sp %>%
@@ -1023,7 +1023,7 @@ pred_obs_sp %>%
   geom_line(aes(y = obs), color = "black") +
   geom_line(aes(y = pred), color = "blue", linetype = "dashed")
 
-#---- 6.e. Abundance index construction
+#---- 6.5.e. Abundance index construction
 # Note! The index uncertainty here was far too wide using a regular spatial grid, probably because interpolation over years with no CalCOFI coverage was causing inflation. I kept that plot in for reference, but 4.f. (observed station grid) is probably preferred for diagnosis.
 
 pred_grid_sp <- expand.grid(
@@ -1041,7 +1041,7 @@ ggplot(cab_index_sp, aes(x = year, y = est)) +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.3) +
   labs(y = "Estimated abundance index", x = "Year", title = "Abundance Index: Regular Grid (Inflated by Interpolation)")
 
-#---- 6.f. Abundance index: constrained to observed station grid (probably preferred)
+#---- 6.5.f. Abundance index: constrained to observed station grid (probably preferred)
 
 pred_grid_obs <- cabezon %>%
   dplyr::select(X, Y, year, fyear) %>%
@@ -1074,32 +1074,41 @@ ggplot(cab_index_obs_sp, aes(x = year, y = est)) +
 combined <- cab_index_obs %>%
   dplyr::select(year, est) %>%
   rename(larvae_index = est) %>%
-  left_join(STAR_SSB, by = "year") %>%
-  left_join(STAR_recdevs, by = "year") %>%
-  left_join(STAR_age0, by = "year")
+  left_join(
+    STAR_SSB %>% rename(ssb = value, ssb_lo = lo, ssb_hi = hi),
+    by = "year"
+  ) %>%
+  left_join(
+    STAR_recdevs %>% rename(rec_dev = value, rec_dev_lo = lo, rec_dev_hi = hi),
+    by = "year"
+  ) %>%
+  left_join(
+    STAR_age0 %>% rename(age0 = value, age0_lo = lo, age0_hi = hi),
+    by = "year"
+  )
 
 # Filter to observed years
 combined_obs <- combined %>%
-  filter(!is.na(larvae_index) | is.na(value))
+  filter(!is.na(larvae_index))
 
 # CCF: Restricted larval index vs. age-0 recruits
-ccf(cab_index_obs$est, STAR_age0_calcofi$value,
+ccf(combined_obs$larvae_index, combined_obs$age0,
     lag.max = 10,
     main = "CCF: Restricted Larval Index vs. Age-0 Recruits")
 
 # CCF: Restricted larval index vs. recruitment deviations
-ccf(cab_index_obs$est, STAR_recdevs_calcofi$value,
+ccf(combined_obs$larvae_index, combined_obs$rec_dev,
     lag.max = 10,
     main = "CCF: Restricted Larval Index vs. Recruitment Deviations")
 
 # Nothing really :( when we try against SSB, we get some strong signal, but this is probably due to a shared declining trend. We'll try to parse that.
 # CCF: Restricted larval index vs. SSB
-ccf(STAR_SSB$value, cab_index_obs$est,
+ccf(combined_obs$larvae_index, combined_obs$ssb,
     lag.max = 10,
     main = "CCF: Restricted Larval Index vs. Spawning Stock Biomass (raw)")
 
-larvae_detrended <- residuals(lm(larvae_index ~ year, data = combined_obs))
-ssb_detrended <- residuals(lm(value ~ year, data = combined_obs))
+larvae_detrended <- residuals(loess(larvae_index ~ year, data = combined_obs, span = 0.75))
+ssb_detrended    <- residuals(loess(ssb ~ year,          data = combined_obs, span = 0.75))
 
 ccf(larvae_detrended, ssb_detrended, 
     lag.max = 10,
@@ -1115,40 +1124,547 @@ ccf(larvae_detrended, ssb_detrended,
 
 # Create one data frame to house all STAR + larval index data
 # Note! For these comparisons, we move forward with the constrained 6.f. abundnance index, assuming it's more stable.
-combined <- cab_index_obs_sp %>%
+combined_sp <- cab_index_obs_sp %>%
   dplyr::select(year, est) %>%
   rename(larvae_index = est) %>%
-  left_join(STAR_SSB, by = "year") %>%
-  left_join(STAR_recdevs, by = "year") %>%
-  left_join(STAR_age0, by = "year")
+  left_join(
+    STAR_SSB %>% rename(ssb = value, ssb_lo = lo, ssb_hi = hi),
+    by = "year"
+  ) %>%
+  left_join(
+    STAR_recdevs %>% rename(rec_dev = value, rec_dev_lo = lo, rec_dev_hi = hi),
+    by = "year"
+  ) %>%
+  left_join(
+    STAR_age0 %>% rename(age0 = value, age0_lo = lo, age0_hi = hi),
+    by = "year"
+  )
 
 # Filter to observed years
-combined_obs <- combined %>%
-  filter(!is.na(larvae_index) | is.na(value))
+combined_sp_obs <- combined_sp %>%
+  filter(!is.na(larvae_index))
 
 # CCF: Restricted larval index vs. age-0 recruits
-ccf(cab_index_obs_sp$est, STAR_age0_calcofi$value,
+ccf(combined_sp_obs$larvae_index, combined_sp_obs$age0,
     lag.max = 10,
     main = "CCF: Restricted Larval Index vs. Age-0 Recruits")
 
 # CCF: Restricted larval index vs. recruitment deviations
-ccf(cab_index_obs_sp$est, STAR_recdevs_calcofi$value,
+ccf(combined_sp_obs$larvae_index, combined_sp_obs$rec_dev,
     lag.max = 10,
     main = "CCF: Restricted Larval Index vs. Recruitment Deviations")
 
 # Nothing really :( when we try against SSB, we get some strong signal, but this is probably due to a shared declining trend. We'll try to parse that.
 # CCF: Restricted larval index vs. SSB
-ccf(STAR_SSB$value, cab_index_obs_sp$est,
+ccf(combined_sp_obs$larvae_index, combined_sp_obs$ssb,
     lag.max = 10,
     main = "CCF: Restricted Larval Index vs. Spawning Stock Biomass (raw)")
 
 larvae_detrended <- residuals(lm(larvae_index ~ year, data = combined_obs))
-ssb_detrended <- residuals(lm(value ~ year, data = combined_obs))
+ssb_detrended <- residuals(lm(ssb ~ year, data = combined_obs))
 
 ccf(larvae_detrended, ssb_detrended, 
     lag.max = 10,
     main = "CCF: Restricted Larval Index vs. SSB (detrended)")
 ```
+
+# Experiments
+
+```{r Experiments}
+
+# RQ residuals for full AR1 spatiotemporal model
+pred_obs %>%
+  group_by(year) %>%
+  mutate(med_resid = median(rq_resid)) %>%
+  ggplot(aes(x = factor(year), y = rq_resid)) +
+  geom_boxplot(outlier.size = 0.6, fill = "steelblue", alpha = 0.4) +
+  geom_smooth(
+    aes(x = as.numeric(factor(year)), y = rq_resid),
+    method  = "loess", span = 0.4,
+    se      = TRUE, color = "firebrick", linewidth = 0.8
+  ) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  labs(
+    x     = "Year",
+    y     = "RQ Residual",
+    title = "Annual RQ Residual Distributions — cab_fit1"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, size = 7))
+
+pred_obs %>%
+  group_by(year) %>%
+  summarise(med_resid = median(rq_resid), .groups = "drop") %>%
+  arrange(year) %>%
+  mutate(cusum = cumsum(med_resid)) %>%
+  ggplot(aes(x = year, y = cusum)) +
+  geom_line(linewidth = 0.9) +
+  geom_point(size = 1.5) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
+  labs(
+    x     = "Year",
+    y     = "Cumulative Sum of Median RQ Residual",
+    title = "CUSUM — cab_fit1"
+  ) +
+  theme_minimal()
+
+# RQ residuals for spatial only, fixed effects model
+pred_obs_sp %>%
+  group_by(year) %>%
+  mutate(med_resid = median(rq_resid)) %>%
+  ggplot(aes(x = factor(year), y = rq_resid)) +
+  geom_boxplot(outlier.size = 0.6, fill = "steelblue", alpha = 0.4) +
+  geom_smooth(
+    aes(x = as.numeric(factor(year)), y = rq_resid),
+    method  = "loess", span = 0.4,
+    se      = TRUE, color = "firebrick", linewidth = 0.8
+  ) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  labs(
+    x     = "Year",
+    y     = "RQ Residual",
+    title = "Annual RQ Residual Distributions — cab_fit01"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, size = 7))
+
+
+pred_obs_sp %>%
+  group_by(year) %>%
+  summarise(med_resid = median(rq_resid), .groups = "drop") %>%
+  arrange(year) %>%
+  mutate(cusum = cumsum(med_resid)) %>%
+  ggplot(aes(x = year, y = cusum)) +
+  geom_line(linewidth = 0.9) +
+  geom_point(size = 1.5) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
+  labs(
+    x     = "Year",
+    y     = "Cumulative Sum of Median RQ Residual",
+    title = "CUSUM — cab_fit01"
+  ) +
+  theme_minimal()
+
+
+library(segmented)
+
+#---- Are there any meaningful breakpoints in our time-series to inform segmented regression analysis?
+
+# Build the annual median series for each model
+cusum_sp <- pred_obs_sp %>%
+  group_by(year) %>%
+  summarise(med_resid = median(rq_resid), .groups = "drop") %>%
+  arrange(year)
+
+cusum_ar1 <- pred_obs %>%
+  group_by(year) %>%
+  summarise(med_resid = median(rq_resid), .groups = "drop") %>%
+  arrange(year)
+
+# Fit a linear base model, then let segmented find the breakpoint
+# Spatial model — one breakpoint
+lm_sp  <- lm(med_resid ~ year, data = cusum_sp)
+seg_sp <- segmented(lm_sp, seg.Z = ~year, npsi = 1)
+summary(seg_sp)
+confint(seg_sp)  # confidence interval on the breakpoint location
+
+# AR1 model — two breakpoints
+lm_ar1  <- lm(med_resid ~ year, data = cusum_ar1)
+seg_ar1 <- segmented(lm_ar1, seg.Z = ~year, npsi = 2)
+summary(seg_ar1)
+confint(seg_ar1)
+
+
+bp_sp <- round(seg_sp$psi[, "Est."])  # extract estimated breakpoint
+
+run_era_ccf <- function(df, ss_var, start_yr, end_yr, lag.max = 10) {
+  sub <- df %>% filter(year >= start_yr, year <= end_yr) %>% arrange(year)
+  cat("Era:", start_yr, "–", end_yr, "| n rows:", nrow(sub), "\n")
+  print(sub %>% dplyr::select(year, larvae_index, all_of(ss_var)))
+  ccf(sub$larvae_index, sub[[ss_var]], lag.max = lag.max,
+      main = paste0("CCF: ", start_yr, "–", end_yr, " | ", ss_var))
+}
+
+# AR1 model: three eras
+bp1 <- round(seg_ar1$psi[1, "Est."])
+bp2 <- round(seg_ar1$psi[2, "Est."])
+
+str(combined_obs)
+
+run_era_ccf(combined_obs, "rec_dev", 1981, bp1 - 1)
+run_era_ccf(combined_obs, "rec_dev", bp1,  bp2 - 1)
+run_era_ccf(combined_obs, "rec_dev", bp2,  2015)
+
+#---- Simple lagged regression at -1 to check
+
+combined_lagged <- combined_obs %>%
+  arrange(year) %>%
+  mutate(
+    age0_lead1 = lead(age0, 1),
+    rec_dev_lead1 = lead(rec_dev, 1)
+  )
+
+lm_age0 <- lm(age0_lead1 ~ larvae_index, data = combined_lagged)
+lm_recdev <- lm(rec_dev_lead1 ~ larvae_index, data = combined_lagged)
+
+summary(lm_age0)
+summary(lm_recdev)
+
+combined_lagged %>%
+  filter(!is.na(age0_lead1)) %>%
+  ggplot(aes(x = larvae_index, y = age0_lead1, label = year)) +
+  geom_point() +
+  geom_text(nudge_y = 8, size = 3) +
+  geom_smooth(method = "lm", se = T) +
+  labs(x = "Larval Index (year t)", y = "Age-0 Recruits (year t+1)") +
+  theme_minimal()
+
+combined_lagged_no83 <- combined_lagged %>% filter(year != 1983)
+
+lm_age0_no83 <- lm(age0_lead1 ~ larvae_index, data = combined_lagged_no83)
+summary(lm_age0_no83)
+
+lm_age0_detrend   <- lm(age0_lead1    ~ larvae_index + year, data = combined_lagged)
+lm_recdev_detrend <- lm(rec_dev_lead1 ~ larvae_index + year, data = combined_lagged)
+
+summary(lm_age0_detrend)
+summary(lm_recdev_detrend)
+
+plot(lm_age0, which = 4)  # Cook's distance plot
+
+# Remove the three most visually anomalous years
+combined_lagged_trimmed <- combined_lagged %>% 
+  filter(!year %in% c(1983, 1986, 2001))
+
+lm_age0_trimmed <- lm(age0_lead1 ~ larvae_index, data = combined_lagged_trimmed)
+summary(lm_age0_trimmed)
+```
+
+# Additional model testing
+
+```{r 6.7. cab_fit2}
+#---- 8. cab_fit2 TWEEDIE MODEL DIAGNOSTICS & ABUNDANCE INDEX
+#---- 8.a. Calibration summaries
+pred_obs_tw <- predict(cab_fit2, type = "response")
+
+pred_obs_tw %>%
+  summarise(
+    obs_mean  = mean(cabezon$larvae_100m3, na.rm = TRUE),
+    pred_mean = mean(est, na.rm = TRUE)
+  )
+
+# Note: Tweedie is single-component — binomial calibration and gamma plots are skipped
+
+#---- 8.b. Predicted vs. observed
+plot(pred_obs_tw$est, cabezon$larvae_100m3,
+     xlab = "Predicted", ylab = "Observed",
+     main = "Raw scale — cab_fit2 Tweedie")
+abline(0, 1, lty = 2)
+
+plot(log1p(pred_obs_tw$est), log1p(cabezon$larvae_100m3),
+     xlab = "log(Predicted + 1)", ylab = "log(Observed + 1)",
+     main = "Log scale — cab_fit2 Tweedie")
+abline(0, 1, lty = 2)
+
+#---- 8.c. Randomized quantile residuals
+rq_res_tw <- residuals(cab_fit2, type = "mle-mvn")
+
+qqnorm(rq_res_tw, main = "QQ — cab_fit2 Tweedie")
+qqline(rq_res_tw)
+
+pred_obs_tw$rq_resid <- rq_res_tw
+
+ggplot(pred_obs_tw, aes(x = X, y = Y, color = rq_resid)) +
+  geom_point() +
+  scale_color_gradient2() +
+  facet_wrap(~ year) +
+  labs(title = "Spatial residuals — cab_fit2 Tweedie")
+
+#---- 8.d. Temporal calibration
+pred_obs_tw %>%
+  group_by(year) %>%
+  summarize(
+    obs  = mean(larvae_100m3),
+    pred = mean(est)
+  ) %>%
+  ggplot(aes(x = year)) +
+  geom_line(aes(y = obs), color = "black") +
+  geom_line(aes(y = pred), color = "blue", linetype = "dashed") +
+  labs(title = "Temporal calibration — cab_fit2 Tweedie")
+
+#---- 8.e. Annual RQ distributions
+pred_obs_tw %>%
+  group_by(year) %>%
+  mutate(med_resid = median(rq_resid)) %>%
+  ggplot(aes(x = factor(year), y = rq_resid)) +
+  geom_boxplot(outlier.size = 0.6, fill = "steelblue", alpha = 0.4) +
+  geom_smooth(
+    aes(x = as.numeric(factor(year)), y = rq_resid),
+    method = "loess", span = 0.4,
+    se = TRUE, color = "firebrick", linewidth = 0.8
+  ) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  labs(x = "Year", y = "RQ Residual",
+       title = "Annual RQ Residual Distributions — cab_fit2 Tweedie") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, size = 7))
+
+#---- 8.f. CUSUM
+pred_obs_tw %>%
+  group_by(year) %>%
+  summarise(med_resid = median(rq_resid), .groups = "drop") %>%
+  arrange(year) %>%
+  mutate(cusum = cumsum(med_resid)) %>%
+  ggplot(aes(x = year, y = cusum)) +
+  geom_line(linewidth = 0.9) +
+  geom_point(size = 1.5) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
+  labs(x = "Year", y = "Cumulative Sum of Median RQ Residual",
+       title = "CUSUM — cab_fit2 Tweedie") +
+  theme_minimal()
+
+#---- 8.g. Abundance index: observed station grid
+pred_grid_obs_tw <- cabezon %>%
+  dplyr::select(X, Y, year) %>%
+  distinct()
+
+cab_map_obs_tw  <- predict(cab_fit2,
+                           newdata = pred_grid_obs_tw,
+                           return_tmb_object = TRUE)
+cab_index_obs_tw <- get_index(cab_map_obs_tw, area = 1, bias_correct = TRUE)
+
+ggplot(cab_index_obs_tw, aes(x = year, y = est)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.3) +
+  labs(y = "Estimated abundance index", x = "Year",
+       title = "Abundance Index: Observed Station Grid — cab_fit2 Tweedie")
+
+
+
+#---- 10. cab_fit2 TWEEDIE — STAR COMPARISONS & CCFs
+combined_tw <- cab_index_obs_tw %>%
+  dplyr::select(year, est) %>%
+  rename(larvae_index = est) %>%
+  left_join(
+    STAR_SSB %>% rename(ssb = value, ssb_lo = lo, ssb_hi = hi),
+    by = "year"
+  ) %>%
+  left_join(
+    STAR_recdevs %>% rename(rec_dev = value, rec_dev_lo = lo, rec_dev_hi = hi),
+    by = "year"
+  ) %>%
+  left_join(
+    STAR_age0 %>% rename(age0 = value, age0_lo = lo, age0_hi = hi),
+    by = "year"
+  )
+
+combined_tw_obs <- combined_tw %>%
+  filter(!is.na(larvae_index))
+
+#---- 10.a. Pooled CCFs
+ccf(combined_tw_obs$larvae_index, combined_tw_obs$age0,
+    lag.max = 10,
+    main = "CCF: Tweedie Larval Index vs. Age-0 Recruits")
+
+ccf(combined_tw_obs$larvae_index, combined_tw_obs$rec_dev,
+    lag.max = 10,
+    main = "CCF: Tweedie Larval Index vs. Recruitment Deviations")
+
+ccf(combined_tw_obs$larvae_index, combined_tw_obs$ssb,
+    lag.max = 10,
+    main = "CCF: Tweedie Larval Index vs. SSB (raw)")
+
+larvae_detrended_tw <- residuals(lm(larvae_index ~ year, data = combined_tw_obs))
+ssb_detrended_tw    <- residuals(lm(ssb ~ year,          data = combined_tw_obs))
+
+ccf(larvae_detrended_tw, ssb_detrended_tw,
+    lag.max = 10,
+    main = "CCF: Tweedie Larval Index vs. SSB (detrended)")
+
+#---- 10.b. Breakpoint analysis
+cusum_tw <- pred_obs_tw %>%
+  group_by(year) %>%
+  summarise(med_resid = median(rq_resid), .groups = "drop") %>%
+  arrange(year)
+
+lm_tw  <- lm(med_resid ~ year, data = cusum_tw)
+seg_tw <- segmented(lm_tw, seg.Z = ~year, npsi = 1)
+summary(seg_tw)
+confint(seg_tw)
+```
+
+```{r 6.9. cab_fit03}
+#---- 9. cab_fit03 DG FIXED YEAR / IID MODEL DIAGNOSTICS & ABUNDANCE INDEX
+#---- 9.a. Calibration summaries
+pred_obs_iid <- predict(cab_fit03, type = "response")
+
+pred_obs_iid %>%
+  summarise(
+    obs_mean      = mean(cabezon$larvae_100m3, na.rm = TRUE),
+    pred_mean     = mean(est, na.rm = TRUE),
+    obs_occ       = mean(cabezon$larvae_100m3 > 0, na.rm = TRUE),
+    pred_occ      = mean(est1, na.rm = TRUE),
+    obs_pos_mean  = mean(cabezon$larvae_100m3[cabezon$larvae_100m3 > 0], na.rm = TRUE),
+    pred_pos_mean = mean(est2, na.rm = TRUE)
+  )
+
+pred_obs_iid$presence <- cabezon$larvae_100m3 > 0
+calibration_summary_iid <- pred_obs_iid %>%
+  mutate(prob_bin = cut(est1, breaks = seq(0, 1, by = 0.1))) %>%
+  group_by(prob_bin) %>%
+  summarise(mean_pred = mean(est1), observed = mean(presence), n = n())
+
+plot(calibration_summary_iid$mean_pred, calibration_summary_iid$observed,
+     xlab = "Predicted presence probability",
+     ylab = "Observed presence frequency",
+     main = "Binomial calibration — cab_fit03 DG IID")
+abline(0, 1, lty = 2)
+
+#---- 9.b. Predicted vs. observed
+plot(pred_obs_iid$est, cabezon$larvae_100m3,
+     xlab = "Predicted", ylab = "Observed",
+     main = "Raw scale — cab_fit03 DG IID")
+abline(0, 1, lty = 2)
+
+plot(log1p(pred_obs_iid$est), log1p(cabezon$larvae_100m3),
+     xlab = "log(Predicted + 1)", ylab = "log(Observed + 1)",
+     main = "Log scale — cab_fit03 DG IID")
+abline(0, 1, lty = 2)
+
+pos_idx_iid <- cabezon$larvae_100m3 > 0
+plot(log(pred_obs_iid$est2[pos_idx_iid]), log(cabezon$larvae_100m3[pos_idx_iid]),
+     xlab = "log(Predicted positive abundance)",
+     ylab = "log(Observed positive abundance)",
+     main = "Gamma component — cab_fit03 DG IID")
+abline(0, 1, lty = 2)
+
+#---- 9.c. Randomized quantile residuals
+rq_res_iid <- residuals(cab_fit03, type = "mle-mvn")
+
+qqnorm(rq_res_iid, main = "QQ — cab_fit03 DG IID")
+qqline(rq_res_iid)
+
+pred_obs_iid$rq_resid <- rq_res_iid
+
+ggplot(pred_obs_iid, aes(x = X, y = Y, color = rq_resid)) +
+  geom_point() +
+  scale_color_gradient2() +
+  facet_wrap(~ year) +
+  labs(title = "Spatial residuals — cab_fit03 DG IID")
+
+#---- 9.d. Temporal calibration
+pred_obs_iid %>%
+  group_by(year) %>%
+  summarize(
+    obs  = mean(larvae_100m3),
+    pred = mean(est)
+  ) %>%
+  ggplot(aes(x = year)) +
+  geom_line(aes(y = obs), color = "black") +
+  geom_line(aes(y = pred), color = "blue", linetype = "dashed") +
+  labs(title = "Temporal calibration — cab_fit03 DG IID")
+
+#---- 9.e. Annual RQ distributions
+pred_obs_iid %>%
+  group_by(year) %>%
+  mutate(med_resid = median(rq_resid)) %>%
+  ggplot(aes(x = factor(year), y = rq_resid)) +
+  geom_boxplot(outlier.size = 0.6, fill = "steelblue", alpha = 0.4) +
+  geom_smooth(
+    aes(x = as.numeric(factor(year)), y = rq_resid),
+    method = "loess", span = 0.4,
+    se = TRUE, color = "firebrick", linewidth = 0.8
+  ) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  labs(x = "Year", y = "RQ Residual",
+       title = "Annual RQ Residual Distributions — cab_fit03 DG IID") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, size = 7))
+
+#---- 9.f. CUSUM
+pred_obs_iid %>%
+  group_by(year) %>%
+  summarise(med_resid = median(rq_resid), .groups = "drop") %>%
+  arrange(year) %>%
+  mutate(cusum = cumsum(med_resid)) %>%
+  ggplot(aes(x = year, y = cusum)) +
+  geom_line(linewidth = 0.9) +
+  geom_point(size = 1.5) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
+  labs(x = "Year", y = "Cumulative Sum of Median RQ Residual",
+       title = "CUSUM — cab_fit03 DG IID") +
+  theme_minimal()
+
+#---- 9.g. Abundance index: observed station grid
+pred_grid_obs_iid <- cabezon %>%
+  dplyr::select(X, Y, year) %>%
+  distinct() %>%
+  mutate(fyear = as.factor(year))
+
+cab_map_obs_iid  <- predict(cab_fit03,
+                            newdata = pred_grid_obs_iid,
+                            return_tmb_object = TRUE)
+cab_index_obs_iid <- get_index(cab_map_obs_iid, area = 1, bias_correct = TRUE)
+
+ggplot(cab_index_obs_iid, aes(x = year, y = est)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.3) +
+  labs(y = "Estimated abundance index", x = "Year",
+       title = "Abundance Index: Observed Station Grid — cab_fit03 DG IID")
+
+
+#---- 11. cab_fit03 DG IID — STAR COMPARISONS & CCFs
+combined_iid <- cab_index_obs_iid %>%
+  dplyr::select(year, est) %>%
+  rename(larvae_index = est) %>%
+  left_join(
+    STAR_SSB %>% rename(ssb = value, ssb_lo = lo, ssb_hi = hi),
+    by = "year"
+  ) %>%
+  left_join(
+    STAR_recdevs %>% rename(rec_dev = value, rec_dev_lo = lo, rec_dev_hi = hi),
+    by = "year"
+  ) %>%
+  left_join(
+    STAR_age0 %>% rename(age0 = value, age0_lo = lo, age0_hi = hi),
+    by = "year"
+  )
+
+combined_iid_obs <- combined_iid %>%
+  filter(!is.na(larvae_index))
+
+#---- 11.a. Pooled CCFs
+ccf(combined_iid_obs$larvae_index, combined_iid_obs$age0,
+    lag.max = 10,
+    main = "CCF: DG IID Larval Index vs. Age-0 Recruits")
+
+ccf(combined_iid_obs$larvae_index, combined_iid_obs$rec_dev,
+    lag.max = 10,
+    main = "CCF: DG IID Larval Index vs. Recruitment Deviations")
+
+ccf(combined_iid_obs$larvae_index, combined_iid_obs$ssb,
+    lag.max = 10,
+    main = "CCF: DG IID Larval Index vs. SSB (raw)")
+
+larvae_detrended_iid <- residuals(lm(larvae_index ~ year, data = combined_iid_obs))
+ssb_detrended_iid    <- residuals(lm(ssb ~ year,          data = combined_iid_obs))
+
+ccf(larvae_detrended_iid, ssb_detrended_iid,
+    lag.max = 10,
+    main = "CCF: DG IID Larval Index vs. SSB (detrended)")
+
+#---- 11.b. Breakpoint analysis
+cusum_iid <- pred_obs_iid %>%
+  group_by(year) %>%
+  summarise(med_resid = median(rq_resid), .groups = "drop") %>%
+  arrange(year)
+
+lm_iid  <- lm(med_resid ~ year, data = cusum_iid)
+seg_iid <- segmented(lm_iid, seg.Z = ~year, npsi = 1)
+summary(seg_iid)
+confint(seg_iid)
+```
+
 
 # Extras
 
