@@ -554,7 +554,9 @@ set.seed(my.seed)
 
 #---- 5.a. Build mesh
 library(fmesher)
-#cabezon <- sdmTMB::add_utm_columns(cabezon, ll_names = c("longitude", "latitude"))
+if (!all(c("X", "Y") %in% names(cabezon))) {
+  cabezon <- sdmTMB::add_utm_columns(cabezon, ll_names = c("longitude", "latitude"))
+}
 
 mesh <- fm_mesh_2d(
   loc = cabezon[,c("X","Y")],
@@ -939,10 +941,10 @@ ggplot(cab_index_obs, aes(x = year, y = est)) +
 
 #---- 6.a. Calibration summaries
 
-pred_obs01 <- predict(cab_fit01, type = "response")
+pred_obs_sp <- predict(cab_fit01, type = "response")
 
 # Overall mean calibration
-pred_obs01 %>%
+pred_obs_sp %>%
   summarise(
     obs_mean = mean(larvae_100m3, na.rm = TRUE),
     pred_mean = mean(est, na.rm = TRUE),
@@ -953,9 +955,9 @@ pred_obs01 %>%
   )
 
 # Binomial calibration; i.e. predicted presence probability vs. observed presence rate
-pred_obs01$presence <- pred_obs01$larvae_100m3 > 0
+pred_obs_sp$presence <- pred_obs_sp$larvae_100m3 > 0
 
-calibration_summary <- pred_obs01 %>%
+calibration_summary_sp <- pred_obs_sp %>%
   mutate(prob_bin = cut(est1, breaks = seq(0, 1, by = 0.1))) %>%
   group_by(prob_bin) %>%
   summarise(
@@ -964,7 +966,7 @@ calibration_summary <- pred_obs01 %>%
     n = n()
   )
 
-plot(calibration_summary$mean_pred, calibration_summary$observed,
+plot(calibration_summary_sp$mean_pred, calibration_summary_sp$observed,
      xlab = "Predicted presence probability",
      ylab = "Observed presence frequency")
 abline(0,1,lty=2)
@@ -973,7 +975,7 @@ abline(0,1,lty=2)
 
 # Raw scale comparison
 plot(
-  x = pred_obs01$est,
+  x = pred_obs_sp$est,
   y = cabezon$larvae_100m3,
   xlab = "Predicted",
   ylab = "Observed"
@@ -981,29 +983,29 @@ plot(
 abline(0, 1, lty = 2)
 
 # Log scale comparison
-plot(log1p(pred_obs01$est), log1p(cabezon$larvae_100m3),
+plot(log1p(pred_obs_sp$est), log1p(cabezon$larvae_100m3),
      xlab = "log(Predicted + 1)", ylab = "log(Observed + 1)")
 abline(0, 1, lty = 2)
 
 # Gamma (positive density) component only
-pos_idx <- cabezon$larvae_100m3 > 0
-plot(log(pred_obs01$est2[pos_idx]), log(cabezon$larvae_100m3[pos_idx]),
+pos_idx_sp <- cabezon$larvae_100m3 > 0
+plot(log(pred_obs_sp$est2[pos_idx_sp]), log(cabezon$larvae_100m3[pos_idx_sp]),
      xlab = "log(Predicted positive abundance)",
      ylab = "log(Observed positive abundance)")
 abline(0, 1, lty = 2)
 
 #---- 6.c. Randomized quantile residuals
 
-rq_res <- residuals(cab_fit01, type = "mle-mvn")
+rq_res_sp <- residuals(cab_fit01, type = "mle-mvn")
 
 # QQ plot
-qqnorm(rq_res)
-qqline(rq_res)
+qqnorm(rq_res_sp)
+qqline(rq_res_sp)
 
 # Spatial residual map by year (kind of hard to see)
-pred_obs01$rq_resid <- rq_res
+pred_obs_sp$rq_resid <- rq_res_sp
 
-ggplot(pred_obs01, aes(x = X, y = Y, color = rq_resid)) +
+ggplot(pred_obs_sp, aes(x = X, y = Y, color = rq_resid)) +
   geom_point() +
   scale_color_gradient2() +
   facet_wrap(~ year)
@@ -1011,7 +1013,7 @@ ggplot(pred_obs01, aes(x = X, y = Y, color = rq_resid)) +
 #---- 6.d. Temporal calibration
 
 # Are predictions tracking temporal trends?
-pred_obs01 %>%
+pred_obs_sp %>%
   group_by(year) %>%
   summarize(
     obs = mean(larvae_100m3),
@@ -1024,17 +1026,17 @@ pred_obs01 %>%
 #---- 6.e. Abundance index construction
 # Note! The index uncertainty here was far too wide using a regular spatial grid, probably because interpolation over years with no CalCOFI coverage was causing inflation. I kept that plot in for reference, but 4.f. (observed station grid) is probably preferred for diagnosis.
 
-pred_grid <- expand.grid(
+pred_grid_sp <- expand.grid(
   X = seq(min(cabezon$X), max(cabezon$X), by = 5),
   Y = seq(min(cabezon$Y), max(cabezon$Y), by = 5)
 ) %>%
   tidyr::crossing(year = as.integer(sort(unique(cabezon$year)))) %>%
   mutate(fyear = as.factor(year))
 
-cab_map <- predict(cab_fit01, newdata = pred_grid, return_tmb_object = T)
-cab_index <- get_index(cab_map, area = 0.05^2, bias_correct = T)
+cab_map_sp <- predict(cab_fit01, newdata = pred_grid_sp, return_tmb_object = T)
+cab_index_sp <- get_index(cab_map_sp, area = 0.05^2, bias_correct = T)
 
-ggplot(cab_index, aes(x = year, y = est)) +
+ggplot(cab_index_sp, aes(x = year, y = est)) +
   geom_line() +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.3) +
   labs(y = "Estimated abundance index", x = "Year", title = "Abundance Index: Regular Grid (Inflated by Interpolation)")
@@ -1045,15 +1047,15 @@ pred_grid_obs <- cabezon %>%
   dplyr::select(X, Y, year, fyear) %>%
   distinct()
 
-cab_map_obs <- predict(cab_fit01,
+cab_map_obs_sp <- predict(cab_fit01,
                        newdata = pred_grid_obs,
                        return_tmb_object = T)
 
-cab_index_obs <- get_index(cab_map_obs,
+cab_index_obs_sp <- get_index(cab_map_obs_sp,
                            area = 1,
                            bias_correct = T)
 
-ggplot(cab_index_obs, aes(x = year, y = est)) +
+ggplot(cab_index_obs_sp, aes(x = year, y = est)) +
   geom_line() +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.3) +
   labs(y = "Estimated abundance index", x = "Year", title = "Abundance Index: Observed Station Grid")
@@ -1113,7 +1115,7 @@ ccf(larvae_detrended, ssb_detrended,
 
 # Create one data frame to house all STAR + larval index data
 # Note! For these comparisons, we move forward with the constrained 6.f. abundnance index, assuming it's more stable.
-combined <- cab_index_obs %>%
+combined <- cab_index_obs_sp %>%
   dplyr::select(year, est) %>%
   rename(larvae_index = est) %>%
   left_join(STAR_SSB, by = "year") %>%
@@ -1125,18 +1127,18 @@ combined_obs <- combined %>%
   filter(!is.na(larvae_index) | is.na(value))
 
 # CCF: Restricted larval index vs. age-0 recruits
-ccf(cab_index_obs$est, STAR_age0_calcofi$value,
+ccf(cab_index_obs_sp$est, STAR_age0_calcofi$value,
     lag.max = 10,
     main = "CCF: Restricted Larval Index vs. Age-0 Recruits")
 
 # CCF: Restricted larval index vs. recruitment deviations
-ccf(cab_index_obs$est, STAR_recdevs_calcofi$value,
+ccf(cab_index_obs_sp$est, STAR_recdevs_calcofi$value,
     lag.max = 10,
     main = "CCF: Restricted Larval Index vs. Recruitment Deviations")
 
 # Nothing really :( when we try against SSB, we get some strong signal, but this is probably due to a shared declining trend. We'll try to parse that.
 # CCF: Restricted larval index vs. SSB
-ccf(STAR_SSB$value, cab_index_obs$est,
+ccf(STAR_SSB$value, cab_index_obs_sp$est,
     lag.max = 10,
     main = "CCF: Restricted Larval Index vs. Spawning Stock Biomass (raw)")
 
