@@ -99,6 +99,10 @@ STAR_SSB_plot
 
 ```
 
+This code from Julia gives us the STAR derived quantities against which we'll compare the novel abundance index. With the exception of a period roughly between 1981-1988, uncertainty associated with these quantities is fairly high over time. 
+
+**FLAG!** Quantify the uncertainty where possible, and if necessary interrogate the absolute values, e.g., age0 recruits ranges from -50 - 1000, rec-devs from -1 - 1.5, and so on.
+
 # 1. DATA QC + EXPLORATION
 
 ```{r 1. DATA QC}
@@ -107,6 +111,10 @@ STAR_SSB_plot
 cabezon <- read.csv("cabezon_calcofi_data.csv")
 
 str(cabezon)
+
+# Add factor variable for season
+cabezon <- cabezon %>%
+  mutate(season = as.factor(season))
 
 # ---- 1. DATA QC + EXPLORATION
 
@@ -147,6 +155,17 @@ plot(cabezon$volume_sampled, cabezon$larvae_100m3)
 
 ```
 
+This initial set of inspections is intended to give a rough picture of how standardized the sampling was over the period of study. For example, were the same number of cruises taken every year? Every season? If not, what were the deviations? How many stations were covered in each cruise? Is this number stable?
+
+The grid map shows the locations of each tow, telling us that, with the exception of some light deviation, all tows are pretty spatially consistent.
+
+**FLAG!** After the grid map, let's generate a plot that attempts to capture the uniformity (or non-uniformity) of tows over time. I'm thinking bubbles sized to how frequently a station is sampled over time, telling us roughly if the spatial arrangement of sampling is stable.
+
+The zero inflation code tells us that we have roughly 84.5% zeroes. That's decent zero inflation, suggesting that we at least include some Delta-Gamma models.
+
+The last scatterplot is a rough picture of the cabezon sampling histogram. It shows us what volume of cabezon larvae we picked up by the volume of water sampled. The pattern is mostly stable, with a few outliers. The pattern is also more or less what we'd expect; namely, that a vast majority of cabezon-positive samples are clustered around a low volume, with some pulling up much larger quantities here and there. In other words, it looks like a histogram.
+
+
 # 2. DATA EXPLORATION & SUMMARY STATISTICS
 
 ```{r 2. DATA EXPLORATION & SUMMARY STATISTICS}
@@ -156,7 +175,7 @@ plot(cabezon$volume_sampled, cabezon$larvae_100m3)
 cabezon <- cabezon %>%
   mutate(station_id = paste(line, station, sep = "_"))
 
-# Annual mean larval abundance with SE
+# Annual mean larval observations with SE
 annual_cab_summary <- cabezon %>%
   group_by(year) %>%
   summarize(
@@ -166,7 +185,7 @@ annual_cab_summary <- cabezon %>%
     se = sd_larvae / sqrt(n)
   )
 
-# Annual mean larval abundance plotted
+# Annual mean larval observations plotted
 ggplot(annual_cab_summary, aes(x = year, y = mean_larvae)) +
   geom_line() + 
   geom_point() + 
@@ -196,6 +215,17 @@ pos_tows_year <- cabezon %>%
     positive_tows     = sum(larvae_100m3 > 0),
     pct_positive_tows = positive_tows / total_tows * 100
   )
+print(pos_tows_year,    caption = "Positive tows by year")
+
+ggplot(pos_tows_year, aes(x = year, y = pct_positive_tows)) +
+  geom_line(color = "steelblue", linewidth = 1) +
+  geom_point(color = "steelblue") +
+  labs(
+    x     = "Year",
+    y     = "Positive Tows (%)",
+    title = "Percentage of Larvae-Positive Tows by Year"
+  ) +
+  theme_bw()
 
 # ... Month
 pos_tows_month <- cabezon %>%
@@ -205,6 +235,17 @@ pos_tows_month <- cabezon %>%
     positive_tows     = sum(larvae_100m3 > 0),
     pct_positive_tows = positive_tows / total_tows * 100
   )
+print(pos_tows_month,   caption = "Positive tows by month")
+
+ggplot(pos_tows_month, aes(x = month, y = pct_positive_tows)) +
+  geom_line(color = "steelblue", linewidth = 1) +
+  geom_point(color = "steelblue") +
+  labs(
+    x     = "Month",
+    y     = "Positive Tows (%)",
+    title = "Percentage of Larvae-Positive Tows by Month"
+  ) +
+  theme_bw()
 
 # ... Season
 pos_tows_season <- cabezon %>%
@@ -214,6 +255,17 @@ pos_tows_season <- cabezon %>%
     positive_tows     = sum(larvae_100m3 > 0),
     pct_positive_tows = positive_tows / total_tows * 100
   )
+print(pos_tows_season,  caption = "Positive tows by season")
+
+ggplot(pos_tows_season, aes(x = season, y = pct_positive_tows, group = 1)) +
+  geom_line(color = "steelblue", linewidth = 1) +
+  geom_point(color = "steelblue") +
+  labs(
+    x     = "Season",
+    y     = "Positive Tows (%)",
+    title = "Percentage of Larvae-Positive Tows by Season"
+  ) +
+  theme_bw()
 
 # ... Station
 pos_tows_station <- cabezon %>%
@@ -223,7 +275,7 @@ pos_tows_station <- cabezon %>%
     positive_tows     = sum(larvae_100m3 > 0),
     pct_positive_tows = positive_tows / total_tows * 100
   )
-
+print(pos_tows_station, caption = "Positive tows by station")
 
 # Average larvae counts (all tows and positive tows only) by ...
 # ... Year
@@ -233,6 +285,7 @@ avg_larvae_year <- cabezon %>%
     mean_all      = mean(larvae_100m3),
     mean_positive = mean(larvae_100m3[larvae_100m3 > 0])
   )
+print(avg_larvae_year,    digits = 3, caption = "Mean larvae by year")
 
 # ... Month
 avg_larvae_month <- cabezon %>%
@@ -241,6 +294,7 @@ avg_larvae_month <- cabezon %>%
     mean_all      = mean(larvae_100m3),
     mean_positive = mean(larvae_100m3[larvae_100m3 > 0])
   )
+print(avg_larvae_month,   digits = 3, caption = "Mean larvae by month")
 
 # ... Season
 avg_larvae_season <- cabezon %>%
@@ -249,6 +303,7 @@ avg_larvae_season <- cabezon %>%
     mean_all      = mean(larvae_100m3),
     mean_positive = mean(larvae_100m3[larvae_100m3 > 0])
   )
+print(avg_larvae_season,  digits = 3, caption = "Mean larvae by season")
 
 # ... Station
 avg_larvae_station <- cabezon %>%
@@ -257,6 +312,7 @@ avg_larvae_station <- cabezon %>%
     mean_all      = mean(larvae_100m3),
     mean_positive = mean(larvae_100m3[larvae_100m3 > 0])
   )
+print(avg_larvae_station, digits = 3, caption = "Mean larvae by station")
 
 plot_data <- bind_rows(
   pos_tows_year   %>% mutate(group_var = "Year",   level = as.character(year)),
@@ -276,7 +332,25 @@ plot_data <- plot_data %>%
     group_var == "Season" ~ factor(level, levels = c("winter", "spring", "summer", "fall")),
     T ~ factor(level)
   ))
+
 ```
+
+This section shows how tows break down numerically over time to continue diagnosing the stability and uniformity of sampling.
+
+A few key takeaways from this section:
+
+- It's perhaps worth noting that the percentage of cabezon-positive tows seems fairly stochastic over time. In other words, there is some very rough trending (perhaps decadal?), but overall the percentage of positive samples varies widely between close to zero and approaching 30%.
+
+- The trend is far more steady for months and seasons, as we'd expect. **FLAG!** check biological life history of cabezon, but based on these patterns I'm assuming that spawning season is roughly Oct-Mar, peaking in the winter months.
+
+- It's more difficult to intuitively describe what's happening across space with these checks, so we'll explore that further in Section 4 using heatmaps.
+
+- Inspecting annual values for average volume across all tows and then across all positive tows yields relatively steady results, with the caveat that some years in the late 80's and late 90's/early 00's show higher values for both. **FLAG!** again, perhaps consider a decadal pattern here?
+
+- The monthly values for these averages are pretty much as expected, **but**, **FLAG!** **check out what's happening with December**
+
+- Seasonal values for these averages are also expected, showing higher values during the spawning seasons and dropping off sharply for summer.
+
 
 # 3. STAR COMPARISONS & INITIAL CCFs
 
@@ -1245,7 +1319,6 @@ pred_obs_sp %>%
   ) +
   theme_minimal()
 
-
 library(segmented)
 
 #---- Are there any meaningful breakpoints in our time-series to inform segmented regression analysis?
@@ -1343,8 +1416,8 @@ summary(lm_age0_trimmed)
 # Additional model testing
 
 ```{r 6.7. cab_fit2}
-#---- 8. cab_fit2 TWEEDIE MODEL DIAGNOSTICS & ABUNDANCE INDEX
-#---- 8.a. Calibration summaries
+#---- 6.7. cab_fit2 TWEEDIE MODEL DIAGNOSTICS & ABUNDANCE INDEX
+#---- 6.7.a. Calibration summaries
 pred_obs_tw <- predict(cab_fit2, type = "response")
 
 pred_obs_tw %>%
@@ -1355,7 +1428,7 @@ pred_obs_tw %>%
 
 # Note: Tweedie is single-component — binomial calibration and gamma plots are skipped
 
-#---- 8.b. Predicted vs. observed
+#---- 6.7.b. Predicted vs. observed
 plot(pred_obs_tw$est, cabezon$larvae_100m3,
      xlab = "Predicted", ylab = "Observed",
      main = "Raw scale — cab_fit2 Tweedie")
@@ -1366,7 +1439,7 @@ plot(log1p(pred_obs_tw$est), log1p(cabezon$larvae_100m3),
      main = "Log scale — cab_fit2 Tweedie")
 abline(0, 1, lty = 2)
 
-#---- 8.c. Randomized quantile residuals
+#---- 6.7.c. Randomized quantile residuals
 rq_res_tw <- residuals(cab_fit2, type = "mle-mvn")
 
 qqnorm(rq_res_tw, main = "QQ — cab_fit2 Tweedie")
@@ -1380,7 +1453,7 @@ ggplot(pred_obs_tw, aes(x = X, y = Y, color = rq_resid)) +
   facet_wrap(~ year) +
   labs(title = "Spatial residuals — cab_fit2 Tweedie")
 
-#---- 8.d. Temporal calibration
+#---- 6.7.d. Temporal calibration
 pred_obs_tw %>%
   group_by(year) %>%
   summarize(
@@ -1392,7 +1465,7 @@ pred_obs_tw %>%
   geom_line(aes(y = pred), color = "blue", linetype = "dashed") +
   labs(title = "Temporal calibration — cab_fit2 Tweedie")
 
-#---- 8.e. Annual RQ distributions
+#---- 6.7.e. Annual RQ distributions
 pred_obs_tw %>%
   group_by(year) %>%
   mutate(med_resid = median(rq_resid)) %>%
@@ -1409,7 +1482,7 @@ pred_obs_tw %>%
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 90, size = 7))
 
-#---- 8.f. CUSUM
+#---- 6.7.f. CUSUM
 pred_obs_tw %>%
   group_by(year) %>%
   summarise(med_resid = median(rq_resid), .groups = "drop") %>%
@@ -1423,7 +1496,7 @@ pred_obs_tw %>%
        title = "CUSUM — cab_fit2 Tweedie") +
   theme_minimal()
 
-#---- 8.g. Abundance index: observed station grid
+#---- 6.7.g. Abundance index: observed station grid
 pred_grid_obs_tw <- cabezon %>%
   dplyr::select(X, Y, year) %>%
   distinct()
@@ -1441,7 +1514,7 @@ ggplot(cab_index_obs_tw, aes(x = year, y = est)) +
 
 
 
-#---- 10. cab_fit2 TWEEDIE — STAR COMPARISONS & CCFs
+#---- 7.7. cab_fit2 TWEEDIE — STAR COMPARISONS & CCFs
 combined_tw <- cab_index_obs_tw %>%
   dplyr::select(year, est) %>%
   rename(larvae_index = est) %>%
@@ -1461,7 +1534,7 @@ combined_tw <- cab_index_obs_tw %>%
 combined_tw_obs <- combined_tw %>%
   filter(!is.na(larvae_index))
 
-#---- 10.a. Pooled CCFs
+#----7.7.a. Pooled CCFs
 ccf(combined_tw_obs$larvae_index, combined_tw_obs$age0,
     lag.max = 10,
     main = "CCF: Tweedie Larval Index vs. Age-0 Recruits")
@@ -1481,7 +1554,7 @@ ccf(larvae_detrended_tw, ssb_detrended_tw,
     lag.max = 10,
     main = "CCF: Tweedie Larval Index vs. SSB (detrended)")
 
-#---- 10.b. Breakpoint analysis
+#---- 7.7.b. Breakpoint analysis
 cusum_tw <- pred_obs_tw %>%
   group_by(year) %>%
   summarise(med_resid = median(rq_resid), .groups = "drop") %>%
@@ -1494,8 +1567,8 @@ confint(seg_tw)
 ```
 
 ```{r 6.9. cab_fit03}
-#---- 9. cab_fit03 DG FIXED YEAR / IID MODEL DIAGNOSTICS & ABUNDANCE INDEX
-#---- 9.a. Calibration summaries
+#---- 6.9. cab_fit03 DG FIXED YEAR / IID MODEL DIAGNOSTICS & ABUNDANCE INDEX
+#---- 6.9.a. Calibration summaries
 pred_obs_iid <- predict(cab_fit03, type = "response")
 
 pred_obs_iid %>%
@@ -1520,7 +1593,7 @@ plot(calibration_summary_iid$mean_pred, calibration_summary_iid$observed,
      main = "Binomial calibration — cab_fit03 DG IID")
 abline(0, 1, lty = 2)
 
-#---- 9.b. Predicted vs. observed
+#---- 6.9.b. Predicted vs. observed
 plot(pred_obs_iid$est, cabezon$larvae_100m3,
      xlab = "Predicted", ylab = "Observed",
      main = "Raw scale — cab_fit03 DG IID")
@@ -1538,7 +1611,7 @@ plot(log(pred_obs_iid$est2[pos_idx_iid]), log(cabezon$larvae_100m3[pos_idx_iid])
      main = "Gamma component — cab_fit03 DG IID")
 abline(0, 1, lty = 2)
 
-#---- 9.c. Randomized quantile residuals
+#---- 6.9.c. Randomized quantile residuals
 rq_res_iid <- residuals(cab_fit03, type = "mle-mvn")
 
 qqnorm(rq_res_iid, main = "QQ — cab_fit03 DG IID")
@@ -1552,7 +1625,7 @@ ggplot(pred_obs_iid, aes(x = X, y = Y, color = rq_resid)) +
   facet_wrap(~ year) +
   labs(title = "Spatial residuals — cab_fit03 DG IID")
 
-#---- 9.d. Temporal calibration
+#---- 6.9.d. Temporal calibration
 pred_obs_iid %>%
   group_by(year) %>%
   summarize(
@@ -1564,7 +1637,7 @@ pred_obs_iid %>%
   geom_line(aes(y = pred), color = "blue", linetype = "dashed") +
   labs(title = "Temporal calibration — cab_fit03 DG IID")
 
-#---- 9.e. Annual RQ distributions
+#---- 6.9.e. Annual RQ distributions
 pred_obs_iid %>%
   group_by(year) %>%
   mutate(med_resid = median(rq_resid)) %>%
@@ -1581,7 +1654,7 @@ pred_obs_iid %>%
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 90, size = 7))
 
-#---- 9.f. CUSUM
+#---- 6.9.f. CUSUM
 pred_obs_iid %>%
   group_by(year) %>%
   summarise(med_resid = median(rq_resid), .groups = "drop") %>%
@@ -1595,7 +1668,7 @@ pred_obs_iid %>%
        title = "CUSUM — cab_fit03 DG IID") +
   theme_minimal()
 
-#---- 9.g. Abundance index: observed station grid
+#---- 6.9.g. Abundance index: observed station grid
 pred_grid_obs_iid <- cabezon %>%
   dplyr::select(X, Y, year) %>%
   distinct() %>%
@@ -1613,7 +1686,7 @@ ggplot(cab_index_obs_iid, aes(x = year, y = est)) +
        title = "Abundance Index: Observed Station Grid — cab_fit03 DG IID")
 
 
-#---- 11. cab_fit03 DG IID — STAR COMPARISONS & CCFs
+#---- 7.9. cab_fit03 DG IID — STAR COMPARISONS & CCFs
 combined_iid <- cab_index_obs_iid %>%
   dplyr::select(year, est) %>%
   rename(larvae_index = est) %>%
@@ -1633,7 +1706,7 @@ combined_iid <- cab_index_obs_iid %>%
 combined_iid_obs <- combined_iid %>%
   filter(!is.na(larvae_index))
 
-#---- 11.a. Pooled CCFs
+#---- 7.9.a. Pooled CCFs
 ccf(combined_iid_obs$larvae_index, combined_iid_obs$age0,
     lag.max = 10,
     main = "CCF: DG IID Larval Index vs. Age-0 Recruits")
@@ -1653,7 +1726,7 @@ ccf(larvae_detrended_iid, ssb_detrended_iid,
     lag.max = 10,
     main = "CCF: DG IID Larval Index vs. SSB (detrended)")
 
-#---- 11.b. Breakpoint analysis
+#---- 7.9.b. Breakpoint analysis
 cusum_iid <- pred_obs_iid %>%
   group_by(year) %>%
   summarise(med_resid = median(rq_resid), .groups = "drop") %>%
