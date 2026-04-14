@@ -7,7 +7,11 @@ output: word_document
 
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(
+  echo = F,
+  message = F,
+  warning = F
+  )
 ```
 
 
@@ -648,6 +652,8 @@ Next, we take a look at some bar plots to visualize the percentage of tows that 
 
 - 1983 (which we know had some sampling issues), 1984, 1998, and 2015
 
+ - *1998 high sampling rate due to historic El Nino.*
+
 - **FLAG!** Let's do some further investigation into these outlier values. Something to keep in mind is that later, 1983 is the year that artificially pulls our CCFs tighter.
 
 - **FLAG!** It's probably also worth generating these same plots for percent-positive tows as 100% bar charts, which might be easier to interpret if percentage is our key value here.
@@ -934,6 +940,8 @@ tidy(cab_fit03, effects = "ran_pars")
 ```
 
 **RE-RUN** models constrained to spawning season and spatially 
+
+- *double check how the model is interpreting the spatial exactitude of station locations*
 
 
 
