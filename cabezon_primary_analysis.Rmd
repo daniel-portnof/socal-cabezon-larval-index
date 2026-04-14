@@ -114,7 +114,7 @@ This code from Julia gives us the STAR derived quantities against which we'll co
 
 # 1. DATA QC + EXPLORATION
 
-```{r 1. DATA QC}
+```{r 1. DATA QC, cache = T}
 #---- DATA QC + EXPLORATION
 
 cabezon <- read.csv("cabezon_calcofi_data.csv")
@@ -177,7 +177,7 @@ The last scatterplot is a rough picture of the cabezon sampling histogram. It sh
 
 # 2. DATA EXPLORATION & SUMMARY STATISTICS
 
-```{r 2. DATA EXPLORATION & SUMMARY STATISTICS}
+```{r 2. DATA EXPLORATION & SUMMARY STATISTICS, cache = T}
 #---- 2. DATA EXPLORATION & SUMMARY STATISTICS
 
 # Composite station column (combines line + station)
@@ -367,7 +367,7 @@ A few key takeaways from this section:
 
 # 3. STAR COMPARISONS & INITIAL CCFs
 
-```{r 3. STAR COMPARISONS & INITIAL CCFs}
+```{r 3. STAR COMPARISONS & INITIAL CCFs, cache = T}
 
 #---- 3. STAR COMPARISONS & INITIAL CCFs
 
@@ -428,7 +428,7 @@ We also run some initial CCFs to see if we can pick up any correlation between t
 
 # 4. DATA VISUALIZATION
 
-```{r 4. DATA VISUALIZATION}
+```{r 4. DATA VISUALIZATION, cache = T}
 
 # ---- 4. DATA VISUALIZATION
 
@@ -669,7 +669,7 @@ The next three plots are heatmaps to visualize these patterns in another way, in
 
 # 5. sdmTMB MODEL FITTING
 
-```{r 5. sdmTMB MODEL FITTING}
+```{r 5. sdmTMB MODEL FITTING, cache = T}
 
 #---- 5. sdmTMB MODEL FITTING
 set.seed(my.seed)
@@ -941,7 +941,7 @@ tidy(cab_fit03, effects = "ran_pars")
 
 ## 6.1. cab_fit1 — Full Delta-Gamma Model
 
-```{r 6.1. cab_fit1 diagnostics}
+```{r 6.1. cab_fit1 diagnostics, cache = T}
 
 #---- 6.1.a. Calibration summaries
 
@@ -1067,7 +1067,7 @@ ggplot(cab_index_obs, aes(x = year, y = est)) +
 
 ## 6.2. cab_fit01 — Fixed Year Effects Delta-Gamma Model
 
-```{r 6.2. cab_fit01 diagnostics}
+```{r 6.2. cab_fit01 diagnostics, cache = T}
 
 #---- 6.2.a. Calibration summaries
 
@@ -1198,7 +1198,7 @@ ggplot(cab_index_obs_sp, aes(x = year, y = est)) +
 
 ## 7.1. cab_fit1
 
-```{r 7.1. STAR comparisons cab_fit1 full extrapolation}
+```{r 7.1. STAR comparisons cab_fit1 full extrapolation, cache = T}
 
 # Create one data frame to house all STAR + larval index data
 # Note! For these comparisons, we move forward with the constrained 6.1.f. abundance index, assuming it's more stable.
@@ -1297,7 +1297,7 @@ ccf(larvae_detrended, ssb_detrended,
 
 ## 7.2. cab_fit01
 
-```{r 7.2. STAR comparisons cab_fit01 full extrapolation}
+```{r 7.2. STAR comparisons cab_fit01 full extrapolation, cache = T}
 
 # Create one data frame to house all STAR + larval index data
 # Note! For these comparisons, we move forward with the constrained 6.2.f. abundance index, assuming it's more stable.
@@ -1345,7 +1345,7 @@ ccf(larvae_detrended, ssb_detrended,
     main = "CCF: Restricted Larval Index vs. SSB (detrended)")
 ```
 
-```{r 7.2.2. STAR comparisons cab_fit01 station extrapolation}
+```{r 7.2.2. STAR comparisons cab_fit01 station extrapolation, cache = T}
 
 # Create one data frame to house all STAR + larval index data
 # Note! For these comparisons, we move forward with the constrained 6.2.f. abundance index, assuming it's more stable.
@@ -1397,7 +1397,7 @@ ccf(larvae_detrended, ssb_detrended,
 ## 7.3. cab_fit1 — Correlation Analysis
 
 
-```{r 7.3. cab_fit1 — Correlation Analysis}
+```{r 7.3. cab_fit1 — Correlation Analysis, cache = T}
 # RQ residuals for full AR1 spatiotemporal model
 pred_obs %>%
   group_by(year) %>%
@@ -1538,7 +1538,7 @@ pred_obs %>%
 
 ## 7.4. cab_fit01 — Correlation Analysis
 
-```{r 7.4. cab_fit01 — Correlation Analysis}
+```{r 7.4. cab_fit01 — Correlation Analysis, cache = T}
 # RQ residuals for spatial-only model
 pred_obs_sp %>%
   group_by(year) %>%
@@ -1697,7 +1697,7 @@ It's worth keeping in mind, of course, that this constrains our spatial data fur
 
 # 8. DATA PARING & EXPLORATION (CONSTRAINED)
 
-```{r 8. DATA PARING AND EXPLORATION (CONSTRAINED)}
+```{r 8. DATA PARING AND EXPLORATION (CONSTRAINED), cache = T}
 
 cabezon_shelf_spawn <- cabezon %>%
   filter(
@@ -1953,7 +1953,7 @@ cabezon_shelf_spawn %>%
 
 # 9. sdmTMB MODEL FITTING (CONSTRAINED)
 
-```{r 9. sdmTMB MODEL FITTING (CONSTRAINED)}
+```{r 9. sdmTMB MODEL FITTING (CONSTRAINED), cache = T}
 
 set.seed(my.seed)
 
@@ -2193,7 +2193,7 @@ tidy(ss_cab_fit2, effects = "ran_pars")
 
 ## 10.1. ss_cab_fit1 — Full Delta-Gamma Model
 
-```{r 10.1. ss_cab_fit1 diagnostics}
+```{r 10.1. ss_cab_fit1 diagnostics, cache = T}
 
 #---- 10.1.a. Calibration summaries
 
@@ -2319,7 +2319,7 @@ ggplot(ss_full_cab_index_obs, aes(x = year, y = est)) +
 
 ## 10.2. ss_cab_fit1 — STAR Comparisons & CCFs
 
-```{r 10.2. ss_cab_fit1 STAR comparisons full extrapolation}
+```{r 10.2. ss_cab_fit1 STAR comparisons full extrapolation, cache = T}
 #---- 10.2. ss_cab_fit1 STAR comparisons and CCF
 
 # Create one data frame to house all STAR + larval index data
@@ -2368,7 +2368,7 @@ ccf(larvae_detrended, ssb_detrended,
     main = "CCF: Restricted Larval Index vs. SSB (detrended)")
 ```
 
-```{r 10.2.2. ss_cab_fit1 STAR comparisons station extrapolation}
+```{r 10.2.2. ss_cab_fit1 STAR comparisons station extrapolation, cache = T}
 #---- 10.2. ss_cab_fit1 STAR comparisons and CCF
 
 # Create one data frame to house all STAR + larval index data
@@ -2419,7 +2419,7 @@ ccf(larvae_detrended, ssb_detrended,
 
 ## 10.3. ss_cab_fit1 — Correlation Testing
 
-```{r 10.3. ss_cab_fit1 correlation testing}
+```{r 10.3. ss_cab_fit1 correlation testing, cache = T}
 # RQ residuals for full AR1 spatiotemporal model
 ss_full_pred_obs %>%
   group_by(year) %>%
@@ -2634,7 +2634,7 @@ run_era_ccf(ss_full_combined_obs, "rec_dev", bp_ss_fit1_gamma, 2015)
 
 ## 10.4. ss_cab_fit01 — Fixed Year Effects Delta-Gamma Model
 
-```{r 10.4. ss_cab_fit01 diagnostics}
+```{r 10.4. ss_cab_fit01 diagnostics, cache = T}
 
 #---- 10.4.a. Calibration summaries
 
@@ -2761,7 +2761,7 @@ ggplot(ss_fy_cab_index_obs, aes(x = year, y = est)) +
 
 ## 10.5. ss_cab_fit01 — STAR Comparisons & CCFs
 
-```{r 10.5. ss_cab_fit01 STAR comparisons full extrapolation}
+```{r 10.5. ss_cab_fit01 STAR comparisons full extrapolation, cache = T}
 
 #---- 10.5. ss_cab_fit01 STAR comparisons and CCF
 
@@ -2812,7 +2812,7 @@ ccf(ss_fy_larvae_detrended, ss_fy_ssb_detrended,
 
 ```
 
-```{r 10.5.2. ss_cab_fit01 STAR comparisons station extrapolation}
+```{r 10.5.2. ss_cab_fit01 STAR comparisons station extrapolation, cache = T}
 
 #---- 10.5. ss_cab_fit01 STAR comparisons and CCF
 
@@ -2865,7 +2865,7 @@ ccf(ss_fy_larvae_detrended, ss_fy_ssb_detrended,
 
 ## 10.6. ss_cab_fit01 — Correlation Testing
 
-```{r 10.6. ss_cab_fit01 correlation testing}
+```{r 10.6. ss_cab_fit01 correlation testing, cache = T}
 # RQ residuals for fixed year effect + IID model
 ss_fy_pred_obs %>%
   group_by(year) %>%
@@ -3020,7 +3020,7 @@ AIC(ss_cab_fit01, ss_cab_fit1, ss_cab_fit1c)
 
 # A1. TWEEDIE MODEL — cab_fit2
 
-```{r A1. cab_fit2 Tweedie}
+```{r A1. cab_fit2 Tweedie, eval = F}
 #---- A1. cab_fit2 Tweedie — Diagnostics & Abundance Index
 #---- A1.a. Calibration summaries
 pred_obs_tw <- predict(cab_fit2, type = "response")
@@ -3173,7 +3173,7 @@ confint(seg_tw)
 
 # A2. ALTERNATIVE MODEL — cab_fit03
 
-```{r A2. cab_fit03}
+```{r A2. cab_fit03, eval = F}
 #---- A2. cab_fit03 DG Fixed Year / IID — Diagnostics & Abundance Index
 #---- A2.a. Calibration summaries
 pred_obs_iid <- predict(cab_fit03, type = "response")
@@ -3348,7 +3348,7 @@ confint(seg_iid)
 
 # A3. EXPERIMENTS
 
-```{r A3. Experiments}
+```{r A3. Experiments, eval = F}
 
 # RQ residuals for full AR1 spatiotemporal model
 pred_obs %>%
@@ -3517,7 +3517,7 @@ summary(lm_age0_trimmed)
 
 # A4. EXTRAS
 
-```{r A4. Extras, error = TRUE}
+```{r A4. Extras, error = TRUE, eval = F}
 
 world <- ne_coastline(scale = "medium", returnclass = "sf")
 
