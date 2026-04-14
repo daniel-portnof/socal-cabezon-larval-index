@@ -63,6 +63,7 @@ cabezon$fyear <- as.factor(cabezon$year)
 ```
 
 
+
 ---
 
 # PART II — CONSTRAINED ANALYSIS (SPAWNING SEASON + SHELF REGION)
@@ -676,7 +677,7 @@ ss_full_pred_grid <- expand.grid(
   mutate(fyear = as.factor(year))
 
 ss_full_cab_map <- predict(ss_cab_fit1, newdata = ss_full_pred_grid, return_tmb_object = T)
-ss_full_cab_index <- get_index(ss_full_cab_map, area = 0.05^2, bias_correct = T)
+ss_full_cab_index <- get_index(ss_full_cab_map, area = 5^2, bias_correct = T)
 
 ggplot(ss_full_cab_index, aes(x = year, y = est)) +
   geom_line() +
@@ -694,7 +695,7 @@ ss_full_cab_map_obs <- predict(ss_cab_fit1,
                        return_tmb_object = T)
 
 ss_full_cab_index_obs <- get_index(ss_full_cab_map_obs,
-                           area = 1,
+                           area = 5^2,
                            bias_correct = T)
 
 ggplot(ss_full_cab_index_obs, aes(x = year, y = est)) +
@@ -705,7 +706,56 @@ ggplot(ss_full_cab_index_obs, aes(x = year, y = est)) +
 
 ## 10.2. ss_cab_fit1 — STAR Comparisons & CCFs
 
-```{r 10.2. ss_cab_fit1 STAR comparisons}
+```{r 10.2. ss_cab_fit1 STAR comparisons full extrapolation}
+#---- 10.2. ss_cab_fit1 STAR comparisons and CCF
+
+# Create one data frame to house all STAR + larval index data
+# Note! For these comparisons, we move forward with the constrained 10.1.f. abundance index, assuming it's more stable.
+ss_full_combined <- ss_full_cab_index %>%
+  dplyr::select(year, est) %>%
+  rename(larvae_index = est) %>%
+  left_join(
+    STAR_SSB %>% rename(ssb = value, ssb_lo = lo, ssb_hi = hi),
+    by = "year"
+  ) %>%
+  left_join(
+    STAR_recdevs %>% rename(rec_dev = value, rec_dev_lo = lo, rec_dev_hi = hi),
+    by = "year"
+  ) %>%
+  left_join(
+    STAR_age0 %>% rename(age0 = value, age0_lo = lo, age0_hi = hi),
+    by = "year"
+  )
+
+# Filter to observed years
+ss_full_combined_obs <- ss_full_combined %>%
+  filter(!is.na(larvae_index))
+
+# CCF: Restricted larval index vs. age-0 recruits
+ccf(ss_full_combined_obs$larvae_index, ss_full_combined_obs$age0,
+    lag.max = 10,
+    main = "CCF: Restricted Larval Index vs. Age-0 Recruits")
+
+# CCF: Restricted larval index vs. recruitment deviations
+ccf(ss_full_combined_obs$larvae_index, ss_full_combined_obs$rec_dev,
+    lag.max = 10,
+    main = "CCF: Restricted Larval Index vs. Recruitment Deviations")
+
+# Nothing really :( when we try against SSB, we get some strong signal, but this is probably due to a shared declining trend. We'll try to parse that.
+# CCF: Restricted larval index vs. SSB
+ccf(ss_full_combined_obs$larvae_index, ss_full_combined_obs$ssb,
+    lag.max = 10,
+    main = "CCF: Restricted Larval Index vs. Spawning Stock Biomass (raw)")
+
+larvae_detrended <- residuals(loess(larvae_index ~ year, data = ss_full_combined_obs, span = 0.75))
+ssb_detrended    <- residuals(loess(ssb ~ year,          data = ss_full_combined_obs, span = 0.75))
+
+ccf(larvae_detrended, ssb_detrended, 
+    lag.max = 10,
+    main = "CCF: Restricted Larval Index vs. SSB (detrended)")
+```
+
+```{r 10.2.2. ss_cab_fit1 STAR comparisons station extrapolation}
 #---- 10.2. ss_cab_fit1 STAR comparisons and CCF
 
 # Create one data frame to house all STAR + larval index data
@@ -1066,7 +1116,7 @@ ss_fy_pred_grid <- expand.grid(
   mutate(fyear = as.factor(year))
 
 ss_fy_cab_map   <- predict(ss_cab_fit01, newdata = ss_fy_pred_grid, return_tmb_object = TRUE)
-ss_fy_cab_index <- get_index(ss_fy_cab_map, area = 0.05^2, bias_correct = TRUE)
+ss_fy_cab_index <- get_index(ss_fy_cab_map, area = 5^2, bias_correct = TRUE)
 
 ggplot(ss_fy_cab_index, aes(x = year, y = est)) +
   geom_line() +
@@ -1085,7 +1135,7 @@ ss_fy_cab_map_obs   <- predict(ss_cab_fit01,
                                return_tmb_object = TRUE)
 
 ss_fy_cab_index_obs <- get_index(ss_fy_cab_map_obs,
-                                 area = 1,
+                                 area = 5^2,
                                  bias_correct = TRUE)
 
 ggplot(ss_fy_cab_index_obs, aes(x = year, y = est)) +
@@ -1098,7 +1148,58 @@ ggplot(ss_fy_cab_index_obs, aes(x = year, y = est)) +
 
 ## 10.5. ss_cab_fit01 — STAR Comparisons & CCFs
 
-```{r 10.5. ss_cab_fit01 STAR comparisons}
+```{r 10.5. ss_cab_fit01 STAR comparisons full extrapolation}
+
+#---- 10.5. ss_cab_fit01 STAR comparisons and CCF
+
+# Create one data frame to house all STAR + larval index data
+# Note! For these comparisons, we move forward with the constrained 10.4.f. abundance index, assuming it's more stable.
+ss_fy_combined <- ss_fy_cab_index %>%
+  dplyr::select(year, est) %>%
+  rename(larvae_index = est) %>%
+  left_join(
+    STAR_SSB %>% rename(ssb = value, ssb_lo = lo, ssb_hi = hi),
+    by = "year"
+  ) %>%
+  left_join(
+    STAR_recdevs %>% rename(rec_dev = value, rec_dev_lo = lo, rec_dev_hi = hi),
+    by = "year"
+  ) %>%
+  left_join(
+    STAR_age0 %>% rename(age0 = value, age0_lo = lo, age0_hi = hi),
+    by = "year"
+  )
+
+# Filter to observed years
+ss_fy_combined_obs <- ss_fy_combined %>%
+  filter(!is.na(larvae_index))
+
+# CCF: Restricted larval index vs. age-0 recruits
+ccf(ss_fy_combined_obs$larvae_index, ss_fy_combined_obs$age0,
+    lag.max = 10,
+    main = "CCF: Restricted Larval Index vs. Age-0 Recruits")
+
+# CCF: Restricted larval index vs. recruitment deviations
+ccf(ss_fy_combined_obs$larvae_index, ss_fy_combined_obs$rec_dev,
+    lag.max = 10,
+    main = "CCF: Restricted Larval Index vs. Recruitment Deviations")
+
+# Nothing really :( when we try against SSB, we get some strong signal, but this is probably due to a shared declining trend. We'll try to parse that.
+# CCF: Restricted larval index vs. SSB
+ccf(ss_fy_combined_obs$larvae_index, ss_fy_combined_obs$ssb,
+    lag.max = 10,
+    main = "CCF: Restricted Larval Index vs. Spawning Stock Biomass (raw)")
+
+ss_fy_larvae_detrended <- residuals(loess(larvae_index ~ year, data = ss_fy_combined_obs, span = 0.75))
+ss_fy_ssb_detrended    <- residuals(loess(ssb ~ year,          data = ss_fy_combined_obs, span = 0.75))
+
+ccf(ss_fy_larvae_detrended, ss_fy_ssb_detrended, 
+    lag.max = 10,
+    main = "CCF: Restricted Larval Index vs. SSB (detrended)")
+
+```
+
+```{r 10.5.2. ss_cab_fit01 STAR comparisons station extrapolation}
 
 #---- 10.5. ss_cab_fit01 STAR comparisons and CCF
 
@@ -1295,5 +1396,6 @@ AIC(ss_cab_fit01, ss_cab_fit1, ss_cab_fit1c)
 
 
 ```
+
 
 
