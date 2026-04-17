@@ -1,0 +1,292 @@
+---
+title: "Cabezon and Bottle Data Analysis"
+author: "Dan Portnof"
+date: "2026-04-17"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# ---- 0. SETUP
+
+# Load packages
+library(tidyverse)
+library(r4ss)
+library(here)
+library(dplyr)
+library(ggplot2)
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(maps)
+library(sdmTMB)
+library(fmesher)
+library(segmented)
+library(corrplot)
+library(lme4)
+
+my.seed <- 666
+set.seed(my.seed)
+
+cabezon <- read.csv("cabezon_calcofi_data.csv")
+
+str(cabezon)
+
+cabezon_shelf_spawn <- cabezon %>%
+  filter(
+    month %in% c(1, 2, 3),
+    station <= 60.0
+  )
+
+cat("Rows retained:", nrow(cabezon_shelf_spawn), "of", nrow(cabezon), "\n")
+cat("Years covered:", paste(range(cabezon_shelf_spawn$year), collapse = "–"), "\n")
+cat("Months present:", paste(sort(unique(cabezon_shelf_spawn$month)), collapse = ", "), "\n")
+cat("Station range:", paste(range(cabezon_shelf_spawn$station), collapse = "–"), "\n")
+cat("Lines present:", paste(sort(unique(cabezon_shelf_spawn$line)), collapse = ", "), "\n")
+
+cabezon_shelf_spawn %>%
+  group_by(year) %>%
+  summarize(
+    n_tows = n(),
+    n_pos = sum(larvae_100m3 > 0),
+    pct_pos = round(100 * n_pos / n_tows, 1)
+  ) %>%
+  print(n = Inf)
+
+# Composite station column (combines line + station)
+cabezon_shelf_spawn <- cabezon_shelf_spawn %>%
+  mutate(
+    line = round(line, 1),
+    sta = round(station, 1)
+    )
+
+annual_cpue <- cabezon_shelf_spawn %>%
+  group_by(year) %>%
+  summarize(mean_cpue = mean(larvae_100m3, na.rm = T))
+
+bottle <- read_csv("bottle_data.csv", locale = locale(encoding = "latin1"))
+
+str(bottle)
+
+bottle_clean <- bottle %>%
+  separate(Sta_ID, into = c("line", "sta"), sep = " ", remove = F) %>%
+  mutate(
+    line = as.numeric(line, 1),
+    sta = as.numeric(sta, 1)
+  ) %>%
+  mutate(
+    century = as.integer(str_sub(Depth_ID, 1, 2)) * 100L,
+    depth_id_core = str_split_fixed(Depth_ID, "-", n = 2)[, 2],
+    year = as.integer(str_sub(depth_id_core, 1, 2)) + century,
+    month = as.integer(str_sub(depth_id_core, 3, 4))
+  ) %>%
+  dplyr::select(-century)
+
+bottle_clean <- bottle_clean %>%
+  mutate(
+    line = round(line, 1),
+    sta = round(sta, 1)
+  )
+
+bottle_surface <- bottle_clean %>%
+  filter(Depthm <= 10,
+         month %in% c(1, 2, 3)) %>%
+  group_by(line, sta, year, month) %>%
+  summarize(
+    temp_surf = mean(T_degC, na.rm = T),
+    sal_surf = mean(Salnty, na.rm = T),
+    o2_surf = mean(O2ml_L, na.rm = T),
+    chla_surf = mean(ChlorA, na.rm = T),
+    .groups = "drop"
+  )
+
+cabezon_env <- cabezon_shelf_spawn %>%
+  left_join(bottle_surface, by = c("line", "sta", "year", "month"))
+
+# What's our coverage looking like?
+cabezon_env %>%
+  group_by(year) %>%
+  summarise(
+    n          = n(),
+    prop_temp  = mean(!is.na(temp_surf)),
+    prop_sal   = mean(!is.na(sal_surf)),
+    prop_o2    = mean(!is.na(o2_surf)),
+    prop_chla  = mean(!is.na(chla_surf))
+  ) %>%
+  print(n = Inf)
+
+cabezon_env %>%
+  dplyr::select(temp_surf, sal_surf, o2_surf, chla_surf) %>%
+  filter(complete.cases(.)) %>%
+  cor() %>%
+  corrplot(method = "number", type = "upper")
+
+cabezon_env <- cabezon_env %>%
+  mutate(cabezon_present = (as.integer(larvae_100m3) > 0)) %>%
+  mutate(cabezon_present = as.integer(cabezon_present))
+
+table(cabezon_env$present, useNA = "ifany")
+
+cabezon_env <- cabezon_env %>%
+  mutate(sta_id = paste(line, sta, sep = "_"))
+
+cabezon_env <- cabezon_env %>%
+  mutate(across(c(temp_surf, sal_surf, o2_surf, chla_surf), scale,
+                .names = "{.col}_z"))
+
+cabezon_env <- cabezon_env %>%
+  left_join(annual_cpue, by = "year") %>%
+  mutate(mean_cpue_z = scale(mean_cpue))
+
+cabezon_env_complete <- cabezon_env %>%
+  filter(complete.cases(temp_surf_z, sal_surf_z, o2_surf_z, mean_cpue_z))
+
+# Candidate models, inclusive of 1981/1983 years with incomplete data.
+
+m1 <- glmer(cabezon_present ~ temp_surf_z + sal_surf_z + (1 | sta_id),
+            data = cabezon_env_complete, family = binomial)
+
+m2 <- glmer(cabezon_present ~ temp_surf_z + sal_surf_z + o2_surf_z + (1 | sta_id),
+            data = cabezon_env_complete, family = binomial)
+
+m3 <- glmer(cabezon_present ~ temp_surf_z + sal_surf_z + chla_surf_z + (1 | sta_id),
+            data = cabezon_env_complete, family = binomial)
+
+m4 <- glmer(cabezon_present ~ sal_surf_z + o2_surf_z + chla_surf_z + (1 | sta_id),
+            data = cabezon_env_complete, family = binomial)
+
+m5 <- glmer(cabezon_present ~ temp_surf_z + sal_surf_z + o2_surf_z + chla_surf_z + (1 | sta_id),
+            data = cabezon_env_complete, family = binomial)
+
+AIC(m1, m2, m3, m4, m5)
+
+summary(m3)
+summary(m5)
+
+summary(m2)
+
+if (!all(c("X", "Y") %in% names(cabezon_env_complete))) {
+  cabezon_env_complete <- sdmTMB::add_utm_columns(cabezon_env_complete, ll_names = c("longitude", "latitude"))
+}
+
+cab_env_mesh <- fm_mesh_2d(
+  loc = cabezon_env_complete[,c("X","Y")],
+  cutoff = 20,
+  max.edge = c(75, 150),
+  offset = c(45, 120)
+)
+cab_env_mesh2 <- make_mesh(data = cabezon_env_complete, c("X", "Y"), mesh = cab_env_mesh)
+plot(cab_env_mesh2); title("SPDE Mesh for Cabezon CalCOFI analysis (Constrained)")
+
+# M1: temp + sal
+m1_sdm <- sdmTMB(
+  cabezon_present ~ temp_surf_z + sal_surf_z + mean_cpue_z,
+  data           = cabezon_env_complete,
+  mesh           = cab_env_mesh2,
+  family         = binomial(),
+  spatial        = "on",
+  spatiotemporal = "off"
+)
+
+# M2: temp + sal + o2 (preferred inferential model)
+m2_sdm <- sdmTMB(
+  cabezon_present ~ temp_surf_z + sal_surf_z + o2_surf_z + mean_cpue_z,
+  data           = cabezon_env_complete,
+  mesh           = cab_env_mesh2,
+  family         = binomial(),
+  spatial        = "on",
+  spatiotemporal = "off"
+)
+
+# M3: temp + sal + chla
+m3_sdm <- sdmTMB(
+  cabezon_present ~ temp_surf_z + sal_surf_z + chla_surf_z + mean_cpue_z,
+  data           = cabezon_env_complete,
+  mesh           = cab_env_mesh2,
+  family         = binomial(),
+  spatial        = "on",
+  spatiotemporal = "off"
+)
+
+# M4: sal + o2 + chla
+m4_sdm <- sdmTMB(
+  cabezon_present ~ sal_surf_z + o2_surf_z + chla_surf_z + mean_cpue_z,
+  data           = cabezon_env_complete,
+  mesh           = cab_env_mesh2,
+  family         = binomial(),
+  spatial        = "on",
+  spatiotemporal = "off"
+)
+
+# M5: full model
+m5_sdm <- sdmTMB(
+  cabezon_present ~ temp_surf_z + sal_surf_z + o2_surf_z + chla_surf_z + mean_cpue_z,
+  data           = cabezon_env_complete,
+  mesh           = cab_env_mesh2,
+  family         = binomial(),
+  spatial        = "on",
+  spatiotemporal = "off"
+)
+
+# Compare
+AIC(m1_sdm, m2_sdm, m3_sdm, m4_sdm, m5_sdm)
+
+sanity(m2_sdm)
+summary(m2_sdm)
+
+cabezon_env_complete$resid_m2 <- residuals(m2_sdm, type = "response")
+
+plot(fitted(m2_sdm), cabezon_env_complete$resid_m2,
+     xlab = "Fitted values", ylab = "RQ Residuals",
+     main = "Residuals vs. Fitted - m2_sdm")
+abline(h = 0, lty = 2)
+
+ggplot(cabezon_env_complete, aes(X, Y, color = resid_m2)) +
+  geom_point(size = 2) +
+  scale_color_gradient2() +
+  facet_wrap(~year) +
+  coord_fixed() +
+  labs(title = "Spatial residuals by year - m2_sdm")
+
+# What years were lost in the complete case filter?
+setdiff(unique(cabezon_env$year), unique(cabezon_env_complete$year))
+
+# Distribution of positive catches
+cabezon_env_complete %>%
+  filter(cabezon_present == TRUE) %>%
+  pull(larvae_100m3) %>%  # adjust column name if needed
+  summary()
+
+# And a quick histogram
+cabezon_env_complete %>%
+  filter(cabezon_present == TRUE) %>%
+  ggplot(aes(larvae_100m3)) +
+  geom_histogram(bins = 30) +
+  scale_x_log10() +
+  labs(title = "Distribution of positive catches (log scale)")
+
+
+m2_hurdle_ln <- sdmTMB(
+  larvae_100m3 ~ temp_surf_z + sal_surf_z + o2_surf_z + mean_cpue_z,
+  data = cabezon_env_complete,
+  mesh = cab_env_mesh2,
+  family = delta_lognormal(),
+  spatial = "on",
+  spatiotemporal = "off"
+)
+
+m2_hurdle_gm <- sdmTMB(
+  larvae_100m3 ~ temp_surf_z + sal_surf_z + o2_surf_z + mean_cpue_z,
+  data = cabezon_env_complete,
+  mesh = cab_env_mesh2,
+  family = delta_gamma(),
+  spatial = "on",
+  spatiotemporal = "off"
+)
+
+AIC(m2_hurdle_ln, m2_hurdle_gm)
+```
+
