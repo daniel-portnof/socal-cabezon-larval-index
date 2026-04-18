@@ -7,11 +7,11 @@ output: word_document
 
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(
-  echo = F,
-  message = F,
-  warning = F
-  )
+#knitr::opts_chunk$set(
+#  echo = F,
+#  message = F,
+#  warning = F
+#  )
 ```
 
 
@@ -165,6 +165,22 @@ cabezon %>%
 
 # Raw distribution visual
 plot(cabezon$volume_sampled, cabezon$larvae_100m3)
+
+pos_vals <- cabezon$larvae_100m3[cabezon$larvae_100m3 > 0]
+hist(log(pos_vals), breaks = 50, main = "log(positive larvae_100m3)")
+
+cabezon %>%
+  filter(larvae_100m3 > 0) %>%
+  group_by(year) %>%
+  summarize(m = mean(larvae_100m3), v = var(larvae_100m3), n = n()) %>%
+  filter(n > 5) %>%
+   ggplot(aes(log(m), log(v))) + geom_point() + geom_smooth(method = "lm") +
+  geom_abline(slope = 2, intercept = 0, linetype = "dashed", color = "red") +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "blue") +
+  labs(title = "Mean-variance relationship (dashed: red=gamma slope 2, blue=Poisson slope 1)")
+
+# Also useful: what fraction are zeros?
+mean(cabezon$larvae_100m3 == 0)
 
 ```
 

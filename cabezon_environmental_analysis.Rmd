@@ -274,7 +274,7 @@ m2_hurdle_ln <- sdmTMB(
   data = cabezon_env_complete,
   mesh = cab_env_mesh2,
   family = delta_lognormal(),
-  spatial = "on",
+  spatial = list("on", "off"),
   spatiotemporal = "off"
 )
 
@@ -288,5 +288,21 @@ m2_hurdle_gm <- sdmTMB(
 )
 
 AIC(m2_hurdle_ln, m2_hurdle_gm)
+
+sanity(m2_hurdle_ln)
+summary(m2_sdm)
+summary(m2_hurdle_ln)
+
+library(DHARMa)
+
+sim_hurdle <- simulate(m2_hurdle_ln, nsim = 500, type = "mle-mvn")
+
+dharma_hurdle <- createDHARMa(
+  simulatedResponse = sim_hurdle,
+  observedResponse = cabezon_env_complete$larvae_100m3,
+  fittedPredictedResponse = predict(m2_hurdle_ln)$est
+)
+
+plot(dharma_hurdle)
 ```
 
