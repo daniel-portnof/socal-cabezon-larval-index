@@ -2138,13 +2138,13 @@ sanity(ss_cab_fit2)
 
 # Tweedie: spatial only, spatiotemporal off
 ss_cab_fit2a <- sdmTMB(
-  formula = larvae_100m3 ~ 1,
+  formula = larvae_100m3 ~ 0 + fyear,
   data = cabezon_shelf_spawn,
   mesh = ss_cab_mesh,
   time = "year",
   family = tweedie(),
   spatial = "on",
-  spatiotemporal = "off",
+  spatiotemporal = "iid",
   offset = NULL,
   extra_time = 1982
 )
@@ -2201,13 +2201,27 @@ AIC_table
 
 #---- 9.d. Sanity checks and random effect parameter estimates for best models
 
-sanity(ss_cab_fit1)
+sanity(ss_cab_null)
 sanity(ss_cab_fit01)
+sanity(ss_cab_fit02)
+sanity(ss_cab_fit03)
+sanity(ss_cab_fit1)
+sanity(ss_cab_fit1a)
+sanity(ss_cab_fit1b)
+sanity(ss_cab_fit1c)
 sanity(ss_cab_fit2)
+sanity(ss_cab_fit2a)
 
-tidy(ss_cab_fit1, effects = "ran_pars")
+tidy(ss_cab_null, effects = "ran_pars")
 tidy(ss_cab_fit01, effects = "ran_pars")
+tidy(ss_cab_fit02, effects = "ran_pars")
+tidy(ss_cab_fit03, effects = "ran_pars")
+tidy(ss_cab_fit1, effects = "ran_pars")
+tidy(ss_cab_fit1a, effects = "ran_pars")
+tidy(ss_cab_fit1b, effects = "ran_pars")
+tidy(ss_cab_fit1c, effects = "ran_pars")
 tidy(ss_cab_fit2, effects = "ran_pars")
+tidy(ss_cab_fit2a, effects = "ran_pars")
 
 
 ```
@@ -3032,6 +3046,281 @@ AIC(ss_cab_fit01, ss_cab_fit1, ss_cab_fit1c)
 
 
 
+```
+
+##10.7. ss_cab_fit2a — Tweedie with iid spatiotemporal
+
+```{r}
+#---- 10.2.a. Calibration summaries (Tweedie; single component)
+
+ss_fit2a_pred_obs <- predict(ss_cab_fit2a, type = "response")
+
+# Overall mean calibration (no est1/est2 for Tweedie)
+ss_fit2a_pred_obs %>%
+  summarise(
+    obs_mean  = mean(larvae_100m3, na.rm = TRUE),
+    pred_mean = mean(est, na.rm = TRUE),
+    obs_occ   = mean(larvae_100m3 > 0, na.rm = TRUE),
+    # Tweedie has no explicit p(encounter); use threshold on est as a rough proxy
+    pred_occ_proxy = mean(est > 0, na.rm = TRUE)
+  )
+
+#---- 10.2.b. Predicted vs. observed plots
+
+# Raw scale
+plot(
+  x = ss_fit2a_pred_obs$est,
+  y = cabezon_shelf_spawn$larvae_100m3,
+  xlab = "Predicted",
+  ylab = "Observed"
+)
+abline(0, 1, lty = 2)
+
+# Log scale
+plot(
+  log1p(ss_fit2a_pred_obs$est),
+  log1p(cabezon_shelf_spawn$larvae_100m3),
+  xlab = "log(Predicted + 1)",
+  ylab = "log(Observed + 1)"
+)
+abline(0, 1, lty = 2)
+
+#---- 10.2.c. Randomized quantile residuals
+
+ss_fit2a_rq_res <- residuals(ss_cab_fit2a, type = "mle-mvn")
+
+# QQ plot
+qqnorm(ss_fit2a_rq_res)
+qqline(ss_fit2a_rq_res)
+
+# Spatial residual map by year
+ss_fit2a_pred_obs$rq_resid <- ss_fit2a_rq_res
+
+ggplot(ss_fit2a_pred_obs, aes(x = longitude, y = latitude, color = rq_resid)) +
+  geom_point() +
+  scale_color_gradient2() +
+  facet_wrap(~ year)
+
+#---- 10.2.d. Temporal calibration
+
+ss_fit2a_pred_obs %>%
+  group_by(year) %>%
+  summarize(
+    obs  = mean(larvae_100m3),
+    pred = mean(est)
+  ) %>%
+  ggplot(aes(x = year)) +
+  geom_line(aes(y = obs), color = "black") +
+  geom_line(aes(y = pred), color = "blue", linetype = "dashed")
+
+#---- 10.2.e. Abundance index: regular prediction grid
+# fyear must be present and match levels in training data
+# Note: 1982 is extra_time — fixed effect for that level is interpolated by sdmTMB
+
+ss_fit2a_pred_grid <- expand.grid(
+  X = seq(min(cabezon_shelf_spawn$X), max(cabezon_shelf_spawn$X), by = 5),
+  Y = seq(min(cabezon_shelf_spawn$Y), max(cabezon_shelf_spawn$Y), by = 5)
+) %>%
+  tidyr::crossing(year = as.integer(sort(unique(cabezon_shelf_spawn$year)))) %>%
+  mutate(fyear = as.factor(year))
+
+ss_fit2a_cab_map <- predict(ss_cab_fit2a,
+                            newdata   = ss_fit2a_pred_grid,
+                            return_tmb_object = TRUE)
+
+ss_fit2a_cab_index <- get_index(ss_fit2a_cab_map, area = 5^2, bias_correct = TRUE)
+
+ggplot(ss_fit2a_cab_index, aes(x = year, y = est)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.3) +
+  labs(y = "Estimated abundance index", x = "Year",
+       title = "Abundance Index: Tweedie IID (fixed year effects, regular grid)")
+
+#---- 10.2.f. Abundance index: observed station grid (preferred)
+
+ss_fit2a_pred_grid_obs <- cabezon_shelf_spawn %>%
+  dplyr::select(X, Y, year) %>%
+  distinct() %>%
+  mutate(fyear = as.factor(year))
+
+ss_fit2a_cab_map_obs <- predict(ss_cab_fit2a,
+                                newdata = ss_fit2a_pred_grid_obs,
+                                return_tmb_object = TRUE)
+
+ss_fit2a_cab_index_obs <- get_index(ss_fit2a_cab_map_obs,
+                                    area = 5^2,
+                                    bias_correct = TRUE)
+
+ggplot(ss_fit2a_cab_index_obs, aes(x = year, y = est)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.3) +
+  labs(y = "Estimated abundance index", x = "Year",
+       title = "Abundance Index: Tweedie IID (fixed year effects, observed grid)")
+```
+
+## 10.8. ss_cab_fit2a — STAR correlation analysis
+
+```{r}
+#---- 10.8. ss_cab_fit2a STAR comparisons and CCF
+
+# Create one data frame to house all STAR + larval index data
+# Note: using observed station grid index (10.2.f) as preferred basis
+tw_fy_combined <- ss_fit2a_cab_index_obs %>%
+  dplyr::select(year, est) %>%
+  rename(larvae_index = est) %>%
+  left_join(
+    STAR_SSB %>% rename(ssb = value, ssb_lo = lo, ssb_hi = hi),
+    by = "year"
+  ) %>%
+  left_join(
+    STAR_recdevs %>% rename(rec_dev = value, rec_dev_lo = lo, rec_dev_hi = hi),
+    by = "year"
+  ) %>%
+  left_join(
+    STAR_age0 %>% rename(age0 = value, age0_lo = lo, age0_hi = hi),
+    by = "year"
+  )
+
+# Filter to observed years
+tw_fy_combined_obs <- tw_fy_combined %>%
+  filter(!is.na(larvae_index))
+
+# CCF: Tweedie IID larval index vs. age-0 recruits
+ccf(tw_fy_combined_obs$larvae_index, tw_fy_combined_obs$age0,
+    lag.max = 10,
+    main = "CCF: Tweedie IID Larval Index vs. Age-0 Recruits")
+
+# CCF: Tweedie IID larval index vs. recruitment deviations
+ccf(tw_fy_combined_obs$larvae_index, tw_fy_combined_obs$rec_dev,
+    lag.max = 10,
+    main = "CCF: Tweedie IID Larval Index vs. Recruitment Deviations")
+
+# CCF: Tweedie IID larval index vs. SSB (raw)
+# Note: shared declining trend may inflate signal — detrended version below is preferred
+ccf(tw_fy_combined_obs$larvae_index, tw_fy_combined_obs$ssb,
+    lag.max = 10,
+    main = "CCF: Tweedie IID Larval Index vs. Spawning Stock Biomass (raw)")
+
+# Detrend both series via loess before comparing against SSB
+tw_fy_larvae_detrended <- residuals(loess(larvae_index ~ year, data = tw_fy_combined_obs, span = 0.75))
+tw_fy_ssb_detrended    <- residuals(loess(ssb ~ year,          data = tw_fy_combined_obs, span = 0.75))
+
+ccf(tw_fy_larvae_detrended, tw_fy_ssb_detrended,
+    lag.max = 10,
+    main = "CCF: Tweedie IID Larval Index vs. SSB (detrended)")
+```
+
+## 10.9. ss_cab_fit2a — Correlation analysis
+
+```{r}
+#---- 10.9. ss_cab_fit2a diagnostics and lagged regression
+
+# RQ residuals: annual distributions
+ss_fit2a_pred_obs %>%
+  ggplot(aes(x = factor(year), y = rq_resid)) +
+  geom_boxplot(outlier.size = 0.6, fill = "steelblue", alpha = 0.4) +
+  geom_smooth(
+    aes(x = as.numeric(factor(year)), y = rq_resid),
+    method    = "loess", span = 0.4,
+    se        = TRUE, color = "firebrick", linewidth = 0.8
+  ) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  labs(
+    x     = "Year",
+    y     = "RQ Residual",
+    title = "Annual RQ Residual Distributions — ss_cab_fit2a"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, size = 7))
+
+# CUSUM of median RQ residuals (single component; Tweedie)
+ss_fit2a_pred_obs %>%
+  group_by(year) %>%
+  summarise(med_resid = median(rq_resid), .groups = "drop") %>%
+  arrange(year) %>%
+  mutate(cusum = cumsum(med_resid)) %>%
+  ggplot(aes(x = year, y = cusum)) +
+  geom_line(linewidth = 0.9) +
+  geom_point(size = 1.5) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
+  labs(
+    x     = "Year",
+    y     = "Cumulative Sum of Median RQ Residual",
+    title = "CUSUM — ss_cab_fit2a"
+  ) +
+  theme_minimal()
+
+#---- Simple lagged regression at lag -1
+
+tw_fy_combined_lagged <- tw_fy_combined_obs %>%
+  arrange(year) %>%
+  mutate(
+    age0_lead1    = lead(age0, 1),
+    rec_dev_lead1 = lead(rec_dev, 1)
+  )
+
+tw_fy_lm_age0   <- lm(age0_lead1    ~ larvae_index, data = tw_fy_combined_lagged)
+tw_fy_lm_recdev <- lm(rec_dev_lead1 ~ larvae_index, data = tw_fy_combined_lagged)
+
+summary(tw_fy_lm_age0)
+summary(tw_fy_lm_recdev)
+
+tw_fy_combined_lagged %>%
+  filter(!is.na(age0_lead1)) %>%
+  ggplot(aes(x = larvae_index, y = age0_lead1, label = year)) +
+  geom_point() +
+  geom_text(nudge_y = 8, size = 3) +
+  geom_smooth(method = "lm", se = TRUE) +
+  labs(x = "Larval Index (year t)", y = "Age-0 Recruits (year t+1)") +
+  theme_minimal()
+
+# Sensitivity: remove 1983
+tw_fy_combined_lagged_no83 <- tw_fy_combined_lagged %>% filter(year != 1983)
+tw_fy_lm_age0_no83 <- lm(age0_lead1 ~ larvae_index, data = tw_fy_combined_lagged_no83)
+summary(tw_fy_lm_age0_no83)
+
+# Detrended regressions
+tw_fy_lm_age0_detrend   <- lm(age0_lead1    ~ larvae_index + year, data = tw_fy_combined_lagged)
+tw_fy_lm_recdev_detrend <- lm(rec_dev_lead1 ~ larvae_index + year, data = tw_fy_combined_lagged)
+summary(tw_fy_lm_age0_detrend)
+summary(tw_fy_lm_recdev_detrend)
+
+# Cook's distance
+plot(tw_fy_lm_age0, which = 4)
+
+# Trimmed analysis: remove three most anomalous years
+tw_fy_combined_lagged_trimmed <- tw_fy_combined_lagged %>%
+  filter(!year %in% c(1983, 1986, 1998))
+
+tw_fy_combined_lagged_trimmed %>%
+  filter(!is.na(age0_lead1)) %>%
+  ggplot(aes(x = larvae_index, y = age0_lead1, label = year)) +
+  geom_point() +
+  geom_text(nudge_y = 8, size = 3) +
+  geom_smooth(method = "lm", se = TRUE) +
+  labs(x = "Larval Index (year t)", y = "Age-0 Recruits (year t+1)") +
+  theme_minimal()
+
+tw_fy_lm_age0_trimmed <- lm(age0_lead1 ~ larvae_index, data = tw_fy_combined_lagged_trimmed)
+summary(tw_fy_lm_age0_trimmed)
+
+tw_fy_lm_age0_trimmed_detrend <- lm(age0_lead1 ~ larvae_index + year, data = tw_fy_combined_lagged_trimmed)
+summary(tw_fy_lm_age0_trimmed_detrend)
+
+# Is underprediction spatially structured?
+ss_fit2a_pred_obs %>%
+  group_by(station) %>%
+  summarise(mean_resid = mean(rq_resid), .groups = "drop") %>%
+  ggplot(aes(x = station, y = mean_resid)) +
+  geom_point() +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_smooth(method = "loess", se = TRUE) +
+  labs(x = "Station", y = "Mean RQ Residual",
+       title = "Mean Residual by Station — ss_cab_fit2a") +
+  theme_minimal()
+
+# AIC comparison: Tweedie variants
+AIC(ss_cab_fit2, ss_cab_fit2a)
 ```
 
 

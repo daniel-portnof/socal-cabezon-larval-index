@@ -287,7 +287,7 @@ m2_hurdle_gm <- sdmTMB(
   spatiotemporal = "off"
 )
 
-AIC(m2_hurdle_ln, m2_hurdle_gm)
+AIC(m2_hurdle_ln, m2_hurdle_gm, m3_tweedie)
 
 sanity(m2_hurdle_ln)
 summary(m2_sdm)
