@@ -2333,7 +2333,7 @@ ss_full_cab_index <- get_index(ss_full_cab_map, area = 5^2, bias_correct = T)
 ggplot(ss_full_cab_index, aes(x = year, y = est)) +
   geom_line() +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.3) +
-  labs(y = "Estimated abundance index", x = "Year", title = "Abundance Index: Constrained to Spawning Season & Coastal Samples")
+  labs(y = "Estimated abundance index", x = "Year", title = "Abundance Index: Delta-Gamma on Global Intercept with AR1 Spatiotemporal Fields")
 
 #---- 10.1.f. Abundance index: constrained to observed station grid (probably preferred)
 
@@ -3656,6 +3656,73 @@ lm_iid  <- lm(med_resid ~ year, data = cusum_iid)
 seg_iid <- segmented(lm_iid, seg.Z = ~year, npsi = 1)
 summary(seg_iid)
 confint(seg_iid)
+```
+
+## A2.2 Delta-Lognormal test model
+
+```{r}
+cab_fit_dln <- sdmTMB(
+  larvae_100m3 ~ 0 + fyear,
+  data = cabezon_shelf_spawn,
+  mesh = ss_cab_mesh,
+  time = "year",
+  family = delta_lognormal(),
+  spatial = list("on", "on"),
+  spatiotemporal = list("off", "off"),
+  offset = NULL,
+  extra_time = 1982
+)
+
+sanity(cab_fit_dln)
+
+AIC(cab_fit_dln)
+
+
+cab_fit_dln2 <- sdmTMB(
+  larvae_100m3 ~ 0 + fyear,
+  data = cabezon_shelf_spawn,
+  mesh = ss_cab_mesh,
+  time = "year",
+  family = delta_lognormal(),
+  spatial = list("on", "on"),
+  spatiotemporal = list("iid", "off"),
+  offset = NULL,
+  extra_time = 1982
+)
+
+sanity(cab_fit_dln2)
+
+AIC(cab_fit_dln2)
+
+tidy(cab_fit_dln, effects = "ran_pars")
+tidy(cab_fit_dln2, effects = "ran_pars")
+
+
+index_dln <- get_index(predict(cab_fit_dln, newdata = ss_full_pred_grid, 
+                                return_tmb_object = TRUE), 
+                       area = 25)
+
+ggplot(index_dln, aes(x = year, y = est)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.3) +
+  labs(y = "Estimated abundance index", x = "Year", title = "Abundance Index: Delta-Lognormal with fixed year effect")
+
+ss_full_pred_grid_obs <- cabezon_shelf_spawn %>%
+  dplyr::select(X, Y, year, fyear) %>%
+  distinct()
+
+ss_full_cab_map_obs <- predict(cab_fit_dln,
+                       newdata = ss_full_pred_grid_obs,
+                       return_tmb_object = T)
+
+index_dln_obs <- get_index(ss_full_cab_map_obs,
+                           area = 5^2,
+                           bias_correct = T)
+
+ggplot(index_dln_obs, aes(x = year, y = est)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.3) +
+  labs(y = "Estimated abundance index", x = "Year", title = "Abundance Index: Observed Station Grid")
 ```
 
 
