@@ -35,12 +35,14 @@ cabezon <- read.csv("cabezon_calcofi_data.csv")
 
 str(cabezon)
 
+# Constrain cabezon dataset to spawning season and continental shelf
 cabezon_shelf_spawn <- cabezon %>%
   filter(
     month %in% c(1, 2, 3),
     station <= 60.0
   )
 
+# Data check
 cat("Rows retained:", nrow(cabezon_shelf_spawn), "of", nrow(cabezon), "\n")
 cat("Years covered:", paste(range(cabezon_shelf_spawn$year), collapse = "–"), "\n")
 cat("Months present:", paste(sort(unique(cabezon_shelf_spawn$month)), collapse = ", "), "\n")
@@ -63,6 +65,7 @@ cabezon_shelf_spawn <- cabezon_shelf_spawn %>%
     sta = round(station, 1)
     )
 
+# Compute an annual cpue value to test against the response; i.e., how does larval abundance vary at a given station given overall larval abundance in a year?
 annual_cpue <- cabezon_shelf_spawn %>%
   group_by(year) %>%
   summarize(mean_cpue = mean(larvae_100m3, na.rm = T))
@@ -71,6 +74,7 @@ bottle <- read_csv("bottle_data.csv", locale = locale(encoding = "latin1"))
 
 str(bottle)
 
+# Split out bottle metadata and get unique station ID's to compare against larval data
 bottle_clean <- bottle %>%
   separate(Sta_ID, into = c("line", "sta"), sep = " ", remove = F) %>%
   mutate(
@@ -91,6 +95,7 @@ bottle_clean <- bottle_clean %>%
     sta = round(sta, 1)
   )
 
+# Begin with environmental covariates at the surface
 bottle_surface <- bottle_clean %>%
   filter(Depthm <= 10,
          month %in% c(1, 2, 3)) %>%
@@ -103,6 +108,7 @@ bottle_surface <- bottle_clean %>%
     .groups = "drop"
   )
 
+# Attach cleaned bottle data to larval data in one data table
 cabezon_env <- cabezon_shelf_spawn %>%
   left_join(bottle_surface, by = c("line", "sta", "year", "month"))
 
@@ -118,6 +124,7 @@ cabezon_env %>%
   ) %>%
   print(n = Inf)
 
+# Match new data table with associated values from larval and bottle datasets
 cabezon_env %>%
   dplyr::select(temp_surf, sal_surf, o2_surf, chla_surf) %>%
   filter(complete.cases(.)) %>%
@@ -125,7 +132,7 @@ cabezon_env %>%
   corrplot(method = "number", type = "upper")
 
 cabezon_env <- cabezon_env %>%
-  mutate(cabezon_present = (as.integer(larvae_100m3) > 0)) %>%
+  mutate(cabezon_present = as.integer(larvae_100m3 > 0)) %>%
   mutate(cabezon_present = as.integer(cabezon_present))
 
 table(cabezon_env$present, useNA = "ifany")
@@ -133,6 +140,7 @@ table(cabezon_env$present, useNA = "ifany")
 cabezon_env <- cabezon_env %>%
   mutate(sta_id = paste(line, sta, sep = "_"))
 
+# Standardize!
 cabezon_env <- cabezon_env %>%
   mutate(across(c(temp_surf, sal_surf, o2_surf, chla_surf), scale,
                 .names = "{.col}_z"))
@@ -141,6 +149,7 @@ cabezon_env <- cabezon_env %>%
   left_join(annual_cpue, by = "year") %>%
   mutate(mean_cpue_z = scale(mean_cpue))
 
+# Constrain to observations where all covariates are present
 cabezon_env_complete <- cabezon_env %>%
   filter(complete.cases(temp_surf_z, sal_surf_z, o2_surf_z, mean_cpue_z))
 
@@ -287,11 +296,15 @@ m2_hurdle_gm <- sdmTMB(
   spatiotemporal = "off"
 )
 
-AIC(m2_hurdle_ln, m2_hurdle_gm, m3_tweedie)
+AIC(m2_hurdle_ln, m2_hurdle_gm)
 
 sanity(m2_hurdle_ln)
+summary(m2)
 summary(m2_sdm)
 summary(m2_hurdle_ln)
+
+tidy(m2_hurdle_ln, effects = "fixed", model = 1, conf.int = TRUE)
+tidy(m2_hurdle_ln, effects = "fixed", model = 2, conf.int = TRUE)
 
 library(DHARMa)
 
@@ -304,5 +317,55 @@ dharma_hurdle <- createDHARMa(
 )
 
 plot(dharma_hurdle)
+```
+```{r}
+# ---- Sensitivity analysis: constrain to 1984-2014
+
+cabezon_env_constrained <- cabezon_env_complete %>%
+  filter(year >= 1984, year <= 2014)
+
+cat("Rows retained:", nrow(cabezon_env_constrained), 
+    "of", nrow(cabezon_env_complete), "\n")
+cat("Years covered:", paste(range(cabezon_env_constrained$year), collapse = "–"), "\n")
+
+# Rebuild mesh on constrained dataset
+cab_env_mesh_sens <- fm_mesh_2d(
+  loc = cabezon_env_constrained[, c("X", "Y")],
+  cutoff = 20,
+  max.edge = c(75, 150),
+  offset = c(45, 120)
+)
+cab_env_mesh_sens2 <- make_mesh(data = cabezon_env_constrained, 
+                                c("X", "Y"), 
+                                mesh = cab_env_mesh_sens)
+
+# Refit preferred binomial model
+m2_sdm_sens <- sdmTMB(
+  cabezon_present ~ temp_surf_z + sal_surf_z + o2_surf_z + mean_cpue_z,
+  data           = cabezon_env_constrained,
+  mesh           = cab_env_mesh_sens2,
+  family         = binomial(),
+  spatial        = "on",
+  spatiotemporal = "off"
+)
+
+sanity(m2_sdm_sens)
+summary(m2_sdm_sens)
+
+# Refit preferred hurdle model
+m2_hurdle_ln_sens <- sdmTMB(
+  larvae_100m3 ~ temp_surf_z + sal_surf_z + o2_surf_z + mean_cpue_z,
+  data           = cabezon_env_constrained,
+  mesh           = cab_env_mesh_sens2,
+  family         = delta_lognormal(),
+  spatial        = list("on", "off"),
+  spatiotemporal = "off"
+)
+
+sanity(m2_hurdle_ln_sens)
+summary(m2_hurdle_ln_sens)
+
+tidy(m2_hurdle_ln_sens, effects = "fixed", model = 1, conf.int = TRUE)
+tidy(m2_hurdle_ln_sens, effects = "fixed", model = 2, conf.int = TRUE)
 ```
 
