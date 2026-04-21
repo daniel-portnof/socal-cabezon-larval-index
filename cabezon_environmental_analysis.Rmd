@@ -283,7 +283,7 @@ m2_hurdle_ln <- sdmTMB(
   data = cabezon_env_complete,
   mesh = cab_env_mesh2,
   family = delta_lognormal(),
-  spatial = list("on", "off"),
+  spatial = list("on", "on"),
   spatiotemporal = "off"
 )
 
@@ -318,6 +318,7 @@ dharma_hurdle <- createDHARMa(
 
 plot(dharma_hurdle)
 ```
+
 ```{r}
 # ---- Sensitivity analysis: constrain to 1984-2014
 
@@ -358,7 +359,7 @@ m2_hurdle_ln_sens <- sdmTMB(
   data           = cabezon_env_constrained,
   mesh           = cab_env_mesh_sens2,
   family         = delta_lognormal(),
-  spatial        = list("on", "off"),
+  spatial        = list("on", "on"),
   spatiotemporal = "off"
 )
 

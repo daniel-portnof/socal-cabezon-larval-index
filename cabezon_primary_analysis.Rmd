@@ -3723,12 +3723,207 @@ ggplot(index_dln_obs, aes(x = year, y = est)) +
   geom_line() +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.3) +
   labs(y = "Estimated abundance index", x = "Year", title = "Abundance Index: Observed Station Grid")
+
+# Let's try the Erica Mason approach with library(funtimes) and check for correlations between the index and SSB. The code below is for the Delta-Gamma fully parameterized AR1 model index.
+
+library(funtimes)
+
+set.seed(my.seed)
+# Spearman CCF with bootstrap CIs
+# x = larvae_index (leading variable)
+# y = ssb (response)
+
+ccf_results <- ccf_boot(
+  x = ss_full_combined_obs$larvae_index,
+  y = ss_full_combined_obs$ssb,
+  lag.max = 10,
+  plot = "Spearman",
+  level = 0.95,
+  B = 1000
+)
+
+ccf_results_diff <- ccf_boot(
+  x = diff(ss_full_combined_obs$larvae_index),
+  y = diff(ss_full_combined_obs$ssb),
+  lag.max = 10,
+  plot = "Spearman",
+  level = 0.95,
+  B = 1000
+)
+
+
+# Let's try that again on the Delta-Lognormal model *without* spatiotemporal variation, assuming the fixed year effect is capturing temporal trends adequately while serving as a better direct proxy to stock assessments outputs.
+
+# --- Extract D-Ln fixed year effect index ---
+index_dln <- get_index(
+  predict(cab_fit_dln, newdata = ss_full_pred_grid, return_tmb_object = TRUE),
+  area = 25
+)
+
+# --- Join to SSB data ---
+ss_full_combined_dln <- index_dln %>%
+  dplyr::select(year, est, lwr, upr) %>%
+  rename(larvae_index = est) %>%
+  left_join(
+    STAR_SSB %>% rename(ssb = value, ssb_lo = lo, ssb_hi = hi),
+    by = "year"
+  ) %>%
+  left_join(
+    STAR_recdevs %>% rename(rec_dev = value, rec_dev_lo = lo, rec_dev_hi = hi),
+    by = "year"
+  ) %>%
+  left_join(
+    STAR_age0 %>% rename(age0 = value, age0_lo = lo, age0_hi = hi),
+    by = "year"
+  )  # replace ssb_data with your actual SSB object
+
+# --- Raw Spearman CCF with bootstrap CIs ---
+ccf_boot(
+  x = ss_full_combined_dln$larvae_index,
+  y = ss_full_combined_dln$ssb,
+  lag.max = 10,
+  plot = "Spearman",
+  B = 1000
+)
+
+# --- First-differenced version ---
+ccf_boot(
+  x = diff(ss_full_combined_dln$larvae_index),
+  y = diff(ss_full_combined_dln$ssb),
+  lag.max = 10,
+  plot = "Spearman",
+  B = 1000
+)
+
 ```
 
 
 # A3. EXPERIMENTS
 
 ```{r A3. Experiments, eval = F}
+
+names(ss_full_cab_index)
+
+ss_full_combined <- ss_full_cab_index %>%
+  dplyr::select(year, est, lwr, upr) %>%        # add lwr and upr here
+  rename(larvae_index = est) %>%
+  left_join(
+    STAR_SSB %>% rename(ssb = value, ssb_lo = lo, ssb_hi = hi),
+    by = "year"
+  ) %>%
+  left_join(
+    STAR_recdevs %>% rename(rec_dev = value, rec_dev_lo = lo, rec_dev_hi = hi),
+    by = "year"
+  ) %>%
+  left_join(
+    STAR_age0 %>% rename(age0 = value, age0_lo = lo, age0_hi = hi),
+    by = "year"
+  )
+
+ss_full_combined_obs <- ss_full_combined %>%
+  filter(!is.na(larvae_index))
+
+scale_factor_ssb <- max(ss_full_combined_obs$larvae_index, na.rm = TRUE) /
+  max(ss_full_combined_obs$ssb, na.rm = TRUE)
+
+ggplot(ss_full_combined_obs %>% filter(year >= 1984, year <= 2015),
+       aes(x = year)) +
+  # SSB scaled UP to primary axis units
+  geom_ribbon(aes(ymin = ssb_lo * scale_factor_ssb,
+                  ymax = ssb_hi * scale_factor_ssb),
+              fill = "steelblue", alpha = 0.3) +
+  geom_line(aes(y = ssb * scale_factor_ssb), color = "steelblue", linewidth = 0.8) +
+  # Larvae index on primary axis
+  geom_ribbon(aes(ymin = lwr, ymax = upr), fill = "coral", alpha = 0.3) +
+  geom_line(aes(y = larvae_index), color = "coral", linewidth = 0.8) +
+  scale_y_continuous(
+    name = "Estimated Larval Abundance Index; Delta-Gamma full AR1",
+    sec.axis = sec_axis(~ . / scale_factor_ssb,
+                        name = "SSB (mt)")
+  ) +
+  scale_x_continuous(breaks = seq(1984, 2015, by = 4)) +
+  labs(title = "SoCal Cabezon: Larval Index vs. SSB (1984–2015)", x = "Year") +
+  theme_bw()
+
+
+
+dln_ss_full_combined <- index_dln %>%
+  dplyr::select(year, est, lwr, upr) %>%        # add lwr and upr here
+  rename(larvae_index = est) %>%
+  left_join(
+    STAR_SSB %>% rename(ssb = value, ssb_lo = lo, ssb_hi = hi),
+    by = "year"
+  ) %>%
+  left_join(
+    STAR_recdevs %>% rename(rec_dev = value, rec_dev_lo = lo, rec_dev_hi = hi),
+    by = "year"
+  ) %>%
+  left_join(
+    STAR_age0 %>% rename(age0 = value, age0_lo = lo, age0_hi = hi),
+    by = "year"
+  )
+
+dln_ss_full_combined_obs <- dln_ss_full_combined %>%
+  filter(!is.na(larvae_index))
+
+dln_scale_factor_ssb <- max(dln_ss_full_combined_obs$larvae_index, na.rm = TRUE) /
+  max(dln_ss_full_combined_obs$ssb, na.rm = TRUE)
+
+ggplot(dln_ss_full_combined_obs %>% filter(year >= 1984, year <= 2015),
+       aes(x = year)) +
+  # SSB scaled UP to primary axis units
+  geom_ribbon(aes(ymin = ssb_lo * dln_scale_factor_ssb,
+                  ymax = ssb_hi * dln_scale_factor_ssb),
+              fill = "steelblue", alpha = 0.3) +
+  geom_line(aes(y = ssb * dln_scale_factor_ssb), color = "steelblue", linewidth = 0.8) +
+  # Larvae index on primary axis
+  geom_ribbon(aes(ymin = lwr, ymax = upr), fill = "coral", alpha = 0.3) +
+  geom_line(aes(y = larvae_index), color = "coral", linewidth = 0.8) +
+  scale_y_continuous(
+    name = "Estimated Larval Abundance Index; Delta-Lognormal Fixed Year",
+    sec.axis = sec_axis(~ . / scale_factor_ssb,
+                        name = "SSB (mt)")
+  ) +
+  scale_x_continuous(breaks = seq(1984, 2015, by = 4)) +
+  labs(title = "SoCal Cabezon: Larval Index vs. SSB (1984–2015)", x = "Year") +
+  theme_bw()
+
+
+# --- Build lagged dataset: larvae(t) vs SSB(t+4) ---
+ss_full_combined_lagged_ssb <- ss_full_combined_obs %>%
+  arrange(year) %>%
+  mutate(
+    ssb_lead4 = lead(ssb, 4)
+  )
+
+# --- Baseline model ---
+ss_full_lm_ssb <- lm(ssb_lead4 ~ larvae_index, data = ss_full_combined_lagged_ssb)
+summary(ss_full_lm_ssb)
+
+# --- Detrended model (controls for shared temporal trend) ---
+ss_full_lm_ssb_detrend <- lm(ssb_lead4 ~ larvae_index + year, data = ss_full_combined_lagged_ssb)
+summary(ss_full_lm_ssb_detrend)
+
+# --- Scatter plot ---
+ss_full_combined_lagged_ssb %>%
+  filter(!is.na(ssb_lead4)) %>%
+  ggplot(aes(x = larvae_index, y = ssb_lead4, label = year)) +
+  geom_point() +
+  geom_text(nudge_y = 2, size = 3) +
+  geom_smooth(method = "lm", se = TRUE) +
+  labs(
+    x = "Larval Index (year t)",
+    y = "SSB (mt, year t+4)",
+    title = "SoCal Cabezon: Larval Index vs. SSB at +4 Year Lag"
+  ) +
+  theme_minimal()
+
+# --- Influence diagnostics ---
+plot(ss_full_lm_ssb, which = 4)  # Cook's distance
+plot(ss_full_lm_ssb_detrend, which = 4)
+
+
+
 
 # RQ residuals for full AR1 spatiotemporal model
 pred_obs %>%
