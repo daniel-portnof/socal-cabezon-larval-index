@@ -7,6 +7,7 @@ Using sdmTMB to derive a larval abundance index from CalCOFI data to be compared
 - Currently working from `cabezon_constrained_model.Rmd` and `cabezon_environmental_analysis.Rmd`.
   
 - `cabezon_constrained_model.Rmd` roughly runs as follows:
+  
   0. Setup and check STAR output plots
   1. CalCOFI data import and QA/QC
   2. Data cuts and visualization of observed patterns
@@ -14,11 +15,13 @@ Using sdmTMB to derive a larval abundance index from CalCOFI data to be compared
   4. Residual checks and derive abundance index
   5. Test against STAR outputs via CCF
   6. Regression analysis on significant correlation(s)
+    
 - Currently, there are no major patterns detected. The strongest result is a weak (and biologically implausible) negative relationship between larval abundance and recruitment metrics, in which recruitment metrics *lead* abundance by one year. This is spurious.
 - Further investigation also reveals little to no relationship between larval abundance indices and SSB.
 - Curious if a finer-grade data source on adult cabezon abundance (e.g., catch if there was a strong enough dataset) would track better with these indices.
 
 - `cabezon_environmental_analysis.Rmd` is checking for how oceanographic data collected via CalCOFI bottle samples (`bottle_data.csv`) relates to larval presence/absence (using the same manta net tow data `cabezon_calcofi_data.csv`) and positive density. It roughly runs as follows:
+
   1. Setup and data import & QA/QC
   2. Join and standardize bottle and larval data
   3. Run candidate presence/absence GLMMs and compare (station/location as random effect)
