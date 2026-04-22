@@ -1,7 +1,7 @@
 # socal-cabezon-larval-index
 Using sdmTMB to derive a larval abundance index from CalCOFI data to be compared with existing federal stock metrics for cabezon in Southern California.
 
-*NOTE:* You will need to download the `Cab_SCS_BC_STAR/` folder, `cabezon_calcofi_data.csv`, and `calcofi_bottle_data.csv` into your working directory to run the scripts.
+*NOTE:* You will need to download the `Cab_SCS_BC_STAR/` folder, `cabezon_calcofi_data.csv`, and `bottle_data.csv` into your working directory to run the scripts.
 
 ### Notes (04-22-2026):
 - Currently working from `cabezon_constrained_model.Rmd` and `cabezon_environmental_analysis.Rmd`.
@@ -35,6 +35,7 @@ Using sdmTMB to derive a larval abundance index from CalCOFI data to be compared
 | `cabezon_constrained_model.Rmd` | Analysis on constrained dataset; spawning season only, coastal shelf stations only — knit to reproduce report |
 | `cabezon_environmental_analysis.Rmd` | Analysis of environmental covariates from CalCOFI bottle data and constrained larval dataset; spawning season only, coastal shelf stations only — knit to reproduce report |
 | `cabezon_calcofi_data.csv` | CalCOFI larval survey data (1981–2015) |
+| `bottle_data.csv` | CalCOFI oceanographic bottle survey data (1954—2021) |
 | `Cab_SCS_BC_STAR/` | Stock Synthesis model outputs (STAR panel assessment) |
 | `cabezon_appendix.Rmd` | Appendix containing experimental models, code chunks, and other ephemera |
 | `cabezon_primary_analysis.R` | Standalone script — **currently outdated** |
