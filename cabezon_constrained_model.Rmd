@@ -887,7 +887,7 @@ ss_dln_fy_calibration_summary <- ss_dln_fy_pred_obs %>%
     n         = n()
   )
 
-plot(ss_dln_fy_calibration_summary$mean_pred, ss_fy_calibration_summary$observed,
+plot(ss_dln_fy_calibration_summary$mean_pred, ss_dln_fy_calibration_summary$observed,
      xlab = "Predicted presence probability",
      ylab = "Observed presence frequency")
 abline(0, 1, lty = 2)
@@ -952,8 +952,8 @@ ss_dln_fy_pred_grid <- expand.grid(
   tidyr::crossing(year = as.integer(sort(unique(cabezon_shelf_spawn$year)))) %>%
   mutate(fyear = as.factor(year))
 
-ss_dln_fy_cab_map   <- predict(ss_cab_fit01, newdata = ss_dln_fy_pred_grid, return_tmb_object = TRUE)
-ss_dln_fy_cab_index <- get_index(ss_fy_cab_map, area = 5^2, bias_correct = TRUE)
+ss_dln_fy_cab_map   <- predict(ss_cab_fit_dln1, newdata = ss_dln_fy_pred_grid, return_tmb_object = TRUE)
+ss_dln_fy_cab_index <- get_index(ss_dln_fy_cab_map, area = 5^2, bias_correct = TRUE)
 
 ggplot(ss_dln_fy_cab_index, aes(x = year, y = est)) +
   geom_line() +
@@ -1235,7 +1235,7 @@ ggplot(ss_dln_fy_combined %>% filter(year >= 1984, year <= 2015),
 
 # Create one data frame to house all STAR + larval index data
 # Note! For these comparisons, we move forward with the constrained 10.4.f. abundance index, assuming it's more stable.
-ss_fy_combined_sta <- ss_fy_cab_index_obs %>%
+ss_fy_combined_sta <- ss_dln_fy_cab_index_obs %>%
   dplyr::select(year, est) %>%
   rename(larvae_index = est) %>%
   left_join(
@@ -1444,7 +1444,7 @@ summary(ss_full_lm_age0_trimmed_detrend)
 
 ```{r 6.2. ss_cab_fit01 correlation testing, cache = T}
 # RQ residuals for fixed year effect + IID model
-ss_fy_pred_obs %>%
+ss_dln_fy_pred_obs %>%
   group_by(year) %>%
   mutate(med_resid = median(rq_resid)) %>%
   ggplot(aes(x = factor(year), y = rq_resid)) +
@@ -1458,12 +1458,12 @@ ss_fy_pred_obs %>%
   labs(
     x     = "Year",
     y     = "RQ Residual",
-    title = "Annual RQ Residual Distributions — ss_cab_fit01"
+    title = "Annual RQ Residual Distributions — ss_cab_fit_dln1"
   ) +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 90, size = 7))
 
-ss_fy_pred_obs %>%
+ss_dln_fy_pred_obs %>%
   group_by(year) %>%
   summarise(med_resid = median(rq_resid), .groups = "drop") %>%
   arrange(year) %>%
@@ -1475,18 +1475,18 @@ ss_fy_pred_obs %>%
   labs(
     x     = "Year",
     y     = "Cumulative Sum of Median RQ Residual",
-    title = "CUSUM — ss_cab_fit01"
+    title = "CUSUM — ss_cab_fit_dln1"
   ) +
   theme_minimal()
 
 # 1. Is the underprediction concentrated in one delta component?
-ss_fy_pred_obs <- ss_fy_pred_obs %>%
+ss_dln_fy_pred_obs <- ss_dln_fy_pred_obs %>%
   mutate(
-    rq_resid1 = residuals(ss_cab_fit01, model = 1, type = "mle-mvn"),
-    rq_resid2 = residuals(ss_cab_fit01, model = 2, type = "mle-mvn")
+    rq_resid1 = residuals(ss_cab_fit_dln1, model = 1, type = "mle-mvn"),
+    rq_resid2 = residuals(ss_cab_fit_dln1, model = 2, type = "mle-mvn")
   )
 
-ss_fy_pred_obs %>%
+ss_dln_fy_pred_obs %>%
   group_by(year) %>%
   summarise(
     med_resid1 = median(rq_resid1, na.rm = TRUE),
@@ -1508,11 +1508,11 @@ ss_fy_pred_obs %>%
   scale_color_manual(values = c("cusum1" = "steelblue", "cusum2" = "firebrick"),
                      labels = c("cusum1" = "Delta (binomial)", "cusum2" = "Gamma")) +
   labs(x = "Year", y = "CUSUM",
-       title = "CUSUM by Delta Model Component — ss_cab_fit01") +
+       title = "CUSUM by Delta Model Component — ss_cab_fit_dln1") +
   theme_minimal()
 
 # 2. Is the underprediction spatially structured?
-ss_fy_pred_obs %>%
+ss_dln_fy_pred_obs %>%
   group_by(station) %>%
   summarise(mean_resid = mean(rq_resid), .groups = "drop") %>%
   ggplot(aes(x = station, y = mean_resid)) +
@@ -1520,25 +1520,25 @@ ss_fy_pred_obs %>%
   geom_hline(yintercept = 0, linetype = "dashed") +
   geom_smooth(method = "loess", se = TRUE) +
   labs(x = "Station", y = "Mean RQ Residual",
-       title = "Mean Residual by Station — ss_cab_fit01") +
+       title = "Mean Residual by Station — ss_cab_fit_dln1") +
   theme_minimal()
 
 #---- Simple lagged regression at lag -1
 
-ss_fy_combined_lagged <- ss_fy_combined_obs %>%
+ss_dln_fy_combined_lagged <- ss_dln_fy_combined_obs %>%
   arrange(year) %>%
   mutate(
     age0_lead1    = lead(age0, 1),
     rec_dev_lead1 = lead(rec_dev, 1)
   )
 
-ss_fy_lm_age0   <- lm(age0_lead1    ~ larvae_index, data = ss_fy_combined_lagged)
-ss_fy_lm_recdev <- lm(rec_dev_lead1 ~ larvae_index, data = ss_fy_combined_lagged)
+ss_dln_fy_lm_age0   <- lm(age0_lead1    ~ larvae_index, data = ss_dln_fy_combined_lagged)
+ss_dln_fy_lm_recdev <- lm(rec_dev_lead1 ~ larvae_index, data = ss_dln_fy_combined_lagged)
 
-summary(ss_fy_lm_age0)
-summary(ss_fy_lm_recdev)
+summary(ss_dln_fy_lm_age0)
+summary(ss_dln_fy_lm_recdev)
 
-ss_fy_combined_lagged %>%
+ss_dln_fy_combined_lagged %>%
   filter(!is.na(age0_lead1)) %>%
   ggplot(aes(x = larvae_index, y = age0_lead1, label = year)) +
   geom_point() +
@@ -1548,24 +1548,24 @@ ss_fy_combined_lagged %>%
   theme_minimal()
 
 # Sensitivity: remove 1983
-ss_fy_combined_lagged_no83 <- ss_fy_combined_lagged %>% filter(year != 1983)
-ss_fy_lm_age0_no83 <- lm(age0_lead1 ~ larvae_index, data = ss_fy_combined_lagged_no83)
-summary(ss_fy_lm_age0_no83)
+ss_dln_fy_combined_lagged_no83 <- ss_dln_fy_combined_lagged %>% filter(year != 1983)
+ss_dln_fy_lm_age0_no83 <- lm(age0_lead1 ~ larvae_index, data = ss_dln_fy_combined_lagged_no83)
+summary(ss_dln_fy_lm_age0_no83)
 
 # Detrended regressions
-ss_fy_lm_age0_detrend   <- lm(age0_lead1    ~ larvae_index + year, data = ss_fy_combined_lagged)
-ss_fy_lm_recdev_detrend <- lm(rec_dev_lead1 ~ larvae_index + year, data = ss_fy_combined_lagged)
-summary(ss_fy_lm_age0_detrend)
-summary(ss_fy_lm_recdev_detrend)
+ss_dln_fy_lm_age0_detrend   <- lm(age0_lead1    ~ larvae_index + year, data = ss_dln_fy_combined_lagged)
+ss_dln_fy_lm_recdev_detrend <- lm(rec_dev_lead1 ~ larvae_index + year, data = ss_dln_fy_combined_lagged)
+summary(ss_dln_fy_lm_age0_detrend)
+summary(ss_dln_fy_lm_recdev_detrend)
 
 # Cook's distance
-plot(ss_fy_lm_age0, which = 4)
+plot(ss_dln_fy_lm_age0, which = 4)
 
 # Trimmed analysis: remove three most anomalous years
-ss_fy_combined_lagged_trimmed <- ss_fy_combined_lagged %>%
+ss_dln_fy_combined_lagged_trimmed <- ss_dln_fy_combined_lagged %>%
   filter(!year %in% c(1983, 1986, 1998))
 
-ss_fy_combined_lagged_trimmed %>%
+ss_dln_fy_combined_lagged_trimmed %>%
   filter(!is.na(age0_lead1)) %>%
   ggplot(aes(x = larvae_index, y = age0_lead1, label = year)) +
   geom_point() +
@@ -1574,11 +1574,11 @@ ss_fy_combined_lagged_trimmed %>%
   labs(x = "Larval Index (year t)", y = "Age-0 Recruits (year t+1)") +
   theme_minimal()
 
-ss_fy_lm_age0_trimmed <- lm(age0_lead1 ~ larvae_index, data = ss_fy_combined_lagged_trimmed)
-summary(ss_fy_lm_age0_trimmed)
+ss_dln_fy_lm_age0_trimmed <- lm(age0_lead1 ~ larvae_index, data = ss_dln_fy_combined_lagged_trimmed)
+summary(ss_dln_fy_lm_age0_trimmed)
 
-ss_fy_lm_age0_trimmed_detrend <- lm(age0_lead1 ~ larvae_index + year, data = ss_fy_combined_lagged_trimmed)
-summary(ss_fy_lm_age0_trimmed_detrend)
+ss_dln_fy_lm_age0_trimmed_detrend <- lm(age0_lead1 ~ larvae_index + year, data = ss_dln_fy_combined_lagged_trimmed)
+summary(ss_dln_fy_lm_age0_trimmed_detrend)
 
 
 
