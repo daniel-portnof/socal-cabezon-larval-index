@@ -8,13 +8,13 @@ Using sdmTMB to derive a larval abundance index from CalCOFI data to be compared
   
 - `cabezon_constrained_model.Rmd` roughly runs as follows:
   
-  0. Setup and check STAR output plots
-  1. CalCOFI data import and QA/QC
-  2. Data cuts and visualization of observed patterns
-  3. Model construction and comparison
-  4. Residual checks and derive abundance index
-  5. Test against STAR outputs via CCF
-  6. Regression analysis on significant correlation(s)
+  1. Setup and check STAR output plots
+  2. CalCOFI data import and QA/QC
+  3. Data cuts and visualization of observed patterns
+  4. Model construction and comparison
+  5. Residual checks and derive abundance index
+  6. Test against STAR outputs via CCF
+  7. Regression analysis on significant correlation(s)
     
 - Currently, there are no major patterns detected. The strongest result is a weak (and biologically implausible) negative relationship between larval abundance and recruitment metrics, in which recruitment metrics *lead* abundance by one year. This is spurious.
 - Further investigation also reveals little to no relationship between larval abundance indices and SSB.
