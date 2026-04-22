@@ -48,10 +48,7 @@ po/*~
 # RStudio Connect folder
 rsconnect/
 .DS_Store
-cabezon_calcofi_data.csv
-Cab_SCS_BC_STAR/
 .Rproj.user
 .claude/
 cabezon_primary_analysis_files/
 *_full-knit.docx
-bottle_data.csv
