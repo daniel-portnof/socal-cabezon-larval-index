@@ -1,20 +1,31 @@
 # socal-cabezon-larval-index
 Using sdmTMB to derive a larval abundance index from CalCOFI data to be compared with existing federal stock metrics for cabezon in Southern California.
 
-### Notes (04-15-2026):
-- `cabezon_primary_analysis.Rmd` is typically the most up-to-date file.
-- The analysis roughly runs as follows
-  1. Check STAR output plots
-  2. CalCOFI data import and QA/QC
-  3. Visualization of patterns in observed data
-  4. Model construction and comparison
-  5. Derive abundance index
-  6. Test against STAR outputs via CCF
-  7. Regression analysis on significant correlation(s)
-- Currently, there are no major patterns detected. The strongest result is a weak (and biologically implausible) negative relationship between larval abundance and recruitment metrics, in which recruitment metrics *lead* abundance by one year. This is likely spurious.
-  - It is also worth noting that the indices used for comparison are drawn only on the discrete CalCOFI station locations rather than the entire interpolated spatial field. While this does artificially reduce uncertainty in the resulting indices, it is an exercise intended only for the sake of initial comparisons. If a relationship is detected, further examination will be needed against the models' full spatial predictions.
-- Next steps will be to further investigate any relationship between novel indices and SSB and to validate best-fit models against environmental covariates.
+*NOTE:* You will need to download the `Cab_SCS_BC_STAR/` folder, `cabezon_calcofi_data.csv`, and `calcofi_bottle_data.csv` into your working directory to run the scripts.
 
+### Notes (04-22-2026):
+- Currently working from `cabezon_constrained_model.Rmd` and `cabezon_environmental_analysis.Rmd`.
+  
+- `cabezon_constrained_model.Rmd` roughly runs as follows:
+  0. Setup and check STAR output plots
+  1. CalCOFI data import and QA/QC
+  2. Data cuts and visualization of observed patterns
+  3. Model construction and comparison
+  4. Residual checks and derive abundance index
+  5. Test against STAR outputs via CCF
+  6. Regression analysis on significant correlation(s)
+- Currently, there are no major patterns detected. The strongest result is a weak (and biologically implausible) negative relationship between larval abundance and recruitment metrics, in which recruitment metrics *lead* abundance by one year. This is spurious.
+- Further investigation also reveals little to no relationship between larval abundance indices and SSB.
+- Curious if a finer-grade data source on adult cabezon abundance (e.g., catch if there was a strong enough dataset) would track better with these indices.
+
+- `cabezon_environmental_analysis.Rmd` is checking for how oceanographic data collected via CalCOFI bottle samples (`bottle_data.csv`) relates to larval presence/absence (using the same manta net tow data `cabezon_calcofi_data.csv`) and positive density. It roughly runs as follows:
+  1. Setup and data import & QA/QC
+  2. Join and standardize bottle and larval data
+  3. Run candidate presence/absence GLMMs and compare (station/location as random effect)
+  4. Run candidate presence/absence sdm's and compare
+  5. Refit best models with hurdle component
+  6. Check summaries and residuals
+  
 ## Repository Contents
 
 | File / Folder | Description |
@@ -22,6 +33,7 @@ Using sdmTMB to derive a larval abundance index from CalCOFI data to be compared
 | `cabezon_primary_analysis.Rmd` | All analyses, inclusive of the full and constrained datasets and appendix materials — knit to reproduce report |
 | `cabezon_full_model.Rmd` | Analysis on full CalCOFI dataset; all years, all stations — knit to reproduce report |
 | `cabezon_constrained_model.Rmd` | Analysis on constrained dataset; spawning season only, coastal shelf stations only — knit to reproduce report |
+| `cabezon_environmental_analysis.Rmd` | Analysis of environmental covariates from CalCOFI bottle data and constrained larval dataset; spawning season only, coastal shelf stations only — knit to reproduce report |
 | `cabezon_calcofi_data.csv` | CalCOFI larval survey data (1981–2015) |
 | `Cab_SCS_BC_STAR/` | Stock Synthesis model outputs (STAR panel assessment) |
 | `cabezon_appendix.Rmd` | Appendix containing experimental models, code chunks, and other ephemera |
