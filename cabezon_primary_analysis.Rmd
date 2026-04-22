@@ -866,82 +866,44 @@ cab_fit2a <- sdmTMB(
 
 sanity(cab_fit2a)
 
-#---- 5.c. Cross validation
+# Delta-Lognormal: fixed year effect, spatial only (no spatiotemporal)
+cab_fit_dln1 <- sdmTMB(
+  larvae_100m3 ~ 0 + fyear,
+  data = cabezon,
+  mesh = cab_mesh,
+  time = "year",
+  family = delta_lognormal(),
+  spatial = list("on", "on"),
+  spatiotemporal = list("off", "off"),
+  offset = NULL,
+  extra_time = 1982
+)
 
-cv_null <- sdmTMB_cv(cab_null$call$formula, cabezon, cab_mesh, delta_gamma(), k_folds = 5)
-cv_m01 <- sdmTMB_cv(cab_fit01$call$formula, cabezon, cab_mesh, delta_gamma(), k_folds = 5)
-cv_m02 <- sdmTMB_cv(cab_fit02$call$formula, cabezon, cab_mesh, delta_gamma(), k_folds = 5)
-cv_m03 <- sdmTMB_cv(cab_fit03$call$formula, cabezon, cab_mesh, delta_gamma(), k_folds = 5)
-cv_m1 <- sdmTMB_cv(cab_fit1$call$formula, cabezon, cab_mesh, delta_gamma(),k_folds = 5)
-cv_m1a <- sdmTMB_cv(cab_fit1a$call$formula, cabezon, cab_mesh, delta_gamma(), k_folds = 5)
-cv_m1b <- sdmTMB_cv(cab_fit1b$call$formula, cabezon, cab_mesh, delta_gamma(), k_folds = 5)
-cv_m1c <- sdmTMB_cv(cab_fit1c$call$formula, cabezon, cab_mesh, delta_gamma(), k_folds = 5)
-cv_m2 <- sdmTMB_cv(cab_fit2a$call$formula, cabezon, cab_mesh, tweedie(), k_folds = 5)
-cv_m2a <- sdmTMB_cv(cab_fit2a$call$formula, cabezon, cab_mesh, tweedie(), k_folds = 5)
+sanity(cab_fit_dln1)
 
-#---- 5.d. Construct model comparison table
+AIC(cab_fit_dln1)
 
-cv_table <- data.frame(
-  fit_name = c(
-    "cab_null",
-    "cab_fit01",
-    "cab_fit02",
-    "cab_fit03",
-    "cab_fit1",
-    "cab_fit1a",
-    "cab_fit1b",
-    "cab_fit1c",
-    "cab_fit2",
-    "cab_fit2a"
-  ),
-  model = c(
-    "Delta-Gamma NULL",
-    "Delta-Gamma spatial + spatiotemporal IID + fixed year effect",
-    "Delta-Gamma spatial + fixed year effect - spatiotemporal",
-    "Delta-Gamma: fixed year effect + iid delta",
-    "Delta-Gamma spatial + spatiotemporal AR1",
-    "Delta-Gamma spatial",
-    "Delta-Gamma spatiotemporal Delta AR1",
-    "Delta-Gamma spatiotemporal Gamma AR1",
-    "Tweedie spatial + spatiotemporal AR1",
-    "Tweedie spatial"
-  ),
-  AIC = c(
-    AIC(cab_null),
-    AIC(cab_fit01),
-    AIC(cab_fit02),
-    AIC(cab_fit03),
-    AIC(cab_fit1),
-    AIC(cab_fit1a),
-    AIC(cab_fit1b),
-    AIC(cab_fit1c),
-    AIC(cab_fit2),
-    AIC(cab_fit2a)
-  ),
-    delta_AIC = NA,
-    CV = c(
-      cv_null$sum_loglik,
-      cv_m01$sum_loglik,
-      cv_m02$sum_loglik,
-      cv_m03$sum_loglik,
-      cv_m1$sum_loglik,
-      cv_m1a$sum_loglik,
-      cv_m1b$sum_loglik,
-      cv_m1c$sum_loglik,
-      cv_m2$sum_loglik,
-      cv_m2a$sum_loglik
-    ),
-    delta_CV = NA
-  )
+# Delta-Lognormal: fixed year effect, spatial on, iid delta spatiotemporal, gamma spatiotemporal off
+cab_fit_dln2 <- sdmTMB(
+  larvae_100m3 ~ 0 + fyear,
+  data = cabezon,
+  mesh = cab_mesh,
+  time = "year",
+  family = delta_lognormal(),
+  spatial = list("on", "on"),
+  spatiotemporal = list("iid", "off"),
+  offset = NULL,
+  extra_time = 1982
+)
 
-cv_table$delta_AIC <- cv_table$AIC - min(cv_table$AIC)
-cv_table$delta_CV <- cv_table$CV - min(cv_table$CV)
+sanity(cab_fit_dln2)
 
-cv_table <- cv_table[order(cv_table$CV, decreasing = T), ]
+AIC(cab_fit_dln2)
 
-cv_table
+tidy(cab_fit_dln1, effects = "ran_pars")
+tidy(cab_fit_dln2, effects = "ran_pars")
 
-#---- 5.e. Sanity checks and random effect parameter estimates for best models
+#---- 5.c. Sanity checks and random effect parameter estimates for best models
 
 sanity(cab_fit1)
 sanity(cab_fit01)
@@ -1418,10 +1380,12 @@ ccf(larvae_detrended, ssb_detrended,
 ```
 
 
-## 7.3. cab_fit1 — Correlation Analysis
+# 8. REGRESSION ANALYSES
+
+## 8.1. cab_fit1 — Regression Analysis
 
 
-```{r 7.3. cab_fit1 — Correlation Analysis, cache = T}
+```{r 8.1. cab_fit1 — Regression Analysis, cache = T}
 # RQ residuals for full AR1 spatiotemporal model
 pred_obs %>%
   group_by(year) %>%
@@ -1560,9 +1524,9 @@ pred_obs %>%
 ```
 
 
-## 7.4. cab_fit01 — Correlation Analysis
+## 8.2. cab_fit01 — Regression Analysis
 
-```{r 7.4. cab_fit01 — Correlation Analysis, cache = T}
+```{r 8.2. cab_fit01 — Regression Analysis, cache = T}
 # RQ residuals for spatial-only model
 pred_obs_sp %>%
   group_by(year) %>%
@@ -1707,9 +1671,7 @@ pred_obs_sp %>%
 
 ---
 
-# RE-RUNNING WITH CONSTRAINED TEMPORAL AND SPATIAL WINDOWS
-
-To refresh our memory, all analysis to this point has been done using CalCOFI data in the core CalCOFI grid, extended to the maximum distance from shore that these transect lines go (in excess of some 250 mi). Additionally, our data compasses all months and seasons over the observed time-series from 1981-2015. 
+To refresh our memory, all analysis to this point has been done using CalCOFI data in the core CalCOFI grid, extended to the maximum distance from shore that these transect lines go (in excess of some 250 mi). Additionally, our data compasses all months and seasons over the observed time-series from 1981-2015.
 
 This section will attempt to apply a finer grade to our analysis by constraining these parameters in the following ways:
 
@@ -1719,9 +1681,168 @@ This section will attempt to apply a finer grade to our analysis by constraining
 
 It's worth keeping in mind, of course, that this constrains our spatial data further, *but,* our natural science might suggest that a narrower examination of spawning season larval abundance *in areas where we'd more likely expect larval occurrence* could be a better match to downstream adult distribution and abundance.
 
-# 8. DATA PARING & EXPLORATION (CONSTRAINED)
+# 0. SETUP & STAR REPORT (CONSTRAINED)
 
-```{r 8. DATA PARING AND EXPLORATION (CONSTRAINED), cache = T}
+```{r 0. SETUP & STAR REPORT (Part II)}
+# ---- 0. SETUP & STAR REPORT (Part II)
+
+# Load packages
+library(tidyverse)
+library(r4ss)
+library(here)
+library(dplyr)
+library(ggplot2)
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(maps)
+library(sdmTMB)
+library(fmesher)
+library(segmented)
+
+my.seed <- 666
+set.seed(my.seed)
+
+wd <- "Cab_SCS_BC_STAR" # Mac
+
+# This reads the output files
+pp <- SS_output(wd)
+
+# Pull out derived quantities.  These are things like SSB and age-0 recruits.
+derived_quants <- pp[["derived_quants"]]
+
+# Pull out parameter estimates.  Recruitment deviations are estimated parameters.
+params <- pp[["parameters"]]
+
+# Plot recruitment deviations for the main estimation period.
+devyrs <- 1970:2018
+devdf <- pp$parameters[28:76, ]
+devvalue <- devdf[,3]
+devsd <- devdf[,11]
+devlower <- (devvalue-1.96*devsd)
+devmed   <- devvalue
+devupper <- (devvalue+1.96*devsd)
+STAR_recdevs <- data.frame(year=devyrs, value=devmed,lo=devlower,hi=devupper)
+
+STAR_recdevs_plot <- ggplot(data=STAR_recdevs, aes(x=year, ymin=devlower, ymax=devupper)) +
+  geom_ribbon(fill="skyblue", alpha=0.5) +
+  geom_line(aes(y=devmed)) +
+  labs(title="Cabezon SoCal Recruitment Deviations") +
+  theme_bw()
+
+STAR_recdevs_plot
+
+# Plot age-0 recruits
+age0yrs <- 1970:2018
+startrowindex <- which(rownames(derived_quants)=="Recr_1970")
+endrowindex <- which(rownames(derived_quants)=="Recr_2018")
+age0 <- derived_quants[174:222, "Value"]
+age0sd <- derived_quants[174:222, "StdDev"]
+age0lower <- (age0-1.96*age0sd)
+age0upper <- (age0+1.96*age0sd)
+
+STAR_age0 <- data.frame(year=age0yrs, value=age0,lo=age0lower,hi=age0upper)
+
+STAR_age0_plot <- ggplot(data=STAR_age0, aes(x=year, ymin=age0lower, ymax=age0upper)) +
+  geom_ribbon(fill="skyblue", alpha=0.5) +
+  geom_line(aes(y=age0)) +
+  labs(title="Cabezon SoCal Age 0 Recruits") +
+  theme_bw()
+
+STAR_age0_plot
+
+# Plot SSB
+ssbyrs <- 1916:2018
+startrowindex <- which(rownames(derived_quants)=="SSB_1916")
+endrowindex <- which(rownames(derived_quants)=="SSB_2018")
+ssb <- derived_quants[3:105, "Value"]
+ssbsd <- derived_quants[3:105, "StdDev"]
+ssblower <- (ssb-1.96*ssbsd)
+ssbupper <- (ssb+1.96*ssbsd)
+
+STAR_SSB <- data.frame(year=ssbyrs, value=ssb,lo=ssblower,hi=ssbupper)
+
+STAR_SSB_plot <- ggplot(data=STAR_SSB, aes(x=year, ymin=ssblower, ymax=ssbupper)) +
+  geom_ribbon(fill="skyblue", alpha=0.5) +
+  geom_line(aes(y=ssb)) +
+  labs(title="Cabezon SoCal SSB") +
+  theme_bw()
+
+STAR_SSB_plot
+
+```
+
+# 1. DATA QC + EXPLORATION (CONSTRAINED)
+
+```{r 1. DATA QC (Part II), cache = T}
+#---- DATA QC + EXPLORATION (Part II)
+
+cabezon <- read.csv("cabezon_calcofi_data.csv")
+
+str(cabezon)
+
+# Add factor variable for season
+cabezon <- cabezon %>%
+  mutate(season = as.factor(season))
+
+# ---- 1. DATA QC + EXPLORATION (Part II)
+
+# Check for how many observations per ...
+
+# year
+cabezon %>%
+  count(year, season, line.station) %>%
+  filter(n > 1)
+# month
+cabezon %>%
+  count(year, month, line.station) %>%
+  filter(n > 1)
+# cruise
+cabezon %>%
+  count(cruise, line.station) %>%
+  filter(n > 1)
+
+# Station coverage across years
+cabezon %>%
+  group_by(year) %>%
+  summarize(n_stations = n_distinct(line.station))
+table(cabezon$line.station, cabezon$year)
+  # Pretty steady coverage, especially post-1989
+
+# Check the spatial grid for a quick visual
+ggplot(cabezon, aes(longitude, latitude)) +
+  geom_point(alpha = 0.3)
+
+# How much zero inflation do we have?
+cabezon %>%
+  mutate(zero = larvae_100m3 == 0) %>%
+  count(zero)
+  # Roughly ~85% zeros
+
+# Raw distribution visual
+plot(cabezon$volume_sampled, cabezon$larvae_100m3)
+
+pos_vals <- cabezon$larvae_100m3[cabezon$larvae_100m3 > 0]
+hist(log(pos_vals), breaks = 50, main = "log(positive larvae_100m3)")
+
+cabezon %>%
+  filter(larvae_100m3 > 0) %>%
+  group_by(year) %>%
+  summarize(m = mean(larvae_100m3), v = var(larvae_100m3), n = n()) %>%
+  filter(n > 5) %>%
+   ggplot(aes(log(m), log(v))) + geom_point() + geom_smooth(method = "lm") +
+  geom_abline(slope = 2, intercept = 0, linetype = "dashed", color = "red") +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "blue") +
+  labs(title = "Mean-variance relationship (dashed: red=gamma slope 2, blue=Poisson slope 1)")
+
+# Also useful: what fraction are zeros?
+mean(cabezon$larvae_100m3 == 0)
+
+```
+
+# 2. DATA PARING & EXPLORATION (CONSTRAINED)
+
+```{r 2. DATA PARING AND EXPLORATION (CONSTRAINED), cache = T}
 
 cabezon_shelf_spawn <- cabezon %>%
   filter(
@@ -1975,13 +2096,13 @@ cabezon_shelf_spawn %>%
 
 ```
 
-# 9. sdmTMB MODEL FITTING (CONSTRAINED)
+# 3. sdmTMB MODEL FITTING (CONSTRAINED)
 
-```{r 9. sdmTMB MODEL FITTING (CONSTRAINED), cache = T}
+```{r 3. sdmTMB MODEL FITTING (CONSTRAINED), cache = T}
 
 set.seed(my.seed)
 
-#---- 9.a. Build mesh
+#---- 3.a. Build mesh
 if (!all(c("X", "Y") %in% names(cabezon_shelf_spawn))) {
   cabezon_shelf_spawn <- sdmTMB::add_utm_columns(cabezon_shelf_spawn, ll_names = c("longitude", "latitude"))
 }
@@ -1995,7 +2116,7 @@ ss_mesh <- fm_mesh_2d(
 ss_cab_mesh <- make_mesh(data = cabezon_shelf_spawn, c("X", "Y"), mesh = ss_mesh)
 plot(ss_cab_mesh); title("SPDE Mesh for Cabezon CalCOFI analysis (Constrained)")
 
-#---- 9.b. Fit candidate models
+#---- 3.b. Fit candidate models
 
 # Add year factor variable
 cabezon_shelf_spawn$fyear <- as.factor(cabezon_shelf_spawn$year)
@@ -2151,7 +2272,44 @@ ss_cab_fit2a <- sdmTMB(
 
 sanity(ss_cab_fit2a)
 
-#---- 9.c. Construct model comparison table
+# Delta-Lognormal: fixed year effect, spatial only (no spatiotemporal)
+ss_cab_fit_dln1 <- sdmTMB(
+  larvae_100m3 ~ 0 + fyear,
+  data = cabezon_shelf_spawn,
+  mesh = ss_cab_mesh,
+  time = "year",
+  family = delta_lognormal(),
+  spatial = list("on", "on"),
+  spatiotemporal = list("off", "off"),
+  offset = NULL,
+  extra_time = 1982
+)
+
+sanity(ss_cab_fit_dln1)
+
+AIC(ss_cab_fit_dln1)
+
+# Delta-Lognormal: fixed year effect, spatial on, iid delta spatiotemporal, gamma spatiotemporal off
+ss_cab_fit_dln2 <- sdmTMB(
+  larvae_100m3 ~ 0 + fyear,
+  data = cabezon_shelf_spawn,
+  mesh = ss_cab_mesh,
+  time = "year",
+  family = delta_lognormal(),
+  spatial = list("on", "on"),
+  spatiotemporal = list("iid", "off"),
+  offset = NULL,
+  extra_time = 1982
+)
+
+sanity(ss_cab_fit_dln2)
+
+AIC(ss_cab_fit_dln2)
+
+tidy(ss_cab_fit_dln1, effects = "ran_pars")
+tidy(ss_cab_fit_dln2, effects = "ran_pars")
+
+#---- 3.c. Construct model comparison table
 
 AIC_table <- data.frame(
   fit_name = c(
@@ -2199,7 +2357,7 @@ AIC_table <- AIC_table[order(AIC_table$AIC, decreasing = F), ]
 
 AIC_table
 
-#---- 9.d. Sanity checks and random effect parameter estimates for best models
+#---- 3.d. Sanity checks and random effect parameter estimates for best models
 
 sanity(ss_cab_null)
 sanity(ss_cab_fit01)
@@ -2227,9 +2385,9 @@ tidy(ss_cab_fit2a, effects = "ran_pars")
 ```
 
 
-# 10. MODEL DIAGNOSTICS & ABUNDANCE INDICES (CONSTRAINED)
+# 4. MODEL DIAGNOSTICS & ABUNDANCE INDICES (CONSTRAINED)
 
-## 10.1. ss_cab_fit1 — Full Delta-Gamma Model
+## 4.1. ss_cab_fit1 — Full Delta-Gamma Model
 
 ```{r 10.1. ss_cab_fit1 diagnostics, cache = T}
 
@@ -2355,7 +2513,136 @@ ggplot(ss_full_cab_index_obs, aes(x = year, y = est)) +
   labs(y = "Estimated abundance index", x = "Year", title = "Abundance Index: Observed Station Grid")
 ```
 
-## 10.2. ss_cab_fit1 — STAR Comparisons & CCFs
+## 4.2. ss_cab_fit01 — Fixed Year Effects Delta-Gamma Model
+
+```{r 10.4. ss_cab_fit01 diagnostics, cache = T}
+
+#---- 10.4.a. Calibration summaries
+
+ss_fy_pred_obs <- predict(ss_cab_fit01, type = "response")
+
+# Overall mean calibration
+ss_fy_pred_obs %>%
+  summarise(
+    obs_mean     = mean(larvae_100m3, na.rm = TRUE),
+    pred_mean    = mean(est, na.rm = TRUE),
+    obs_occ      = mean(larvae_100m3 > 0, na.rm = TRUE),
+    pred_occ     = mean(est1, na.rm = TRUE),
+    obs_pos_mean = mean(larvae_100m3[larvae_100m3 > 0], na.rm = TRUE),
+    pred_pos_mean = mean(est2, na.rm = TRUE)
+  )
+
+# Binomial calibration
+ss_fy_pred_obs$presence <- ss_fy_pred_obs$larvae_100m3 > 0
+
+ss_fy_calibration_summary <- ss_fy_pred_obs %>%
+  mutate(prob_bin = cut(est1, breaks = seq(0, 1, by = 0.1))) %>%
+  group_by(prob_bin) %>%
+  summarise(
+    mean_pred = mean(est1),
+    observed  = mean(presence),
+    n         = n()
+  )
+
+plot(ss_fy_calibration_summary$mean_pred, ss_fy_calibration_summary$observed,
+     xlab = "Predicted presence probability",
+     ylab = "Observed presence frequency")
+abline(0, 1, lty = 2)
+
+#---- 10.4.b. Predicted vs. observed plots
+
+# Raw scale
+plot(
+  x = ss_fy_pred_obs$est,
+  y = cabezon_shelf_spawn$larvae_100m3,
+  xlab = "Predicted",
+  ylab = "Observed"
+)
+abline(0, 1, lty = 2)
+
+# Log scale
+plot(log1p(ss_fy_pred_obs$est), log1p(cabezon_shelf_spawn$larvae_100m3),
+     xlab = "log(Predicted + 1)", ylab = "log(Observed + 1)")
+abline(0, 1, lty = 2)
+
+# Gamma (positive density) component only
+pos_idx <- cabezon_shelf_spawn$larvae_100m3 > 0
+plot(log(ss_fy_pred_obs$est2[pos_idx]), log(cabezon_shelf_spawn$larvae_100m3[pos_idx]),
+     xlab = "log(Predicted positive abundance)",
+     ylab = "log(Observed positive abundance)")
+abline(0, 1, lty = 2)
+
+#---- 10.4.c. Randomized quantile residuals
+
+ss_fy_rq_res <- residuals(ss_cab_fit01, type = "mle-mvn")
+
+# QQ plot
+qqnorm(ss_fy_rq_res)
+qqline(ss_fy_rq_res)
+
+# Spatial residual map by year
+ss_fy_pred_obs$rq_resid <- ss_fy_rq_res
+
+ggplot(ss_fy_pred_obs, aes(x = longitude, y = latitude, color = rq_resid)) +
+  geom_point() +
+  scale_color_gradient2() +
+  facet_wrap(~ year)
+
+#---- 10.4.d. Temporal calibration
+
+ss_fy_pred_obs %>%
+  group_by(year) %>%
+  summarize(
+    obs  = mean(larvae_100m3),
+    pred = mean(est)
+  ) %>%
+  ggplot(aes(x = year)) +
+  geom_line(aes(y = obs),  color = "black") +
+  geom_line(aes(y = pred), color = "blue", linetype = "dashed")
+
+#---- 10.4.e. Abundance index: regular spatial grid
+
+ss_fy_pred_grid <- expand.grid(
+  X = seq(min(cabezon_shelf_spawn$X), max(cabezon_shelf_spawn$X), by = 5),
+  Y = seq(min(cabezon_shelf_spawn$Y), max(cabezon_shelf_spawn$Y), by = 5)
+) %>%
+  tidyr::crossing(year = as.integer(sort(unique(cabezon_shelf_spawn$year)))) %>%
+  mutate(fyear = as.factor(year))
+
+ss_fy_cab_map   <- predict(ss_cab_fit01, newdata = ss_fy_pred_grid, return_tmb_object = TRUE)
+ss_fy_cab_index <- get_index(ss_fy_cab_map, area = 5^2, bias_correct = TRUE)
+
+ggplot(ss_fy_cab_index, aes(x = year, y = est)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.3) +
+  labs(y = "Estimated abundance index", x = "Year",
+       title = "Abundance Index: Constrained to Spawning Season & Coastal Samples")
+
+#---- 10.4.f. Abundance index: observed station grid (preferred)
+
+ss_fy_pred_grid_obs <- cabezon_shelf_spawn %>%
+  dplyr::select(X, Y, year, fyear) %>%
+  distinct()
+
+ss_fy_cab_map_obs   <- predict(ss_cab_fit01,
+                               newdata = ss_fy_pred_grid_obs,
+                               return_tmb_object = TRUE)
+
+ss_fy_cab_index_obs <- get_index(ss_fy_cab_map_obs,
+                                 area = 5^2,
+                                 bias_correct = TRUE)
+
+ggplot(ss_fy_cab_index_obs, aes(x = year, y = est)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.3) +
+  labs(y = "Estimated abundance index", x = "Year",
+       title = "Abundance Index: Observed Station Grid")
+
+```
+
+# 5. STAR COMPARISONS & CCFs (CONSTRAINED)
+
+## 5.1. ss_cab_fit1 — STAR Comparisons & CCFs
 
 ```{r 10.2. ss_cab_fit1 STAR comparisons full extrapolation, cache = T}
 #---- 10.2. ss_cab_fit1 STAR comparisons and CCF
@@ -2455,7 +2742,113 @@ ccf(larvae_detrended, ssb_detrended,
     main = "CCF: Restricted Larval Index vs. SSB (detrended)")
 ```
 
-## 10.3. ss_cab_fit1 — Correlation Testing
+## 5.2. ss_cab_fit01 — STAR Comparisons & CCFs
+
+```{r 10.5. ss_cab_fit01 STAR comparisons full extrapolation, cache = T}
+
+#---- 10.5. ss_cab_fit01 STAR comparisons and CCF
+
+# Create one data frame to house all STAR + larval index data
+# Note! For these comparisons, we move forward with the constrained 10.4.f. abundance index, assuming it's more stable.
+ss_fy_combined <- ss_fy_cab_index %>%
+  dplyr::select(year, est) %>%
+  rename(larvae_index = est) %>%
+  left_join(
+    STAR_SSB %>% rename(ssb = value, ssb_lo = lo, ssb_hi = hi),
+    by = "year"
+  ) %>%
+  left_join(
+    STAR_recdevs %>% rename(rec_dev = value, rec_dev_lo = lo, rec_dev_hi = hi),
+    by = "year"
+  ) %>%
+  left_join(
+    STAR_age0 %>% rename(age0 = value, age0_lo = lo, age0_hi = hi),
+    by = "year"
+  )
+
+# Filter to observed years
+ss_fy_combined_obs <- ss_fy_combined %>%
+  filter(!is.na(larvae_index))
+
+# CCF: Restricted larval index vs. age-0 recruits
+ccf(ss_fy_combined_obs$larvae_index, ss_fy_combined_obs$age0,
+    lag.max = 10,
+    main = "CCF: Restricted Larval Index vs. Age-0 Recruits")
+
+# CCF: Restricted larval index vs. recruitment deviations
+ccf(ss_fy_combined_obs$larvae_index, ss_fy_combined_obs$rec_dev,
+    lag.max = 10,
+    main = "CCF: Restricted Larval Index vs. Recruitment Deviations")
+
+# Nothing really :( when we try against SSB, we get some strong signal, but this is probably due to a shared declining trend. We'll try to parse that.
+# CCF: Restricted larval index vs. SSB
+ccf(ss_fy_combined_obs$larvae_index, ss_fy_combined_obs$ssb,
+    lag.max = 10,
+    main = "CCF: Restricted Larval Index vs. Spawning Stock Biomass (raw)")
+
+ss_fy_larvae_detrended <- residuals(loess(larvae_index ~ year, data = ss_fy_combined_obs, span = 0.75))
+ss_fy_ssb_detrended    <- residuals(loess(ssb ~ year,          data = ss_fy_combined_obs, span = 0.75))
+
+ccf(ss_fy_larvae_detrended, ss_fy_ssb_detrended, 
+    lag.max = 10,
+    main = "CCF: Restricted Larval Index vs. SSB (detrended)")
+
+```
+
+```{r 10.5.2. ss_cab_fit01 STAR comparisons station extrapolation, cache = T}
+
+#---- 10.5. ss_cab_fit01 STAR comparisons and CCF
+
+# Create one data frame to house all STAR + larval index data
+# Note! For these comparisons, we move forward with the constrained 10.4.f. abundance index, assuming it's more stable.
+ss_fy_combined <- ss_fy_cab_index_obs %>%
+  dplyr::select(year, est) %>%
+  rename(larvae_index = est) %>%
+  left_join(
+    STAR_SSB %>% rename(ssb = value, ssb_lo = lo, ssb_hi = hi),
+    by = "year"
+  ) %>%
+  left_join(
+    STAR_recdevs %>% rename(rec_dev = value, rec_dev_lo = lo, rec_dev_hi = hi),
+    by = "year"
+  ) %>%
+  left_join(
+    STAR_age0 %>% rename(age0 = value, age0_lo = lo, age0_hi = hi),
+    by = "year"
+  )
+
+# Filter to observed years
+ss_fy_combined_obs <- ss_fy_combined %>%
+  filter(!is.na(larvae_index))
+
+# CCF: Restricted larval index vs. age-0 recruits
+ccf(ss_fy_combined_obs$larvae_index, ss_fy_combined_obs$age0,
+    lag.max = 10,
+    main = "CCF: Restricted Larval Index vs. Age-0 Recruits")
+
+# CCF: Restricted larval index vs. recruitment deviations
+ccf(ss_fy_combined_obs$larvae_index, ss_fy_combined_obs$rec_dev,
+    lag.max = 10,
+    main = "CCF: Restricted Larval Index vs. Recruitment Deviations")
+
+# Nothing really :( when we try against SSB, we get some strong signal, but this is probably due to a shared declining trend. We'll try to parse that.
+# CCF: Restricted larval index vs. SSB
+ccf(ss_fy_combined_obs$larvae_index, ss_fy_combined_obs$ssb,
+    lag.max = 10,
+    main = "CCF: Restricted Larval Index vs. Spawning Stock Biomass (raw)")
+
+ss_fy_larvae_detrended <- residuals(loess(larvae_index ~ year, data = ss_fy_combined_obs, span = 0.75))
+ss_fy_ssb_detrended    <- residuals(loess(ssb ~ year,          data = ss_fy_combined_obs, span = 0.75))
+
+ccf(ss_fy_larvae_detrended, ss_fy_ssb_detrended, 
+    lag.max = 10,
+    main = "CCF: Restricted Larval Index vs. SSB (detrended)")
+
+```
+
+# 6. REGRESSION ANALYSES (CONSTRAINED)
+
+## 6.1. ss_cab_fit1 — Regression Analysis
 
 ```{r 10.3. ss_cab_fit1 correlation testing, cache = T}
 # RQ residuals for full AR1 spatiotemporal model
@@ -2670,238 +3063,7 @@ run_era_ccf(ss_full_combined_obs, "rec_dev", 1981, bp_ss_fit1_gamma - 1)
 run_era_ccf(ss_full_combined_obs, "rec_dev", bp_ss_fit1_gamma, 2015)
 ```
 
-## 10.4. ss_cab_fit01 — Fixed Year Effects Delta-Gamma Model
-
-```{r 10.4. ss_cab_fit01 diagnostics, cache = T}
-
-#---- 10.4.a. Calibration summaries
-
-ss_fy_pred_obs <- predict(ss_cab_fit01, type = "response")
-
-# Overall mean calibration
-ss_fy_pred_obs %>%
-  summarise(
-    obs_mean     = mean(larvae_100m3, na.rm = TRUE),
-    pred_mean    = mean(est, na.rm = TRUE),
-    obs_occ      = mean(larvae_100m3 > 0, na.rm = TRUE),
-    pred_occ     = mean(est1, na.rm = TRUE),
-    obs_pos_mean = mean(larvae_100m3[larvae_100m3 > 0], na.rm = TRUE),
-    pred_pos_mean = mean(est2, na.rm = TRUE)
-  )
-
-# Binomial calibration
-ss_fy_pred_obs$presence <- ss_fy_pred_obs$larvae_100m3 > 0
-
-ss_fy_calibration_summary <- ss_fy_pred_obs %>%
-  mutate(prob_bin = cut(est1, breaks = seq(0, 1, by = 0.1))) %>%
-  group_by(prob_bin) %>%
-  summarise(
-    mean_pred = mean(est1),
-    observed  = mean(presence),
-    n         = n()
-  )
-
-plot(ss_fy_calibration_summary$mean_pred, ss_fy_calibration_summary$observed,
-     xlab = "Predicted presence probability",
-     ylab = "Observed presence frequency")
-abline(0, 1, lty = 2)
-
-#---- 10.4.b. Predicted vs. observed plots
-
-# Raw scale
-plot(
-  x = ss_fy_pred_obs$est,
-  y = cabezon_shelf_spawn$larvae_100m3,
-  xlab = "Predicted",
-  ylab = "Observed"
-)
-abline(0, 1, lty = 2)
-
-# Log scale
-plot(log1p(ss_fy_pred_obs$est), log1p(cabezon_shelf_spawn$larvae_100m3),
-     xlab = "log(Predicted + 1)", ylab = "log(Observed + 1)")
-abline(0, 1, lty = 2)
-
-# Gamma (positive density) component only
-pos_idx <- cabezon_shelf_spawn$larvae_100m3 > 0
-plot(log(ss_fy_pred_obs$est2[pos_idx]), log(cabezon_shelf_spawn$larvae_100m3[pos_idx]),
-     xlab = "log(Predicted positive abundance)",
-     ylab = "log(Observed positive abundance)")
-abline(0, 1, lty = 2)
-
-#---- 10.4.c. Randomized quantile residuals
-
-ss_fy_rq_res <- residuals(ss_cab_fit01, type = "mle-mvn")
-
-# QQ plot
-qqnorm(ss_fy_rq_res)
-qqline(ss_fy_rq_res)
-
-# Spatial residual map by year
-ss_fy_pred_obs$rq_resid <- ss_fy_rq_res
-
-ggplot(ss_fy_pred_obs, aes(x = longitude, y = latitude, color = rq_resid)) +
-  geom_point() +
-  scale_color_gradient2() +
-  facet_wrap(~ year)
-
-#---- 10.4.d. Temporal calibration
-
-ss_fy_pred_obs %>%
-  group_by(year) %>%
-  summarize(
-    obs  = mean(larvae_100m3),
-    pred = mean(est)
-  ) %>%
-  ggplot(aes(x = year)) +
-  geom_line(aes(y = obs),  color = "black") +
-  geom_line(aes(y = pred), color = "blue", linetype = "dashed")
-
-#---- 10.4.e. Abundance index: regular spatial grid
-
-ss_fy_pred_grid <- expand.grid(
-  X = seq(min(cabezon_shelf_spawn$X), max(cabezon_shelf_spawn$X), by = 5),
-  Y = seq(min(cabezon_shelf_spawn$Y), max(cabezon_shelf_spawn$Y), by = 5)
-) %>%
-  tidyr::crossing(year = as.integer(sort(unique(cabezon_shelf_spawn$year)))) %>%
-  mutate(fyear = as.factor(year))
-
-ss_fy_cab_map   <- predict(ss_cab_fit01, newdata = ss_fy_pred_grid, return_tmb_object = TRUE)
-ss_fy_cab_index <- get_index(ss_fy_cab_map, area = 5^2, bias_correct = TRUE)
-
-ggplot(ss_fy_cab_index, aes(x = year, y = est)) +
-  geom_line() +
-  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.3) +
-  labs(y = "Estimated abundance index", x = "Year",
-       title = "Abundance Index: Constrained to Spawning Season & Coastal Samples")
-
-#---- 10.4.f. Abundance index: observed station grid (preferred)
-
-ss_fy_pred_grid_obs <- cabezon_shelf_spawn %>%
-  dplyr::select(X, Y, year, fyear) %>%
-  distinct()
-
-ss_fy_cab_map_obs   <- predict(ss_cab_fit01,
-                               newdata = ss_fy_pred_grid_obs,
-                               return_tmb_object = TRUE)
-
-ss_fy_cab_index_obs <- get_index(ss_fy_cab_map_obs,
-                                 area = 5^2,
-                                 bias_correct = TRUE)
-
-ggplot(ss_fy_cab_index_obs, aes(x = year, y = est)) +
-  geom_line() +
-  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.3) +
-  labs(y = "Estimated abundance index", x = "Year",
-       title = "Abundance Index: Observed Station Grid")
-
-```
-
-## 10.5. ss_cab_fit01 — STAR Comparisons & CCFs
-
-```{r 10.5. ss_cab_fit01 STAR comparisons full extrapolation, cache = T}
-
-#---- 10.5. ss_cab_fit01 STAR comparisons and CCF
-
-# Create one data frame to house all STAR + larval index data
-# Note! For these comparisons, we move forward with the constrained 10.4.f. abundance index, assuming it's more stable.
-ss_fy_combined <- ss_fy_cab_index %>%
-  dplyr::select(year, est) %>%
-  rename(larvae_index = est) %>%
-  left_join(
-    STAR_SSB %>% rename(ssb = value, ssb_lo = lo, ssb_hi = hi),
-    by = "year"
-  ) %>%
-  left_join(
-    STAR_recdevs %>% rename(rec_dev = value, rec_dev_lo = lo, rec_dev_hi = hi),
-    by = "year"
-  ) %>%
-  left_join(
-    STAR_age0 %>% rename(age0 = value, age0_lo = lo, age0_hi = hi),
-    by = "year"
-  )
-
-# Filter to observed years
-ss_fy_combined_obs <- ss_fy_combined %>%
-  filter(!is.na(larvae_index))
-
-# CCF: Restricted larval index vs. age-0 recruits
-ccf(ss_fy_combined_obs$larvae_index, ss_fy_combined_obs$age0,
-    lag.max = 10,
-    main = "CCF: Restricted Larval Index vs. Age-0 Recruits")
-
-# CCF: Restricted larval index vs. recruitment deviations
-ccf(ss_fy_combined_obs$larvae_index, ss_fy_combined_obs$rec_dev,
-    lag.max = 10,
-    main = "CCF: Restricted Larval Index vs. Recruitment Deviations")
-
-# Nothing really :( when we try against SSB, we get some strong signal, but this is probably due to a shared declining trend. We'll try to parse that.
-# CCF: Restricted larval index vs. SSB
-ccf(ss_fy_combined_obs$larvae_index, ss_fy_combined_obs$ssb,
-    lag.max = 10,
-    main = "CCF: Restricted Larval Index vs. Spawning Stock Biomass (raw)")
-
-ss_fy_larvae_detrended <- residuals(loess(larvae_index ~ year, data = ss_fy_combined_obs, span = 0.75))
-ss_fy_ssb_detrended    <- residuals(loess(ssb ~ year,          data = ss_fy_combined_obs, span = 0.75))
-
-ccf(ss_fy_larvae_detrended, ss_fy_ssb_detrended, 
-    lag.max = 10,
-    main = "CCF: Restricted Larval Index vs. SSB (detrended)")
-
-```
-
-```{r 10.5.2. ss_cab_fit01 STAR comparisons station extrapolation, cache = T}
-
-#---- 10.5. ss_cab_fit01 STAR comparisons and CCF
-
-# Create one data frame to house all STAR + larval index data
-# Note! For these comparisons, we move forward with the constrained 10.4.f. abundance index, assuming it's more stable.
-ss_fy_combined <- ss_fy_cab_index_obs %>%
-  dplyr::select(year, est) %>%
-  rename(larvae_index = est) %>%
-  left_join(
-    STAR_SSB %>% rename(ssb = value, ssb_lo = lo, ssb_hi = hi),
-    by = "year"
-  ) %>%
-  left_join(
-    STAR_recdevs %>% rename(rec_dev = value, rec_dev_lo = lo, rec_dev_hi = hi),
-    by = "year"
-  ) %>%
-  left_join(
-    STAR_age0 %>% rename(age0 = value, age0_lo = lo, age0_hi = hi),
-    by = "year"
-  )
-
-# Filter to observed years
-ss_fy_combined_obs <- ss_fy_combined %>%
-  filter(!is.na(larvae_index))
-
-# CCF: Restricted larval index vs. age-0 recruits
-ccf(ss_fy_combined_obs$larvae_index, ss_fy_combined_obs$age0,
-    lag.max = 10,
-    main = "CCF: Restricted Larval Index vs. Age-0 Recruits")
-
-# CCF: Restricted larval index vs. recruitment deviations
-ccf(ss_fy_combined_obs$larvae_index, ss_fy_combined_obs$rec_dev,
-    lag.max = 10,
-    main = "CCF: Restricted Larval Index vs. Recruitment Deviations")
-
-# Nothing really :( when we try against SSB, we get some strong signal, but this is probably due to a shared declining trend. We'll try to parse that.
-# CCF: Restricted larval index vs. SSB
-ccf(ss_fy_combined_obs$larvae_index, ss_fy_combined_obs$ssb,
-    lag.max = 10,
-    main = "CCF: Restricted Larval Index vs. Spawning Stock Biomass (raw)")
-
-ss_fy_larvae_detrended <- residuals(loess(larvae_index ~ year, data = ss_fy_combined_obs, span = 0.75))
-ss_fy_ssb_detrended    <- residuals(loess(ssb ~ year,          data = ss_fy_combined_obs, span = 0.75))
-
-ccf(ss_fy_larvae_detrended, ss_fy_ssb_detrended, 
-    lag.max = 10,
-    main = "CCF: Restricted Larval Index vs. SSB (detrended)")
-
-```
-
-## 10.6. ss_cab_fit01 — Correlation Testing
+## 6.2. ss_cab_fit01 — Regression Analysis
 
 ```{r 10.6. ss_cab_fit01 correlation testing, cache = T}
 # RQ residuals for fixed year effect + IID model
