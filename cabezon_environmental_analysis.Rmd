@@ -434,5 +434,18 @@ env_summary %>%
     plot.subtitle = element_text(color = "gray50", size = 10)
   )
 
+
+ggplot(ss_full_cab_index, aes(x = year, y = est)) +
+  geom_line(color = "coral", linewidth = 0.8) +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), fill = "coral", alpha = 0.15) +
+  geom_point(size = 2, color = "gray20") +
+  scale_x_continuous(breaks = seq(1984, 2020, by = 4)) +
+  labs(y = "Estimated abundance index", x = "Year", title = "Abundance Index: Delta-Gamma on Global Intercept with AR1 Spatiotemporal Fields") +
+  theme_classic(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(color = "gray50", size = 10)
+  )
+
 ```
 
