@@ -33,8 +33,6 @@ Using sdmTMB to derive a larval abundance index from CalCOFI data to be compared
 
 | File / Folder | Description |
 |---|---|
-| `cabezon_primary_analysis.Rmd` | All analyses, inclusive of the full and constrained datasets and appendix materials — knit to reproduce report |
-| `cabezon_full_model.Rmd` | Analysis on full CalCOFI dataset; all years, all stations — knit to reproduce report |
 | `cabezon_constrained_model.Rmd` | Analysis on constrained dataset; spawning season only, coastal shelf stations only — knit to reproduce report |
 | `cabezon_environmental_analysis.Rmd` | Analysis of environmental covariates from CalCOFI bottle data and constrained larval dataset; spawning season only, coastal shelf stations only — knit to reproduce report |
 | `cabezon_calcofi_data.csv` | CalCOFI larval survey data (1981–2015) |
@@ -42,6 +40,8 @@ Using sdmTMB to derive a larval abundance index from CalCOFI data to be compared
 | `Cab_SCS_BC_STAR/` | Stock Synthesis model outputs (STAR panel assessment) |
 | `cabezon_appendix.Rmd` | Appendix containing experimental models, code chunks, and other ephemera |
 | `cabezon_primary_analysis.R` | Standalone script — **currently outdated** |
+| `cabezon_primary_analysis.Rmd` | All analyses, inclusive of the full and constrained datasets and appendix materials — knit to reproduce report -- **currently outdated** |
+| `cabezon_full_model.Rmd` | Analysis on full CalCOFI dataset; all years, all stations — knit to reproduce report -- **currently outdated** |
 
 ## Requirements
 
