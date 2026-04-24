@@ -447,5 +447,145 @@ ggplot(ss_full_cab_index, aes(x = year, y = est)) +
     plot.subtitle = element_text(color = "gray50", size = 10)
   )
 
+
+# Match oxygen's range to the index's range
+index_min <- min(ss_full_cab_index$est, na.rm = TRUE)
+index_max <- max(ss_full_cab_index$est, na.rm = TRUE)
+o2_min    <- min(o2_data$mean, na.rm = TRUE)
+o2_max    <- max(o2_data$mean, na.rm = TRUE)
+
+# Linear rescale: maps o2 range onto index range
+rescale_o2  <- function(x) (x - o2_min) / (o2_max - o2_min) * (index_max - index_min) + index_min
+unscale_o2  <- function(x) (x - index_min) / (index_max - index_min) * (o2_max - o2_min) + o2_min
+
+o2_data <- env_summary %>% filter(variable == "o2_surf")
+
+ggplot() +
+  # Oxygen (rescaled to index range)
+  geom_ribbon(data = o2_data,
+              aes(x = year, ymin = rescale_o2(mean - sd),
+                  ymax = rescale_o2(mean + sd)),
+              fill = "steelblue", alpha = 0.15) +
+  geom_line(data = o2_data,
+            aes(x = year, y = rescale_o2(mean)),
+            color = "steelblue", linewidth = 0.8) +
+  geom_point(data = o2_data,
+             aes(x = year, y = rescale_o2(mean)),
+             size = 2, color = "steelblue4") +
+  # Larval index (primary axis)
+  geom_ribbon(data = ss_full_cab_index,
+              aes(x = year, ymin = lwr, ymax = upr),
+              fill = "coral", alpha = 0.15) +
+  geom_line(data = ss_full_cab_index,
+            aes(x = year, y = est),
+            color = "coral", linewidth = 0.8) +
+  geom_point(data = ss_full_cab_index,
+             aes(x = year, y = est),
+             size = 2, color = "coral4") +
+  scale_y_continuous(
+    name = "Estimated Larval Abundance Index (Full AR1 Delta-Gamma Model)",
+    sec.axis = sec_axis(~ unscale_o2(.), name = "Surface Oxygen (mean ± 1 SD)")
+  ) +
+  scale_x_continuous(breaks = seq(1984, 2020, by = 4)) +
+  labs(
+    title    = "Larval Abundance Index vs. Surface Oxygen",
+    subtitle = "Coral: DG-AR1 larval index  |  Blue: surface O₂ annual mean ± 1 SD",
+    x = "Year"
+  ) +
+  theme_classic(base_size = 13) +
+  theme(
+    plot.title         = element_text(face = "bold"),
+    plot.subtitle      = element_text(color = "gray50", size = 10),
+    axis.title.y.right = element_text(color = "steelblue"),
+    axis.text.y.right  = element_text(color = "steelblue"),
+    axis.title.y.left  = element_text(color = "coral4"),
+    axis.text.y.left   = element_text(color = "coral4")
+  )
+
+
+temp_data <- env_summary %>% filter(variable == "temp_surf")
+
+index_min  <- min(ss_full_cab_index$est, na.rm = TRUE)
+index_max  <- max(ss_full_cab_index$est, na.rm = TRUE)
+temp_min   <- min(temp_data$mean, na.rm = TRUE)
+temp_max   <- max(temp_data$mean, na.rm = TRUE)
+
+rescale_temp <- function(x) (x - temp_min) / (temp_max - temp_min) * (index_max - index_min) + index_min
+unscale_temp <- function(x) (x - index_min) / (index_max - index_min) * (temp_max - temp_min) + temp_min
+
+ggplot() +
+  # Temperature (rescaled to index range)
+  geom_ribbon(data = temp_data,
+              aes(x = year, ymin = rescale_temp(mean - sd),
+                  ymax = rescale_temp(mean + sd)),
+              fill = "steelblue", alpha = 0.15) +
+  geom_line(data = temp_data,
+            aes(x = year, y = rescale_temp(mean)),
+            color = "steelblue", linewidth = 0.8) +
+  geom_point(data = temp_data,
+             aes(x = year, y = rescale_temp(mean)),
+             size = 2, color = "steelblue4") +
+  # Larval index (primary axis)
+  geom_ribbon(data = ss_full_cab_index,
+              aes(x = year, ymin = lwr, ymax = upr),
+              fill = "coral", alpha = 0.15) +
+  geom_line(data = ss_full_cab_index,
+            aes(x = year, y = est),
+            color = "coral", linewidth = 0.8) +
+  geom_point(data = ss_full_cab_index,
+             aes(x = year, y = est),
+             size = 2, color = "coral4") +
+  scale_y_continuous(
+    name = "Estimated Larval Abundance Index (Full AR1 Delta-Gamma Model)",
+    sec.axis = sec_axis(~ unscale_temp(.), name = "Surface Temperature (°C, mean ± 1 SD)")
+  ) +
+  scale_x_continuous(breaks = seq(1984, 2020, by = 4)) +
+  labs(
+    title    = "Larval Abundance Index vs. Surface Temperature",
+    subtitle = "Coral: DG-AR1 larval index  |  Blue: surface temperature annual mean ± 1 SD",
+    x = "Year"
+  ) +
+  theme_classic(base_size = 13) +
+  theme(
+    plot.title         = element_text(face = "bold"),
+    plot.subtitle      = element_text(color = "gray50", size = 10),
+    axis.title.y.right = element_text(color = "steelblue"),
+    axis.text.y.right  = element_text(color = "steelblue"),
+    axis.title.y.left  = element_text(color = "coral4"),
+    axis.text.y.left   = element_text(color = "coral4")
+  )
+
+ccf_boot(
+  x = ss_full_combined_obs %>% filter(year >= 1984, year <= 2015) %>% pull(larvae_index),
+  y = o2_data$mean,
+  lag.max = 10,
+  plot = "Spearman",
+  B = 1000
+)
+
+ccf_boot(
+  x = ss_full_combined_obs %>% filter(year >= 1984, year <= 2015) %>% pull(larvae_index),
+  y = temp_data$mean,
+  lag.max = 10,
+  plot = "Spearman",
+  B = 1000
+)
+
+ccf_boot(
+  x = diff(ss_full_combined_obs %>% filter(year >= 1984, year <= 2015) %>% pull(larvae_index)),
+  y = diff(o2_data$mean),
+  lag.max = 10,
+  plot = "Spearman",
+  B = 1000
+)
+
+ggplot(cabezon_env_complete, aes(x = o2_surf_z, y = temp_surf_z, color = cabezon_present)) +
+  geom_point()
+
+ggplot(cabezon_env_complete, aes(x = o2_surf, y = temp_surf, color = cabezon_present)) +
+  geom_point()
+
+range(cabezon_env_complete$larvae_100m3)
+range(ss_full_cab_index_obs$est)
 ```
 
