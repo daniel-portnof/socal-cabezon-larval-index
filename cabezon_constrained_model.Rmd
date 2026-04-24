@@ -134,6 +134,16 @@ cabezon <- cabezon %>%
 
 # ---- 1. DATA QC + EXPLORATION (Part II)
 
+# Do non-standard hauls have systematically different standard_haul_factor values?
+summary(cabezon_shelf_spawn$standard_haul_factor)
+
+# Are any values notably far from 1.0?
+hist(cabezon_shelf_spawn$standard_haul_factor)
+
+cabezon_shelf_spawn %>%
+  filter(standard_haul_factor != 0.02) %>%
+  count(year) 
+
 # Check for how many observations per ...
 
 # year
@@ -829,7 +839,7 @@ ss_full_pred_grid <- expand.grid(
   mutate(fyear = as.factor(year))
 
 ss_full_cab_map <- predict(ss_cab_fit1, newdata = ss_full_pred_grid, return_tmb_object = T)
-ss_full_cab_index <- get_index(ss_full_cab_map, area = 5^2, bias_correct = T)
+ss_full_cab_index <- get_index(ss_full_cab_map, area = 1, bias_correct = T)
 
 ggplot(ss_full_cab_index, aes(x = year, y = est)) +
   geom_line() +
@@ -847,7 +857,7 @@ ss_full_cab_map_obs <- predict(ss_cab_fit1,
                        return_tmb_object = T)
 
 ss_full_cab_index_obs <- get_index(ss_full_cab_map_obs,
-                           area = 5^2,
+                           area = 1,
                            bias_correct = T)
 
 ggplot(ss_full_cab_index_obs, aes(x = year, y = est)) +
@@ -953,7 +963,7 @@ ss_dln_fy_pred_grid <- expand.grid(
   mutate(fyear = as.factor(year))
 
 ss_dln_fy_cab_map   <- predict(ss_cab_fit_dln1, newdata = ss_dln_fy_pred_grid, return_tmb_object = TRUE)
-ss_dln_fy_cab_index <- get_index(ss_dln_fy_cab_map, area = 5^2, bias_correct = TRUE)
+ss_dln_fy_cab_index <- get_index(ss_dln_fy_cab_map, area = 1, bias_correct = TRUE)
 
 ggplot(ss_dln_fy_cab_index, aes(x = year, y = est)) +
   geom_line() +
@@ -972,7 +982,7 @@ ss_dln_fy_cab_map_obs   <- predict(ss_cab_fit01,
                                return_tmb_object = TRUE)
 
 ss_dln_fy_cab_index_obs <- get_index(ss_dln_fy_cab_map_obs,
-                                 area = 5^2,
+                                 area = 1,
                                  bias_correct = TRUE)
 
 ggplot(ss_dln_fy_cab_index_obs, aes(x = year, y = est)) +
@@ -1049,6 +1059,34 @@ ccf_boot(
   plot = "Spearman",
   B = 1000
 )
+
+# And only differenced SSB on raw larvae
+ccf_boot(
+  x = ss_full_combined_obs$larvae_index,
+  y = diff(ss_full_combined_obs$ssb),
+  lag.max = 10,
+  plot = "Spearman",
+  B = 1000
+)
+
+# Join differenced SSB back to index
+ssb_diff_df <- ss_full_combined_obs %>%
+  arrange(year) %>%
+  mutate(ssb_diff = c(NA, diff(ssb))) %>%
+  filter(!is.na(ssb_diff))
+
+lm_lag0 <- lm(ssb_diff ~ larvae_index, data = ssb_diff_df)
+summary(lm_lag0)
+
+# Visual
+ssb_diff_df %>%
+  ggplot(aes(x = larvae_index, y = ssb_diff, label = year)) +
+  geom_point() +
+  geom_text(nudge_y = 50, size = 3) +
+  geom_smooth(method = "lm", se = TRUE) +
+  labs(x = "Larval Index", y = "ΔSSB (mt)",
+       title = "Contemporaneous larval index vs. change in SSB") +
+  theme_minimal()
 
 # Assuming ecologically that SSB would have the strongest relationship to larval abundance, we'll plot those two time series visually for a qualitative look
 scale_factor_ssb <- max(ss_full_combined_obs$larvae_index, na.rm = TRUE) /
@@ -1674,7 +1712,7 @@ ss_fit2a_cab_map <- predict(ss_cab_fit2a,
                             newdata   = ss_fit2a_pred_grid,
                             return_tmb_object = TRUE)
 
-ss_fit2a_cab_index <- get_index(ss_fit2a_cab_map, area = 5^2, bias_correct = TRUE)
+ss_fit2a_cab_index <- get_index(ss_fit2a_cab_map, area = 1, bias_correct = TRUE)
 
 ggplot(ss_fit2a_cab_index, aes(x = year, y = est)) +
   geom_line() +
@@ -1694,7 +1732,7 @@ ss_fit2a_cab_map_obs <- predict(ss_cab_fit2a,
                                 return_tmb_object = TRUE)
 
 ss_fit2a_cab_index_obs <- get_index(ss_fit2a_cab_map_obs,
-                                    area = 5^2,
+                                    area = 1,
                                     bias_correct = TRUE)
 
 ggplot(ss_fit2a_cab_index_obs, aes(x = year, y = est)) +
