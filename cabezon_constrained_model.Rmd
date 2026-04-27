@@ -35,16 +35,8 @@ It's worth keeping in mind, of course, that this constrains our spatial data fur
 # Load packages
 library(tidyverse)
 library(r4ss)
-library(here)
-library(dplyr)
-library(ggplot2)
-library(sf)
-library(rnaturalearth)
-library(rnaturalearthdata)
-library(maps)
 library(sdmTMB)
 library(fmesher)
-library(segmented)
 library(funtimes)
 
 my.seed <- 666
