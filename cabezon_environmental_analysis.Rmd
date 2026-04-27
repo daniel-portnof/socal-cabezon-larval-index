@@ -19,8 +19,6 @@ library(sdmTMB)
 library(fmesher)
 library(corrplot)
 library(lme4)
-library(funtimes)
-library(DHARMa)
 
 my.seed <- 666
 set.seed(my.seed)
@@ -367,6 +365,8 @@ tidy(m2_hurdle_ln_sens, effects = "fixed", model = 2, conf.int = TRUE)
 # Experiments
 
 ```{r}
+
+library(tidyverse)
 
 # Summarize temp_surf by year (or year-month if you want finer resolution)
 env_summary <- cabezon_env_complete %>%
