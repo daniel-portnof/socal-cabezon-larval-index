@@ -45,14 +45,16 @@ Using sdmTMB to derive a larval abundance index from CalCOFI data to be compared
 
 ## Requirements
 
+*Assuming you are running both `cabezon_constrained_model.Rmd` and `cabezon_environmental_analysis.Rmd`*
+
 **R Version:** 4.4.3 (2025-02-28 ucrt)
 
 ### Key packages
-- `sdmTMB` 1.0.0
 - `tidyverse` 2.0.0 (includes `ggplot2`, `dplyr`, `tidyr`, `readr`, `tibble`, `stringr`, `forcats`, `purrr`)
-- `sf` 1.0-23
-- `rnaturalearth` / `rnaturalearthdata` 1.1.0 / 1.0.0
-- `maps` 3.4.3
-- `here` 1.0.2
-- `r4ss` 1.44.0
-- `lubridate` 1.9.4
+- `sdmTMB` 1.0.0
+- `funtimes` 10.0
+- `lme4` 1.1-38
+- `corrplot` 0.95
+- `fmesher` 0.6.1
+- `r4ss` 2.1.6
+- `DHARMa` 0.4.7
