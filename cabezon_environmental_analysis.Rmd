@@ -355,16 +355,232 @@ m2_hurdle_ln_sens <- sdmTMB(
   spatiotemporal = "off"
 )
 
+m2_hurdle_ln_sens_spoff <- sdmTMB(
+  larvae_100m3 ~ temp_surf_z + sal_surf_z + o2_surf_z + mean_cpue_z,
+  data           = cabezon_env_constrained,
+  mesh           = cab_env_mesh_sens2,
+  family         = delta_lognormal(),
+  spatial        = list("on", "off"),
+  spatiotemporal = "off"
+)
+
 sanity(m2_hurdle_ln_sens)
 summary(m2_hurdle_ln_sens)
+summary(m2_hurdle_ln_sens_spoff)
 
 tidy(m2_hurdle_ln_sens, effects = "fixed", model = 1, conf.int = TRUE)
 tidy(m2_hurdle_ln_sens, effects = "fixed", model = 2, conf.int = TRUE)
+tidy(m2_hurdle_ln_sens, effects = "ran_pars", model = 1, conf.int = TRUE)
+tidy(m2_hurdle_ln_sens, effects = "ran_pars", model = 2, conf.int = TRUE)
+tidy(m2_hurdle_ln_sens_spoff, effects = "ran_pars", model = 1, conf.int = TRUE)
+tidy(m2_hurdle_ln_sens_spoff, effects = "ran_pars", model = 2, conf.int = TRUE)
 ```
 
 # Experiments
 
-```{r}
+```{r Data QA QC on bottle tows}
+# ── BOTTLE DATA QA/QC ──────────────────────────────────────────────────────────
+# Builds on bottle_clean and bottle_surface from data prep script
+# Checks: effort, quality flags, covariate completeness, distributions over time,
+#         station coverage, and match rate to larval data
+
+library(tidyverse)
+library(patchwork)
+
+# ── 1. PARSE QUALITY FLAGS ─────────────────────────────────────────────────────
+# CalCOFI uses 9 = not measured/applicable; treat as NA for completeness checks
+# Flag codes: 1 = good, 2 = good (replicate), 3 = questionable, 4 = bad, 9 = missing
+
+bottle_flagged <- bottle_clean %>%
+  filter(month %in% c(1, 2, 3),
+         Depthm <= 10) %>%
+  mutate(
+    temp_ok  = T_qual  %in% c(NA, 1, 2),   # NA qual = assumed good in early years
+    sal_ok   = S_qual  %in% c(NA, 1, 2),
+    o2_ok    = O_qual  %in% c(NA, 1, 2),
+    chl_ok   = Chlqua  %in% c(NA, 1, 2),
+    temp_measured = !is.na(T_degC)  & T_qual  != 9,
+    sal_measured  = !is.na(Salnty)  & S_qual  != 9,
+    o2_measured   = !is.na(O2ml_L)  & O_qual  != 9,
+    chl_measured  = !is.na(ChlorA)  & Chlqua  != 9
+  )
+
+# ── 2. EFFORT: CAST COUNT PER YEAR ────────────────────────────────────────────
+cast_effort <- bottle_clean %>%
+  filter(month %in% c(1, 2, 3)) %>%
+  distinct(year, line, sta, Cst_Cnt) %>%
+  group_by(year) %>%
+  summarise(
+    n_casts    = n_distinct(Cst_Cnt),
+    n_stations = n_distinct(paste(line, sta)),
+    .groups = "drop"
+  )
+
+p_effort <- ggplot(cast_effort, aes(x = year, y = n_casts)) +
+  geom_col(fill = "steelblue", alpha = 0.7) +
+  geom_smooth(method = "loess", se = FALSE, color = "firebrick", linewidth = 0.8) +
+  labs(x = NULL, y = "N casts",
+       title = "Cast effort (Jan–Mar, surface) by year") +
+  theme_minimal()
+
+# ── 3. COVARIATE COMPLETENESS OVER TIME ───────────────────────────────────────
+completeness <- bottle_flagged %>%
+  group_by(year) %>%
+  summarise(
+    pct_temp = mean(temp_measured),
+    pct_sal  = mean(sal_measured),
+    pct_o2   = mean(o2_measured),
+    pct_chl  = mean(chl_measured),
+    .groups = "drop"
+  ) %>%
+  pivot_longer(-year, names_to = "variable", values_to = "pct_complete",
+               names_prefix = "pct_")
+
+p_complete <- ggplot(completeness, aes(x = year, y = pct_complete, color = variable)) +
+  geom_line(linewidth = 0.8) +
+  geom_point(size = 1.2) +
+  scale_color_brewer(palette = "Set2",
+                     labels = c("Chl-a", "O2", "Salinity", "Temperature")) +
+  scale_y_continuous(limits = c(0, 1), labels = scales::percent) +
+  geom_hline(yintercept = 0.8, linetype = "dashed", color = "grey50") +
+  labs(x = NULL, y = "% complete", color = NULL,
+       title = "Covariate completeness by year (surface, Jan–Mar)") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+# ── 4. RAW DISTRIBUTIONS OVER TIME ────────────────────────────────────────────
+# Mirrors the manta net tow presence/absence + density check
+# Expectation: ENSO years (1983, 1992, 1998) show anomalies; protocol changes show jumps
+
+bottle_surface_long <- bottle_surface %>%
+  pivot_longer(cols = c(temp_surf, sal_surf, o2_surf, chla_surf),
+               names_to = "variable", values_to = "value") %>%
+  mutate(variable = recode(variable,
+    temp_surf  = "Temperature (°C)",
+    sal_surf   = "Salinity",
+    o2_surf    = "O2 (ml/L)",
+    chla_surf  = "Chl-a (µg/L)"
+  ))
+
+p_dist <- ggplot(bottle_surface_long, aes(x = factor(year), y = value)) +
+  geom_boxplot(outlier.size = 0.4, fill = "steelblue", alpha = 0.4, linewidth = 0.3) +
+  geom_smooth(aes(x = as.numeric(factor(year))),
+              method = "loess", se = TRUE, color = "firebrick",
+              linewidth = 0.7, alpha = 0.15) +
+  facet_wrap(~variable, scales = "free_y", ncol = 1) +
+  labs(x = "Year", y = NULL,
+       title = "Surface covariate distributions by year (Jan–Mar)",
+       subtitle = "LOESS smoother; flag abrupt jumps vs. gradual ENSO-driven anomalies") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, size = 5),
+        strip.text = element_text(face = "bold"))
+
+# ── 5. STATION COVERAGE HEATMAP ───────────────────────────────────────────────
+# Which stations are consistently sampled vs. intermittently dropped?
+
+station_grid <- bottle_clean %>%
+  filter(month %in% c(1, 2, 3), Depthm <= 10) %>%
+  distinct(year, line, sta) %>%
+  mutate(
+    sampled   = 1,
+    station   = paste0(line, "_", sta)
+  ) %>%
+  complete(year, station, fill = list(sampled = 0)) %>%
+  # Retain only stations sampled in >= 25% of years (filter noise)
+  group_by(station) %>%
+  filter(mean(sampled) >= 0.25) %>%
+  ungroup()
+
+p_stations <- ggplot(station_grid, aes(x = year, y = station, fill = factor(sampled))) +
+  geom_tile(color = "white", linewidth = 0.1) +
+  scale_fill_manual(values = c("0" = "grey92", "1" = "steelblue"),
+                    labels = c("Not sampled", "Sampled")) +
+  labs(x = "Year", y = "Station (line_sta)", fill = NULL,
+       title = "Bottle station coverage by year (Jan–Mar, surface)") +
+  theme_minimal() +
+  theme(axis.text.y  = element_text(size = 4),
+        legend.position = "bottom")
+
+# ── 6. SALINITY UNIT CHECK ────────────────────────────────────────────────────
+# R_Sal appears to be in a different unit than Salnty — flag if so
+
+sal_check <- bottle_clean %>%
+  filter(month %in% c(1, 2, 3), Depthm <= 10, !is.na(Salnty), !is.na(R_Sal)) %>%
+  summarise(
+    Salnty_range = paste(round(min(Salnty), 2), "–", round(max(Salnty), 2)),
+    R_Sal_range  = paste(round(min(R_Sal),  2), "–", round(max(R_Sal),  2)),
+    Salnty_mean  = round(mean(Salnty), 3),
+    R_Sal_mean   = round(mean(R_Sal),  3)
+  )
+
+cat("\n── Salinity column comparison ──\n")
+print(sal_check)
+cat("Note: if R_Sal >> 35, it is likely in units of 10^-3 (‰ × 10) or a raw conductance value.\n")
+cat("Use Salnty (PSU) as your primary salinity column.\n\n")
+
+# ── 7. MATCH RATE TO LARVAL DATA ──────────────────────────────────────────────
+# Requires cabezon_env_complete already in environment (from larval pipeline)
+# This is the final gate: does bottle data exist where larvae were sampled?
+
+if (exists("cabezon_env_complete")) {
+  match_rate <- cabezon_env_complete %>%
+    group_by(year) %>%
+    summarise(
+      n_tows      = n(),
+      n_temp_match = sum(!is.na(temp_surf_z)),
+      n_o2_match   = sum(!is.na(o2_surf_z)),
+      pct_temp     = n_temp_match / n_tows,
+      pct_o2       = n_o2_match   / n_tows,
+      .groups = "drop"
+    ) %>%
+    pivot_longer(cols = c(pct_temp, pct_o2),
+                 names_to = "variable", values_to = "pct_matched",
+                 names_prefix = "pct_")
+
+  p_match <- ggplot(match_rate, aes(x = year, y = pct_matched, color = variable)) +
+    geom_line(linewidth = 0.8) +
+    geom_point(size = 1.5) +
+    scale_color_manual(values = c(temp = "steelblue", o2 = "darkorange"),
+                       labels = c("O2", "Temperature")) +
+    geom_hline(yintercept = 0.85, linetype = "dashed", color = "grey40") +
+    scale_y_continuous(limits = c(0, 1), labels = scales::percent) +
+    labs(x = "Year", y = "Match rate", color = NULL,
+         title = "Larval tow → bottle cast match rate by year",
+         subtitle = "Dashed line = 85% threshold; years below worth flagging") +
+    theme_minimal() +
+    theme(legend.position = "bottom")
+
+  print(p_match)
+} else {
+  message("cabezon_env_complete not found — skipping match rate check.")
+}
+
+# ── 8. PRINT QC SUMMARY ───────────────────────────────────────────────────────
+
+effort_flag  <- cast_effort %>% filter(n_casts < 0.5 * median(n_casts))
+low_complete <- completeness %>% filter(pct_complete < 0.8)
+
+cat("── QC SUMMARY ──────────────────────────────────────────────────────────\n")
+cat(sprintf("Total surface records (Jan–Mar, ≤10m): %d\n",
+            nrow(filter(bottle_clean, month %in% c(1,2,3), Depthm <= 10))))
+cat(sprintf("Year range: %d – %d\n",
+            min(cast_effort$year), max(cast_effort$year)))
+cat("\nYears with < 50% of median cast effort:\n")
+print(effort_flag)
+cat("\nCovariate-years with < 80% completeness:\n")
+print(low_complete, n = Inf)
+cat("────────────────────────────────────────────────────────────────────────\n")
+
+# ── 9. COMBINED OUTPUT FIGURE ─────────────────────────────────────────────────
+(p_effort / p_complete) | p_dist
+
+p_effort
+p_complete
+p_dist
+```
+
+
+```{r Comparison with manta indices}
 
 library(tidyverse)
 
@@ -441,6 +657,8 @@ ggplot(ss_full_cab_index, aes(x = year, y = est)) +
 
 
 # Match oxygen's range to the index's range
+o2_data <- env_summary %>% filter(variable == "o2_surf")
+
 index_min <- min(ss_full_cab_index$est, na.rm = TRUE)
 index_max <- max(ss_full_cab_index$est, na.rm = TRUE)
 o2_min    <- min(o2_data$mean, na.rm = TRUE)
@@ -449,8 +667,6 @@ o2_max    <- max(o2_data$mean, na.rm = TRUE)
 # Linear rescale: maps o2 range onto index range
 rescale_o2  <- function(x) (x - o2_min) / (o2_max - o2_min) * (index_max - index_min) + index_min
 unscale_o2  <- function(x) (x - index_min) / (index_max - index_min) * (o2_max - o2_min) + o2_min
-
-o2_data <- env_summary %>% filter(variable == "o2_surf")
 
 ggplot() +
   # Oxygen (rescaled to index range)
