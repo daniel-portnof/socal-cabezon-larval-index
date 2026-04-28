@@ -1063,6 +1063,31 @@ ggplot(cab_index_obs, aes(x = year, y = est)) +
   geom_line() +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.3) +
   labs(y = "Estimated abundance index", x = "Year", title = "Abundance Index: Observed Station Grid")
+
+
+ccf_boot(
+  x = cab_index %>% filter(year >= 1984, year <= 2015) %>% pull(est),
+  y = o2_data$mean,
+  lag.max = 10,
+  plot = "Spearman",
+  B = 1000
+)
+
+ccf_boot(
+  x = cab_index %>% filter(year >= 1984, year <= 2015) %>% pull(est),
+  y = temp_data$mean,
+  lag.max = 10,
+  plot = "Spearman",
+  B = 1000
+)
+
+ccf_boot(
+  x = diff(cab_index %>% filter(year >= 1984, year <= 2015) %>% pull(est)),
+  y = diff(o2_data$mean),
+  lag.max = 10,
+  plot = "Spearman",
+  B = 1000
+)
 ```
 
 ## 6.2. cab_fit01 — Fixed Year Effects Delta-Gamma Model
