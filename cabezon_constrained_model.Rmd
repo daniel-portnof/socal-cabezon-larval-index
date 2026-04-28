@@ -126,16 +126,6 @@ cabezon <- cabezon %>%
 
 # ---- 1. DATA QC + EXPLORATION (Part II)
 
-# Do non-standard hauls have systematically different standard_haul_factor values?
-summary(cabezon_shelf_spawn$standard_haul_factor)
-
-# Are any values notably far from 1.0?
-hist(cabezon_shelf_spawn$standard_haul_factor)
-
-cabezon_shelf_spawn %>%
-  filter(standard_haul_factor != 0.02) %>%
-  count(year) 
-
 # Check for how many observations per ...
 
 # year
@@ -217,6 +207,26 @@ cabezon_shelf_spawn %>%
 # Composite station column (combines line + station)
 cabezon_shelf_spawn <- cabezon_shelf_spawn %>%
   mutate(station_id = paste(line, station, sep = "_"))
+
+# Do non-standard hauls have systematically different standard_haul_factor values?
+summary(cabezon_shelf_spawn$standard_haul_factor)
+
+# Are any values notably far from 1.0?
+hist(cabezon_shelf_spawn$standard_haul_factor)
+hist(log(cabezon_shelf_spawn$larvae_100m3))
+
+# Check the spike at larvae_100m3 == 1
+cabezon_shelf_spawn %>% count(larvae_100m3 == 1)
+
+# Check how many true zeros are present
+cabezon_shelf_spawn %>% count(larvae_100m3 == 0)
+
+# Confirm no -Inf values making it into model inputs
+sum(is.infinite(log(cabezon_shelf_spawn$larvae_100m3)))
+
+cabezon_shelf_spawn %>%
+  filter(standard_haul_factor != 0.02) %>%
+  count(year) 
 
 # Calculating positive tow values for visualization
 ss_pos_tows_year <- cabezon_shelf_spawn %>%
@@ -1621,6 +1631,175 @@ summary(ss_dln_fy_lm_age0_trimmed_detrend)
 
 **Take** annual values for our significant covariates (temp and O2) and run them against your indices. Is there any visual relationship? Qualitative similarity between the time-series?
 
+# Heatmaps for winning models
+
+```{r}
+library(terra)
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+
+utm_crs <- 32611
+
+ca_coast <- ne_states(
+  country = "United States of America",
+  returnclass = "sf"
+) |>
+  dplyr::filter(name == "California") |>
+  st_transform(utm_crs)
+
+calcofi_stations <- cabezon_shelf_spawn |>
+  mutate(
+    X_m = X * 1000,
+    Y_m = Y * 1000
+  ) |>
+  distinct(line, station, X_m, Y_m) |>
+  st_as_sf(coords = c("X_m", "Y_m"), crs = utm_crs)
+
+calcofi_lines <- calcofi_stations |>
+  arrange(line, station) |>
+  group_by(line) |>
+  summarize(do_union = FALSE, .groups = "drop") |>
+  st_cast("LINESTRING")
+
+pred_plot <- ss_map_pred |>
+  mutate(
+    X_m = X * 1000,
+    Y_m = Y * 1000
+  )
+
+ggplot() +
+  geom_raster(
+    data = pred_plot,
+    aes(x = X_m, y = Y_m, fill = est2)
+  ) +
+  geom_sf(
+    data = ca_coast,
+    inherit.aes = FALSE,
+    fill = "grey80",
+    color = "grey40"
+  ) +
+  geom_sf(
+    data = calcofi_lines,
+    inherit.aes = FALSE,
+    color = "white",
+    linewidth = 0.3
+  ) +
+  geom_sf(
+    data = calcofi_stations,
+    inherit.aes = FALSE,
+    size = 0.5
+  ) +
+  coord_sf(
+    crs = st_crs(utm_crs),
+    xlim = range(pred_plot$X_m, na.rm = TRUE),
+    ylim = range(pred_plot$Y_m, na.rm = TRUE),
+    expand = FALSE
+  ) +
+  scale_fill_viridis_c(name = "Predicted larvae") +
+  theme_minimal()
+
+
+ss_map_pred <- predict(
+  ss_cab_fit1,
+  newdata = ss_full_pred_grid,
+  type = "response"
+)
+
+pred_plot <- ss_map_pred |>
+  mutate(
+    expected = est1 * est2,
+    X_m = X * 1000,
+    Y_m = Y * 1000
+  )
+
+# Plot showing larval observations by station over time
+obs_plot <- cabezon_shelf_spawn |>
+  mutate(
+    X_m = X * 1000,
+    Y_m = Y * 1000,
+    larvae_positive = larvae_100m3 > 0
+  )
+
+ggplot() +
+  geom_sf(
+    data = ca_coast,
+    inherit.aes = FALSE,
+    fill = "grey80",
+    color = "grey40"
+  ) +
+  geom_sf(
+    data = calcofi_lines,
+    inherit.aes = FALSE,
+    color = "grey95",
+    linewidth = 0.25
+  ) +
+  geom_point(
+    data = obs_plot |> filter(!larvae_positive),
+    aes(x = X_m, y = Y_m),
+    size = 0.4,
+    alpha = 0.25
+  ) +
+  geom_point(
+    data = obs_plot |> filter(larvae_positive),
+    aes(x = X_m, y = Y_m, size = larvae_100m3),
+    alpha = 0.7
+  ) +
+  coord_sf(
+    crs = st_crs(utm_crs),
+    xlim = range(obs_plot$X_m, na.rm = TRUE),
+    ylim = range(obs_plot$Y_m, na.rm = TRUE),
+    expand = FALSE
+  ) +
+  facet_wrap(~ year) +
+  scale_size_continuous(
+    name = "Observed larvae / 100 m³",
+    range = c(1, 7)
+  ) +
+  labs(
+    title = "Observed cabezon larval abundance by CalCOFI station",
+    x = NULL,
+    y = NULL
+  ) +
+  theme_minimal()
+
+# Plot showing delta + hurdle components (distribution and abundance)
+ggplot() +
+  geom_raster(
+    data = pred_plot,
+    aes(x = X_m, y = Y_m, fill = expected)
+  ) +
+  geom_sf(data = ca_coast, inherit.aes = FALSE, fill = "grey80") +
+  coord_sf(
+    crs = st_crs(utm_crs),
+    xlim = range(pred_plot$X_m, na.rm = TRUE),
+    ylim = range(pred_plot$Y_m, na.rm = TRUE),
+    expand = FALSE
+  ) +
+  facet_wrap(~ year) +
+  scale_fill_viridis_c(name = "Predicted larvae") +
+  theme_minimal()
+
+# Plot showing only delta (distribution)
+ggplot() +
+  geom_raster(
+    data = pred_plot,
+    aes(x = X_m, y = Y_m, fill = est1)
+  ) +
+  geom_sf(data = ca_coast, inherit.aes = FALSE, fill = "grey80") +
+  coord_sf(
+    crs = st_crs(utm_crs),
+    xlim = range(pred_plot$X_m, na.rm = TRUE),
+    ylim = range(pred_plot$Y_m, na.rm = TRUE),
+    expand = FALSE
+  ) +
+  facet_wrap(~ year) +
+  scale_fill_viridis_c(name = "Predicted larvae") +
+  theme_minimal()
+
+```
+
+
 # Additional Models
 
 
@@ -1732,6 +1911,178 @@ ggplot(ss_fit2a_cab_index_obs, aes(x = year, y = est)) +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.3) +
   labs(y = "Estimated abundance index", x = "Year",
        title = "Abundance Index: Tweedie IID (fixed year effects, observed grid)")
+
+
+# CUSUM
+ss_full_pred_obs %>%
+  group_by(year) %>%
+  summarise(
+    med_resid1 = median(rq_resid1, na.rm = TRUE),
+    med_resid2 = median(rq_resid2, na.rm = TRUE),  # positive tows only
+    .groups = "drop"
+  ) %>%
+  arrange(year) %>%
+  mutate(
+    cusum1 = cumsum(replace_na(med_resid1, 0)),
+    cusum2 = cumsum(replace_na(med_resid2, 0))
+  ) %>%
+  pivot_longer(cols = c(cusum1, cusum2),
+               names_to = "component",
+               values_to = "cusum") %>%
+  ggplot(aes(x = year, y = cusum, color = component)) +
+  geom_line(linewidth = 0.9) +
+  geom_point() +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
+  scale_color_manual(values = c("cusum1" = "steelblue", "cusum2" = "firebrick"),
+                     labels = c("Delta (binomial)", "Gamma")) +
+  labs(x = "Year", y = "CUSUM", title = "CUSUM by Delta Model Component — ss_cab_fit1") +
+  theme_minimal()
+
+
+library(terra)
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+
+utm_crs <- 32611
+
+ca_coast <- ne_states(
+  country = "United States of America",
+  returnclass = "sf"
+) |>
+  dplyr::filter(name == "California") |>
+  st_transform(utm_crs)
+
+calcofi_stations <- cabezon_shelf_spawn |>
+  mutate(
+    X_m = X * 1000,
+    Y_m = Y * 1000
+  ) |>
+  distinct(line, station, X_m, Y_m) |>
+  st_as_sf(coords = c("X_m", "Y_m"), crs = utm_crs)
+
+calcofi_lines <- calcofi_stations |>
+  arrange(line, station) |>
+  group_by(line) |>
+  summarize(do_union = FALSE, .groups = "drop") |>
+  st_cast("LINESTRING")
+
+pred_plot <- ss_map_pred |>
+  mutate(
+    X_m = X * 1000,
+    Y_m = Y * 1000
+  )
+
+ggplot() +
+  geom_raster(
+    data = pred_plot_tw,
+    aes(x = X_m, y = Y_m, fill = est2)
+  ) +
+  geom_sf(
+    data = ca_coast,
+    inherit.aes = FALSE,
+    fill = "grey80",
+    color = "grey40"
+  ) +
+  geom_sf(
+    data = calcofi_lines,
+    inherit.aes = FALSE,
+    color = "white",
+    linewidth = 0.3
+  ) +
+  geom_sf(
+    data = calcofi_stations,
+    inherit.aes = FALSE,
+    size = 0.5
+  ) +
+  coord_sf(
+    crs = st_crs(utm_crs),
+    xlim = range(pred_plot$X_m, na.rm = TRUE),
+    ylim = range(pred_plot$Y_m, na.rm = TRUE),
+    expand = FALSE
+  ) +
+  scale_fill_viridis_c(name = "Predicted larvae") +
+  theme_minimal()
+
+
+ss_map_pred_tw <- predict(
+  ss_cab_fit2,
+  newdata = ss_fit2a_pred_grid,
+  type = "response"
+)
+
+pred_plot_tw <- ss_map_pred_tw |>
+  mutate(
+    X_m = X * 1000,
+    Y_m = Y * 1000
+  )
+
+# Plot showing larval observations by station over time
+obs_plot_tw <- cabezon_shelf_spawn |>
+  mutate(
+    X_m = X * 1000,
+    Y_m = Y * 1000,
+    larvae_positive = larvae_100m3 > 0
+  )
+
+ggplot() +
+  geom_sf(
+    data = ca_coast,
+    inherit.aes = FALSE,
+    fill = "grey80",
+    color = "grey40"
+  ) +
+  geom_sf(
+    data = calcofi_lines,
+    inherit.aes = FALSE,
+    color = "grey95",
+    linewidth = 0.25
+  ) +
+  geom_point(
+    data = obs_plot_tw |> filter(!larvae_positive),
+    aes(x = X_m, y = Y_m),
+    size = 0.4,
+    alpha = 0.25
+  ) +
+  geom_point(
+    data = obs_plot_tw |> filter(larvae_positive),
+    aes(x = X_m, y = Y_m, size = larvae_100m3),
+    alpha = 0.7
+  ) +
+  coord_sf(
+    crs = st_crs(utm_crs),
+    xlim = range(obs_plot$X_m, na.rm = TRUE),
+    ylim = range(obs_plot$Y_m, na.rm = TRUE),
+    expand = FALSE
+  ) +
+  facet_wrap(~ year) +
+  scale_size_continuous(
+    name = "Observed larvae / 100 m³",
+    range = c(1, 7)
+  ) +
+  labs(
+    title = "Observed cabezon larval abundance by CalCOFI station",
+    x = NULL,
+    y = NULL
+  ) +
+  theme_minimal()
+
+# Plot showing delta + hurdle components (distribution and abundance)
+ggplot() +
+  geom_raster(
+    data = pred_plot_tw,
+    aes(x = X_m, y = Y_m, fill = est)
+  ) +
+  geom_sf(data = ca_coast, inherit.aes = FALSE, fill = "grey80") +
+  coord_sf(
+    crs = st_crs(utm_crs),
+    xlim = range(pred_plot_tw$X_m, na.rm = TRUE),
+    ylim = range(pred_plot_tw$Y_m, na.rm = TRUE),
+    expand = FALSE
+  ) +
+  facet_wrap(~ year) +
+  scale_fill_viridis_c(name = "Predicted larvae") +
+  theme_minimal()
 ```
 
 ## 10.8. ss_cab_fit2a — STAR correlation analysis
