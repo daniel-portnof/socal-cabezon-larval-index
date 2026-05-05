@@ -631,15 +631,15 @@ ss_cab_fit2a <- sdmTMB(
 
 sanity(ss_cab_fit2a)
 
-# Delta-Lognormal: fixed year effect, spatial only (no spatiotemporal)
+# Delta-Lognormal: Global Intercept, spatial and spatiotemporal AR1
 ss_cab_fit_dln1 <- sdmTMB(
-  larvae_100m3 ~ 0 + fyear,
+  larvae_100m3 ~ 1,
   data = cabezon_shelf_spawn,
   mesh = ss_cab_mesh,
   time = "year",
   family = delta_lognormal(),
   spatial = list("on", "on"),
-  spatiotemporal = list("off", "off"),
+  spatiotemporal = list("ar1", "ar1"),
   offset = NULL,
   extra_time = 1982
 )
@@ -656,7 +656,7 @@ ss_cab_fit_dln2 <- sdmTMB(
   time = "year",
   family = delta_lognormal(),
   spatial = list("on", "on"),
-  spatiotemporal = list("iid", "off"),
+  spatiotemporal = list("off", "off"),
   offset = NULL,
   extra_time = 1982
 )
@@ -708,7 +708,7 @@ AIC_table <- data.frame(
     "Delta-Gamma spatiotemporal Gamma AR1 (Constrained)",
     "Tweedie spatial + spatiotemporal AR1 (Constrained)",
     "Tweedie spatial (Constrained)",
-    "Delta-Lognormal spatial + fixed year effect - spatiotemporal (Constrained)",
+    "Delta-Lognormal spatial + spatiotemporal AR1l (Constrained)",
     "Delta-Lognormal spatial + fixed year effect + iid delta (Constrained)"
   ),
   AIC = c(
@@ -868,7 +868,7 @@ ggplot(ss_full_cab_index_obs, aes(x = year, y = est)) +
   labs(y = "Estimated abundance index", x = "Year", title = "Abundance Index: Observed Station Grid")
 ```
 
-## 4.2. ss_cab_fit_dln1 — Fixed Year Effects Delta-Lognormal Model
+## 4.2. ss_cab_fit_dln1 — AR1 Delta-Lognormal Model
 
 ```{r 4.2. ss_cab_fit_dln1 diagnostics, cache = T}
 
@@ -971,7 +971,7 @@ ggplot(ss_dln_fy_cab_index, aes(x = year, y = est)) +
   geom_line() +
   geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.3) +
   labs(y = "Estimated abundance index", x = "Year",
-       title = "Abundance Index: Constrained to Spawning Season & Coastal Samples")
+       title = "Abundance Index: Delta-Lognormal on Global Intercept with AR1 Spatiotemporal Fields")
 
 #---- 4.2.f. Abundance index: observed station grid (preferred)
 
@@ -1641,6 +1641,19 @@ library(rnaturalearthdata)
 
 utm_crs <- 32611
 
+ss_map_pred <- predict(
+  ss_cab_fit1,
+  newdata = ss_full_pred_grid,
+  type = "response"
+)
+
+pred_plot <- ss_map_pred |>
+  mutate(
+    expected = est1 * est2,
+    X_m = X * 1000,
+    Y_m = Y * 1000
+  )
+
 ca_coast <- ne_states(
   country = "United States of America",
   returnclass = "sf"
@@ -1668,50 +1681,6 @@ pred_plot <- ss_map_pred |>
     Y_m = Y * 1000
   )
 
-ggplot() +
-  geom_raster(
-    data = pred_plot,
-    aes(x = X_m, y = Y_m, fill = est2)
-  ) +
-  geom_sf(
-    data = ca_coast,
-    inherit.aes = FALSE,
-    fill = "grey80",
-    color = "grey40"
-  ) +
-  geom_sf(
-    data = calcofi_lines,
-    inherit.aes = FALSE,
-    color = "white",
-    linewidth = 0.3
-  ) +
-  geom_sf(
-    data = calcofi_stations,
-    inherit.aes = FALSE,
-    size = 0.5
-  ) +
-  coord_sf(
-    crs = st_crs(utm_crs),
-    xlim = range(pred_plot$X_m, na.rm = TRUE),
-    ylim = range(pred_plot$Y_m, na.rm = TRUE),
-    expand = FALSE
-  ) +
-  scale_fill_viridis_c(name = "Predicted larvae") +
-  theme_minimal()
-
-
-ss_map_pred <- predict(
-  ss_cab_fit1,
-  newdata = ss_full_pred_grid,
-  type = "response"
-)
-
-pred_plot <- ss_map_pred |>
-  mutate(
-    expected = est1 * est2,
-    X_m = X * 1000,
-    Y_m = Y * 1000
-  )
 
 # Plot showing larval observations by station over time
 obs_plot <- cabezon_shelf_spawn |>
@@ -1763,23 +1732,6 @@ ggplot() +
   ) +
   theme_minimal()
 
-# Plot showing delta + hurdle components (distribution and abundance)
-ggplot() +
-  geom_raster(
-    data = pred_plot,
-    aes(x = X_m, y = Y_m, fill = expected)
-  ) +
-  geom_sf(data = ca_coast, inherit.aes = FALSE, fill = "grey80") +
-  coord_sf(
-    crs = st_crs(utm_crs),
-    xlim = range(pred_plot$X_m, na.rm = TRUE),
-    ylim = range(pred_plot$Y_m, na.rm = TRUE),
-    expand = FALSE
-  ) +
-  facet_wrap(~ year) +
-  scale_fill_viridis_c(name = "Predicted larvae") +
-  theme_minimal()
-
 # Plot showing only delta (distribution)
 ggplot() +
   geom_raster(
@@ -1795,6 +1747,38 @@ ggplot() +
   ) +
   facet_wrap(~ year) +
   scale_fill_viridis_c(name = "Predicted larvae") +
+  theme_minimal()
+
+ggplot() +
+  geom_raster(
+    data = pred_plot,
+    aes(x = X_m, y = Y_m, fill = est2)
+  ) +
+  geom_sf(data = ca_coast, inherit.aes = FALSE, fill = "grey80") +
+  coord_sf(
+    crs = st_crs(utm_crs),
+    xlim = range(pred_plot$X_m, na.rm = TRUE),
+    ylim = range(pred_plot$Y_m, na.rm = TRUE),
+    expand = FALSE
+  ) +
+  facet_wrap(~ year) +
+  scale_fill_viridis_c(name = "Predicted larvae") +
+  theme_minimal()
+
+ggplot() +
+  geom_raster(
+    data = pred_plot,
+    aes(x = X_m, y = Y_m, fill = log(est))
+  ) +
+  geom_sf(data = ca_coast, inherit.aes = FALSE, fill = "grey80") +
+  coord_sf(
+    crs = st_crs(utm_crs),
+    xlim = range(pred_plot$X_m, na.rm = TRUE),
+    ylim = range(pred_plot$Y_m, na.rm = TRUE),
+    expand = FALSE
+  ) +
+  facet_wrap(~ year) +
+  scale_fill_viridis_c(name = "Predicted larvae ln(abun)") +
   theme_minimal()
 
 ```
@@ -1973,6 +1957,39 @@ pred_plot <- ss_map_pred |>
     Y_m = Y * 1000
   )
 
+# Presence + Density
+ggplot() +
+  geom_raster(
+    data = pred_plot_tw,
+    aes(x = X_m, y = Y_m, fill = est)
+  ) +
+  geom_sf(
+    data = ca_coast,
+    inherit.aes = FALSE,
+    fill = "grey80",
+    color = "grey40"
+  ) +
+  geom_sf(
+    data = calcofi_lines,
+    inherit.aes = FALSE,
+    color = "white",
+    linewidth = 0.3
+  ) +
+  geom_sf(
+    data = calcofi_stations,
+    inherit.aes = FALSE,
+    size = 0.5
+  ) +
+  coord_sf(
+    crs = st_crs(utm_crs),
+    xlim = range(pred_plot$X_m, na.rm = TRUE),
+    ylim = range(pred_plot$Y_m, na.rm = TRUE),
+    expand = FALSE
+  ) +
+  scale_fill_viridis_c(name = "Predicted larvae") +
+  theme_minimal()
+
+# Density component
 ggplot() +
   geom_raster(
     data = pred_plot_tw,
@@ -2004,7 +2021,7 @@ ggplot() +
   scale_fill_viridis_c(name = "Predicted larvae") +
   theme_minimal()
 
-
+# Tweedie maps
 ss_map_pred_tw <- predict(
   ss_cab_fit2,
   newdata = ss_fit2a_pred_grid,
