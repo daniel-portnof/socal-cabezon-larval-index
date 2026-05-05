@@ -145,6 +145,8 @@ cabezon_env <- cabezon_env %>%
 cabezon_env_complete <- cabezon_env %>%
   filter(complete.cases(temp_surf_z, sal_surf_z, o2_surf_z, mean_cpue_z))
 
+cabezon_env_complete$fyear <- as.factor(cabezon_env_complete$year)
+
 # Candidate models, inclusive of 1981/1983 years with incomplete data.
 
 m1 <- glmer(cabezon_present ~ temp_surf_z + sal_surf_z + (1 | sta_id),
@@ -279,6 +281,21 @@ m2_hurdle_ln <- sdmTMB(
   spatiotemporal = "off"
 )
 
+m2_hurdle_ln_time <- sdmTMB(
+  larvae_100m3 ~ temp_surf_z + fyear + sal_surf_z + o2_surf_z,
+  data = cabezon_env_complete,
+  time = "year",
+  mesh = cab_env_mesh2,
+  family = delta_lognormal(),
+  spatial = list("on", "on"),
+  spatiotemporal = "off"
+)
+sanity(m2_hurdle_ln_time)
+summary(m2_hurdle_ln_time)
+AIC(m2_hurdle_ln_time)
+tidy(m2_hurdle_ln_time, effects = "fixed", model = 1, conf.int = TRUE)
+tidy(m2_hurdle_ln_time, effects = "fixed", model = 2, conf.int = TRUE)
+
 m2_hurdle_gm <- sdmTMB(
   larvae_100m3 ~ temp_surf_z + sal_surf_z + o2_surf_z + mean_cpue_z,
   data = cabezon_env_complete,
@@ -298,6 +315,29 @@ summary(m2_hurdle_ln)
 tidy(m2_hurdle_ln, effects = "fixed", model = 1, conf.int = TRUE)
 tidy(m2_hurdle_ln, effects = "fixed", model = 2, conf.int = TRUE)
 
+# How well is mean_cpue_z (our index of annual larval prevalence) capturing a fixed year effect?
+year_fx <- tidy(m2_hurdle_ln_time, model = 1, conf.int = TRUE) |>
+  filter(grepl("fyear", term)) |>
+  mutate(year = as.integer(gsub("fyear", "", term)))
+
+# Get mean_cpue_z by year (one value per year)
+year_cpue <- cabezon_env_complete |>
+  group_by(year) |>
+  summarize(mean_cpue_z = first(mean_cpue_z))
+
+# Join and plot
+year_data <- left_join(year_fx, year_cpue, by = "year")
+
+left_join(year_fx, year_cpue, by = "year") |>
+  ggplot(aes(mean_cpue_z, estimate)) +
+  geom_pointrange(aes(ymin = conf.low, ymax = conf.high)) +
+  geom_smooth(method = "lm") +
+  labs(x = "Annual mean CPUE (z-scored)",
+       y = "Year fixed effect (binomial component)")
+
+fit <- lm(estimate ~ mean_cpue_z, data = year_data)
+summary(fit)$r.squared
+
 library(DHARMa)
 
 sim_hurdle <- simulate(m2_hurdle_ln, nsim = 500, type = "mle-mvn")
@@ -309,6 +349,48 @@ dharma_hurdle <- createDHARMa(
 )
 
 plot(dharma_hurdle)
+
+library(visreg)
+
+# Component 1 (binomial / encounter)
+visreg_delta(m2_hurdle_ln, xvar = "temp_surf_z", model = 1, 
+             scale = "response", gg = TRUE)
+visreg_delta(m2_hurdle_ln, xvar = "o2_surf_z", model = 1, 
+             scale = "response", gg = TRUE)
+
+# Component 2 (lognormal / positive density) — for completeness
+visreg_delta(m2_hurdle_ln, xvar = "temp_surf_z", model = 2,
+             scale = "response", gg = TRUE)
+
+library(dplyr)
+library(ggplot2)
+
+# Build a prediction grid: vary one covariate, hold others at zero (= mean, since z-scored)
+nd_temp <- data.frame(
+  temp_surf_z = seq(-2.5, 2.5, length.out = 100),
+  sal_surf_z  = 0,
+  o2_surf_z   = 0,
+  mean_cpue_z = 0,
+  X = mean(cabezon_env_complete$X),   # placeholder — won't be used with re_form = NA
+  Y = mean(cabezon_env_complete$Y)
+)
+
+# Predict, excluding random fields so you isolate the fixed-effect response
+pred_temp <- predict(m2_hurdle_ln, newdata = nd_temp, 
+                     re_form = NA, re_form_iid = NA,
+                     se_fit = TRUE, model = 1)  # component 1
+
+# Back-transform from logit to probability
+pred_temp$prob      <- plogis(pred_temp$est)
+pred_temp$prob_lwr  <- plogis(pred_temp$est - 1.96 * pred_temp$est_se)
+pred_temp$prob_upr  <- plogis(pred_temp$est + 1.96 * pred_temp$est_se)
+
+ggplot(pred_temp, aes(temp_surf_z, prob)) +
+  geom_ribbon(aes(ymin = prob_lwr, ymax = prob_upr), alpha = 0.3) +
+  geom_line(linewidth = 1) +
+  labs(x = "Surface temperature (z-scored)",
+       y = "Predicted encounter probability",
+       title = "Component 1: encounter probability vs. SST")
 ```
 
 ```{r}
