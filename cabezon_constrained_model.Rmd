@@ -496,142 +496,64 @@ ss_cab_null <- sdmTMB(
 
 sanity(ss_cab_null)
 
-# Delta-Gamma: fixed year effect + iid: 
-ss_cab_fit01 <- sdmTMB(
+# NULL Delta-Lognormal model
+
+ss_cab_null_dln <- sdmTMB(
   larvae_100m3 ~ 0 + fyear,
   data = cabezon_shelf_spawn,
   mesh = ss_cab_mesh,
   time = "year",
-  family = delta_gamma(),
-  spatial = list("on", "on"),
-  spatiotemporal = list("iid", "iid"),
+  family = delta_lognormal(),
+  spatial = "off",
+  spatiotemporal = "off",
   offset = NULL,
   extra_time = 1982
 )
 
-sanity(ss_cab_fit01)
+sanity(ss_cab_null_dln)
 
-# Delta-Gamma: fixed year effect - spatiotemporal: # Is this the best fit for a fixed year effect? Our sanity checks tell us that in models with both a fixed year effect and spatiotemporal fields cause the fields to collapse, suggesting maybe that any temporal variation is adequately captured by the fixed year effect already.
-ss_cab_fit02 <- sdmTMB(
+# NULL Tweedie model
+
+ss_cab_null_tw <- sdmTMB(
   larvae_100m3 ~ 0 + fyear,
-  data = cabezon_shelf_spawn,
-  mesh = ss_cab_mesh,
-  time = "year",
-  family = delta_gamma(),
-  spatial = list("on", "on"),
-  spatiotemporal = list("off", "off"),
-  offset = NULL,
-  extra_time = 1982
-)
-
-sanity(ss_cab_fit02)
-
-# Delta-Gamma: fixed year effect + iid delta:
-ss_cab_fit03 <- sdmTMB(
-  larvae_100m3 ~ 0 + fyear,
-  data = cabezon_shelf_spawn,
-  mesh = ss_cab_mesh,
-  time = "year",
-  family = delta_gamma(),
-  spatial = list("on", "on"),
-  spatiotemporal = list("iid", "off"),
-  offset = NULL,
-  extra_time = 1982
-)
-
-sanity(ss_cab_fit03)
-
-# Delta-Gamma: full AR1 spatial + spatiotemporal 
-ss_cab_fit1 <- sdmTMB(
-  list(larvae_100m3 ~ 1, larvae_100m3 ~ 1),
-  data = cabezon_shelf_spawn,
-  mesh = ss_cab_mesh,
-  time = "year",
-  family = delta_gamma(),
-  spatial = list("on", "on"),
-  spatiotemporal = list("ar1", "ar1"),
-  offset = NULL,
-  extra_time = 1982
-)
-
-sanity(ss_cab_fit1)
-
-# Delta-Gamma: spatial only, spatiotemporal off
-ss_cab_fit1a <- sdmTMB(
-  list(larvae_100m3 ~ 1, larvae_100m3 ~ 1),
-  data = cabezon_shelf_spawn,
-  mesh = ss_cab_mesh,
-  time = "year",
-  family = delta_gamma(),
-  spatial = list("on", "on"),
-  spatiotemporal = list("off", "off"),
-  offset = NULL,
-  extra_time = 1982
-)
-
-sanity(ss_cab_fit1a)
-
-# Delta-Gamma; Delta component AR1, Gamma spatiotemporal off
-ss_cab_fit1b <- sdmTMB(
-  list(larvae_100m3 ~ 1, larvae_100m3 ~ 1),
-  data = cabezon_shelf_spawn,
-  mesh = ss_cab_mesh,
-  time = "year",
-  family = delta_gamma(),
-  spatial = list("on", "on"),
-  spatiotemporal = list("ar1", "off"),
-  offset = NULL,
-  extra_time = 1982
-)
-
-sanity(ss_cab_fit1b)
-
-# Delta-Gamma: Gamma component AR1, Delta spatiotemporal off
-ss_cab_fit1c <- sdmTMB(
-  list(larvae_100m3 ~ 1, larvae_100m3 ~ 1),
-  data = cabezon_shelf_spawn,
-  mesh = ss_cab_mesh,
-  time = "year",
-  family = delta_gamma(),
-  spatial = list("on", "on"),
-  spatiotemporal = list("off", "ar1"),
-  offset = NULL,
-  extra_time = 1982
-)
-
-sanity(ss_cab_fit1c)
-
-# Tweedie: full AR1 spatial + spatiotemporal
-ss_cab_fit2 <- sdmTMB(
-  formula = larvae_100m3 ~ 1,
   data = cabezon_shelf_spawn,
   mesh = ss_cab_mesh,
   time = "year",
   family = tweedie(),
-  spatial = "on",
-  spatiotemporal = "ar1",
+  spatial = "off",
+  spatiotemporal = "off",
   offset = NULL,
   extra_time = 1982
 )
 
-sanity(ss_cab_fit2)
+sanity(ss_cab_null_tw)
 
-# Tweedie: spatial only, spatiotemporal off
-ss_cab_fit2a <- sdmTMB(
-  formula = larvae_100m3 ~ 0 + fyear,
-  data = cabezon_shelf_spawn,
-  mesh = ss_cab_mesh,
-  time = "year",
-  family = tweedie(),
-  spatial = "on",
-  spatiotemporal = "iid",
-  offset = NULL,
-  extra_time = 1982
-)
+null_AIC_table <- data.frame(
+  fit_name = c(
+    "ss_cab_null",
+    "ss_cab_null_dln",
+    "ss_cab_null_tw"
+  ),
+  model = c(
+    "Delta-Gamma NULL (Constrained)",
+    "Delta-Lognormal NULL (Constrained)",
+    "Tweedie NULL (Constrained)"
+  ),
+  AIC = c(
+    AIC(ss_cab_null),
+    AIC(ss_cab_null_dln),
+    AIC(ss_cab_null_tw)
+  ),
+    delta_AIC = NA
+  )
 
-sanity(ss_cab_fit2a)
+null_AIC_table$delta_AIC <- null_AIC_table$AIC - min(null_AIC_table$AIC)
 
-# Delta-Lognormal: Global Intercept, spatial and spatiotemporal AR1
+null_AIC_table <- null_AIC_table[order(null_AIC_table$AIC, decreasing = F), ]
+
+null_AIC_table
+
+# Delta-Lognormal: Global Intercept, spatial on, spatiotemporal delta AR1, spatiotemporal lognormal AR1
 ss_cab_fit_dln1 <- sdmTMB(
   larvae_100m3 ~ 1,
   data = cabezon_shelf_spawn,
@@ -641,15 +563,59 @@ ss_cab_fit_dln1 <- sdmTMB(
   spatial = list("on", "on"),
   spatiotemporal = list("ar1", "ar1"),
   offset = NULL,
-  extra_time = 1982
+  extra_time = 1982,
+  priors = sdmTMBpriors(matern_s = pc_matern(range_gt = 50,
+                                             sigma_lt = 5),
+                        matern_st = pc_matern(range_gt = 50,
+                                              sigma_lt = 5))
 )
 
 sanity(ss_cab_fit_dln1)
 
 AIC(ss_cab_fit_dln1)
 
-# Delta-Lognormal: fixed year effect, spatial on, iid delta spatiotemporal, gamma spatiotemporal off
+# Delta-Lognormal: Global Intercept, spatial on, delta AR1, spatiotemporal delta AR1, spatiotemporal lognormal iid
 ss_cab_fit_dln2 <- sdmTMB(
+  larvae_100m3 ~ 1,
+  data = cabezon_shelf_spawn,
+  mesh = ss_cab_mesh,
+  time = "year",
+  family = delta_lognormal(),
+  spatial = list("on", "on"),
+  spatiotemporal = list("ar1", "iid"),
+  offset = NULL,
+  extra_time = 1982,
+  priors = sdmTMBpriors(matern_s = pc_matern(range_gt = 50,
+                                             sigma_lt = 5),
+                        matern_st = pc_matern(range_gt = 50,
+                                              sigma_lt = 5))
+)
+
+sanity(ss_cab_fit_dln2)
+
+AIC(ss_cab_fit_dln2)
+
+# Delta-Lognormal: Global Intercept, spatial on, delta AR1, spatiotemporal delta AR1, spatiotemporal lognormal off
+ss_cab_fit_dln3 <- sdmTMB(
+  larvae_100m3 ~ 1,
+  data = cabezon_shelf_spawn,
+  mesh = ss_cab_mesh,
+  time = "year",
+  family = delta_lognormal(),
+  spatial = list("on", "on"),
+  spatiotemporal = list("ar1", "off"),
+  offset = NULL,
+  extra_time = 1982,
+  priors = sdmTMBpriors(matern_s = pc_matern(range_gt = 50,
+                                             sigma_lt = 5))
+)
+
+sanity(ss_cab_fit_dln3)
+
+AIC(ss_cab_fit_dln3)
+
+# Delta-Lognormal: fixed year effect, spatial on, spatiotemopral off
+ss_cab_fit_dln4 <- sdmTMB(
   larvae_100m3 ~ 0 + fyear,
   data = cabezon_shelf_spawn,
   mesh = ss_cab_mesh,
@@ -658,72 +624,88 @@ ss_cab_fit_dln2 <- sdmTMB(
   spatial = list("on", "on"),
   spatiotemporal = list("off", "off"),
   offset = NULL,
-  extra_time = 1982
+  extra_time = 1982,
+  priors = sdmTMBpriors(matern_s = pc_matern(range_gt = 50,
+                                             sigma_lt = 5))
 )
 
-sanity(ss_cab_fit_dln2)
+sanity(ss_cab_fit_dln4)
 
-AIC(ss_cab_fit_dln2)
+AIC(ss_cab_fit_dln4)
+
+# Delta-Lognormal: fixed year effect, spatial on, spatiotemporal iid
+ss_cab_fit_dln5 <- sdmTMB(
+  larvae_100m3 ~ 0 + fyear,
+  data = cabezon_shelf_spawn,
+  mesh = ss_cab_mesh,
+  time = "year",
+  family = delta_lognormal(),
+  spatial = list("on", "on"),
+  spatiotemporal = list("iid", "iid"),
+  offset = NULL,
+  extra_time = 1982,
+  priors = sdmTMBpriors(matern_s = pc_matern(range_gt = 50,
+                                             sigma_lt = 5),
+                        matern_st = pc_matern(range_gt = 50,
+                                              sigma_lt = 5))
+)
+
+sanity(ss_cab_fit_dln5)
+
+AIC(ss_cab_fit_dln5)
+
+# Delta-Lognormal: fixed year effect, spatial on, iid delta spatiotemporal, gamma spatiotemporal off
+ss_cab_fit_dln6 <- sdmTMB(
+  larvae_100m3 ~ 0 + fyear,
+  data = cabezon_shelf_spawn,
+  mesh = ss_cab_mesh,
+  time = "year",
+  family = delta_lognormal(),
+  spatial = list("on", "on"),
+  spatiotemporal = list("iid", "off"),
+  offset = NULL,
+  extra_time = 1982,
+  priors = sdmTMBpriors(matern_s = pc_matern(range_gt = 50,
+                                             sigma_lt = 5))
+)
+
+sanity(ss_cab_fit_dln6)
+
+AIC(ss_cab_fit_dln6)
+
+
 
 #---- 3.c. Random effect parameter estimates for best models
 
-tidy(ss_cab_null, effects = "ran_pars")
-tidy(ss_cab_fit01, effects = "ran_pars")
-tidy(ss_cab_fit02, effects = "ran_pars")
-tidy(ss_cab_fit03, effects = "ran_pars")
-tidy(ss_cab_fit1, effects = "ran_pars")
-tidy(ss_cab_fit1a, effects = "ran_pars")
-tidy(ss_cab_fit1b, effects = "ran_pars")
-tidy(ss_cab_fit1c, effects = "ran_pars")
-tidy(ss_cab_fit2, effects = "ran_pars")
-tidy(ss_cab_fit2a, effects = "ran_pars")
 tidy(ss_cab_fit_dln1, effects = "ran_pars")
 tidy(ss_cab_fit_dln2, effects = "ran_pars")
+tidy(ss_cab_fit_dln3, effects = "ran_pars")
+tidy(ss_cab_fit_dln4, effects = "ran_pars")
+tidy(ss_cab_fit_dln5, effects = "ran_pars")
 
 #---- 3.d. Construct model comparison table
 
 AIC_table <- data.frame(
   fit_name = c(
-    "ss_cab_null",
-    "ss_cab_fit01",
-    "ss_cab_fit02",
-    "ss_cab_fit03",
-    "ss_cab_fit1",
-    "ss_cab_fit1a",
-    "ss_cab_fit1b",
-    "ss_cab_fit1c",
-    "ss_cab_fit2",
-    "ss_cab_fit2a",
     "ss_cab_fit_dln1",
-    "ss_cab_fit_dln2"
+    "ss_cab_fit_dln2",
+    "ss_cab_fit_dln3",
+    "ss_cab_fit_dln4",
+    "ss_cab_fit_dln5"
   ),
   model = c(
-    "Delta-Gamma NULL (Constrained)",
-    "Delta-Gamma spatial + spatiotemporal IID + fixed year effect (Constrained)",
-    "Delta-Gamma spatial + fixed year effect - spatiotemporal (Constrained)",
-    "Delta-Gamma: fixed year effect + iid delta (Constrained)",
-    "Delta-Gamma spatial + spatiotemporal AR1 (Constrained)",
-    "Delta-Gamma spatial (Constrained)",
-    "Delta-Gamma spatiotemporal Delta AR1 (Constrained)",
-    "Delta-Gamma spatiotemporal Gamma AR1 (Constrained)",
-    "Tweedie spatial + spatiotemporal AR1 (Constrained)",
-    "Tweedie spatial (Constrained)",
-    "Delta-Lognormal spatial + spatiotemporal AR1l (Constrained)",
-    "Delta-Lognormal spatial + fixed year effect + iid delta (Constrained)"
+    "Delta-Lognormal Global Intercept + spatial + spatiotemporal delta AR1 + spatiotemporal lognormal iid (Spawning Season)",
+    "Delta-Lognormal Global Intercept + spatial + spatiotemporal delta AR1 + spatiotemporal gamma off (Spawning Season)",
+    "Delta-Lognormal fixed year effect + spatial + spatiotemporal off (Spawning Season)",
+    "Delta-Lognormal fixed year effect + spatial + spatiotemporal iid (Spawning Season)",
+    "Delta-Lognormal fixed year effect + spatial + spatiotemporal delta iid + spatiotemporal gamma off (Spawning Season)"
   ),
   AIC = c(
-    AIC(ss_cab_null),
-    AIC(ss_cab_fit01),
-    AIC(ss_cab_fit02),
-    AIC(ss_cab_fit03),
-    AIC(ss_cab_fit1),
-    AIC(ss_cab_fit1a),
-    AIC(ss_cab_fit1b),
-    AIC(ss_cab_fit1c),
-    AIC(ss_cab_fit2),
-    AIC(ss_cab_fit2a),
     AIC(ss_cab_fit_dln1),
-    AIC(ss_cab_fit_dln2)
+    AIC(ss_cab_fit_dln2),
+    AIC(ss_cab_fit_dln3),
+    AIC(ss_cab_fit_dln4),
+    AIC(ss_cab_fit_dln5)
   ),
     delta_AIC = NA
   )
@@ -734,7 +716,22 @@ AIC_table <- AIC_table[order(AIC_table$AIC, decreasing = F), ]
 
 AIC_table
 
+ss_cab_fit_dg1 <- sdmTMB(
+  larvae_100m3 ~ 1,
+  data = cabezon_shelf_spawn,
+  mesh = ss_cab_mesh,
+  time = "year",
+  family = delta_gamma(),
+  spatial = list("on", "on"),
+  spatiotemporal = list("ar1", "off"),
+  offset = NULL,
+  extra_time = 1982,
+  priors = sdmTMBpriors(matern_s = pc_matern(range_gt = 50,
+                                             sigma_lt = 5))
+)
 
+sanity(ss_cab_fit_dg1)
+AIC(ss_cab_fit_dg1)
 
 
 ```
