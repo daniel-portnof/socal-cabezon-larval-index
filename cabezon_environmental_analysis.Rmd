@@ -725,7 +725,7 @@ env_summary %>%
   )
 
 
-ggplot(ss_full_cab_index, aes(x = year, y = est)) +
+ggplot(ss_dln3_cab_index, aes(x = year, y = est)) +
   geom_line(color = "coral", linewidth = 0.8) +
   geom_ribbon(aes(ymin = lwr, ymax = upr), fill = "coral", alpha = 0.15) +
   geom_point(size = 2, color = "gray20") +
@@ -741,8 +741,8 @@ ggplot(ss_full_cab_index, aes(x = year, y = est)) +
 # Match oxygen's range to the index's range
 o2_data <- env_summary %>% filter(variable == "o2_surf")
 
-index_min <- min(ss_full_cab_index$est, na.rm = TRUE)
-index_max <- max(ss_full_cab_index$est, na.rm = TRUE)
+index_min <- min(ss_dln3_cab_index$est, na.rm = TRUE)
+index_max <- max(ss_dln3_cab_index$est, na.rm = TRUE)
 o2_min    <- min(o2_data$mean, na.rm = TRUE)
 o2_max    <- max(o2_data$mean, na.rm = TRUE)
 
@@ -763,13 +763,13 @@ ggplot() +
              aes(x = year, y = rescale_o2(mean)),
              size = 2, color = "steelblue4") +
   # Larval index (primary axis)
-  geom_ribbon(data = ss_full_cab_index,
+  geom_ribbon(data = ss_dln3_cab_index,
               aes(x = year, ymin = lwr, ymax = upr),
               fill = "coral", alpha = 0.15) +
-  geom_line(data = ss_full_cab_index,
+  geom_line(data = ss_dln3_cab_index,
             aes(x = year, y = est),
             color = "coral", linewidth = 0.8) +
-  geom_point(data = ss_full_cab_index,
+  geom_point(data = ss_dln3_cab_index,
              aes(x = year, y = est),
              size = 2, color = "coral4") +
   scale_y_continuous(
@@ -795,8 +795,8 @@ ggplot() +
 
 temp_data <- env_summary %>% filter(variable == "temp_surf")
 
-index_min  <- min(ss_full_cab_index$est, na.rm = TRUE)
-index_max  <- max(ss_full_cab_index$est, na.rm = TRUE)
+index_min  <- min(ss_dln3_cab_index$est, na.rm = TRUE)
+index_max  <- max(ss_dln3_cab_index$est, na.rm = TRUE)
 temp_min   <- min(temp_data$mean, na.rm = TRUE)
 temp_max   <- max(temp_data$mean, na.rm = TRUE)
 
@@ -816,13 +816,13 @@ ggplot() +
              aes(x = year, y = rescale_temp(mean)),
              size = 2, color = "steelblue4") +
   # Larval index (primary axis)
-  geom_ribbon(data = ss_full_cab_index,
+  geom_ribbon(data = ss_dln3_cab_index,
               aes(x = year, ymin = lwr, ymax = upr),
               fill = "coral", alpha = 0.15) +
-  geom_line(data = ss_full_cab_index,
+  geom_line(data = ss_dln3_cab_index,
             aes(x = year, y = est),
             color = "coral", linewidth = 0.8) +
-  geom_point(data = ss_full_cab_index,
+  geom_point(data = ss_dln3_cab_index,
              aes(x = year, y = est),
              size = 2, color = "coral4") +
   scale_y_continuous(
@@ -846,7 +846,7 @@ ggplot() +
   )
 
 ccf_boot(
-  x = ss_full_combined_obs %>% filter(year >= 1984, year <= 2015) %>% pull(larvae_index),
+  x = ss_dln3_combined_obs %>% filter(year >= 1984, year <= 2015) %>% pull(larvae_index),
   y = o2_data$mean,
   lag.max = 10,
   plot = "Spearman",
@@ -854,7 +854,7 @@ ccf_boot(
 )
 
 ccf_boot(
-  x = ss_full_combined_obs %>% filter(year >= 1984, year <= 2015) %>% pull(larvae_index),
+  x = ss_dln3_combined_obs %>% filter(year >= 1984, year <= 2015) %>% pull(larvae_index),
   y = temp_data$mean,
   lag.max = 10,
   plot = "Spearman",
@@ -862,7 +862,7 @@ ccf_boot(
 )
 
 ccf_boot(
-  x = diff(ss_full_combined_obs %>% filter(year >= 1984, year <= 2015) %>% pull(larvae_index)),
+  x = diff(ss_dln3_combined_obs %>% filter(year >= 1984, year <= 2015) %>% pull(larvae_index)),
   y = diff(o2_data$mean),
   lag.max = 10,
   plot = "Spearman",
