@@ -305,7 +305,16 @@ m2_hurdle_gm <- sdmTMB(
   spatiotemporal = "off"
 )
 
-AIC(m2_hurdle_ln, m2_hurdle_gm)
+m2_tw <- sdmTMB(
+  larvae_100m3 ~ temp_surf_z + sal_surf_z + o2_surf_z + mean_cpue_z,
+  data = cabezon_env_complete,
+  mesh = cab_env_mesh2,
+  family = tweedie(),
+  spatial = "on",
+  spatiotemporal = "off"
+)
+
+AIC(m2_hurdle_ln, m2_hurdle_gm, m2_tw)
 
 sanity(m2_hurdle_ln)
 summary(m2)
@@ -413,6 +422,80 @@ cab_env_mesh_sens <- fm_mesh_2d(
 cab_env_mesh_sens2 <- make_mesh(data = cabezon_env_constrained, 
                                 c("X", "Y"), 
                                 mesh = cab_env_mesh_sens)
+
+
+c_m1 <- glmer(cabezon_present ~ temp_surf_z + sal_surf_z + (1 | sta_id),
+            data = cabezon_env_constrained, family = binomial)
+
+c_m2 <- glmer(cabezon_present ~ temp_surf_z + sal_surf_z + o2_surf_z + (1 | sta_id),
+            data = cabezon_env_constrained, family = binomial)
+
+c_m3 <- glmer(cabezon_present ~ temp_surf_z + sal_surf_z + chla_surf_z + (1 | sta_id),
+            data = cabezon_env_constrained, family = binomial)
+
+c_m4 <- glmer(cabezon_present ~ sal_surf_z + o2_surf_z + chla_surf_z + (1 | sta_id),
+            data = cabezon_env_constrained, family = binomial)
+
+c_m5 <- glmer(cabezon_present ~ temp_surf_z + sal_surf_z + o2_surf_z + chla_surf_z + (1 | sta_id),
+            data = cabezon_env_constrained, family = binomial)
+
+AIC(c_m1, c_m2, c_m3, c_m4, c_m5)
+
+summary(c_m2)
+summary(c_m5)
+
+# M1: temp + sal
+c_m1_sdm <- sdmTMB(
+  cabezon_present ~ temp_surf_z + sal_surf_z + mean_cpue_z,
+  data           = cabezon_env_constrained,
+  mesh           = cab_env_mesh_sens2,
+  family         = binomial(),
+  spatial        = "on",
+  spatiotemporal = "off"
+)
+
+# M2: temp + sal + o2 (preferred inferential model)
+c_m2_sdm <- sdmTMB(
+  cabezon_present ~ temp_surf_z + sal_surf_z + o2_surf_z + mean_cpue_z,
+  data           = cabezon_env_constrained,
+  mesh           = cab_env_mesh_sens2,
+  family         = binomial(),
+  spatial        = "on",
+  spatiotemporal = "off"
+)
+
+# M3: temp + sal + chla
+c_m3_sdm <- sdmTMB(
+  cabezon_present ~ temp_surf_z + sal_surf_z + chla_surf_z + mean_cpue_z,
+  data           = cabezon_env_constrained,
+  mesh           = cab_env_mesh_sens2,
+  family         = binomial(),
+  spatial        = "on",
+  spatiotemporal = "off"
+)
+
+# M4: sal + o2 + chla
+c_m4_sdm <- sdmTMB(
+  cabezon_present ~ sal_surf_z + o2_surf_z + chla_surf_z + mean_cpue_z,
+  data           = cabezon_env_constrained,
+  mesh           = cab_env_mesh_sens2,
+  family         = binomial(),
+  spatial        = "on",
+  spatiotemporal = "off"
+)
+
+# M5: full model
+c_m5_sdm <- sdmTMB(
+  cabezon_present ~ temp_surf_z + sal_surf_z + o2_surf_z + chla_surf_z + mean_cpue_z,
+  data           = cabezon_env_constrained,
+  mesh           = cab_env_mesh_sens2,
+  family         = binomial(),
+  spatial        = "on",
+  spatiotemporal = "off"
+)
+
+# Compare
+AIC(c_m1_sdm, c_m2_sdm, c_m3_sdm, c_m4_sdm, c_m5_sdm)
 
 # Refit preferred binomial model
 m2_sdm_sens <- sdmTMB(
@@ -730,7 +813,7 @@ ggplot(ss_dln3_cab_index, aes(x = year, y = est)) +
   geom_ribbon(aes(ymin = lwr, ymax = upr), fill = "coral", alpha = 0.15) +
   geom_point(size = 2, color = "gray20") +
   scale_x_continuous(breaks = seq(1984, 2020, by = 4)) +
-  labs(y = "Estimated abundance index", x = "Year", title = "Abundance Index: Delta-Gamma on Global Intercept with AR1 Spatiotemporal Fields") +
+  labs(y = "Estimated abundance index", x = "Year", title = "Abundance Index: Delta-Lognormal on Global Intercept with AR1 and off Spatiotemporal Fields") +
   theme_classic(base_size = 13) +
   theme(
     plot.title = element_text(face = "bold"),
@@ -773,7 +856,7 @@ ggplot() +
              aes(x = year, y = est),
              size = 2, color = "coral4") +
   scale_y_continuous(
-    name = "Estimated Larval Abundance Index (Full AR1 Delta-Gamma Model)",
+    name = "Estimated Larval Abundance Index (Delta-Lognormal AR1)",
     sec.axis = sec_axis(~ unscale_o2(.), name = "Surface Oxygen (mean ± 1 SD)")
   ) +
   scale_x_continuous(breaks = seq(1984, 2020, by = 4)) +
@@ -832,7 +915,7 @@ ggplot() +
   scale_x_continuous(breaks = seq(1984, 2020, by = 4)) +
   labs(
     title    = "Larval Abundance Index vs. Surface Temperature",
-    subtitle = "Coral: DG-AR1 larval index  |  Blue: surface temperature annual mean ± 1 SD",
+    subtitle = "Coral: DLn-AR1 larval index  |  Blue: surface temperature annual mean ± 1 SD",
     x = "Year"
   ) +
   theme_classic(base_size = 13) +
