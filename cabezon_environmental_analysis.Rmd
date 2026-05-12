@@ -962,3 +962,115 @@ range(cabezon_env_complete$larvae_100m3)
 range(ss_full_cab_index_obs$est)
 ```
 
+# Figures
+
+```{r SST partial effects plot}
+library(dplyr)
+library(ggplot2)
+
+# ─── 1. Build prediction grid for SST ───
+# Sequence across observed range, hold other covariates at their means
+sst_grid <- data.frame(
+  temp_surf_z = seq(min(cabezon_env_constrained$temp_surf_z, na.rm = TRUE),
+                    max(cabezon_env_constrained$temp_surf_z, na.rm = TRUE),
+                    length.out = 100),
+  sal_surf_z  = mean(cabezon_env_constrained$sal_surf_z, na.rm = TRUE),
+  o2_surf_z   = mean(cabezon_env_constrained$o2_surf_z, na.rm = TRUE),
+  mean_cpue_z = mean(cabezon_env_constrained$mean_cpue_z, na.rm = TRUE),
+  # spatial coords needed by sdmTMB even if marginalized — pick any valid point
+  X = mean(cabezon_env_constrained$X, na.rm = TRUE),
+  Y = mean(cabezon_env_constrained$Y, na.rm = TRUE)
+)
+
+# ─── 2. Predict, marginalizing over spatial field ───
+sst_pred <- predict(m2_sdm_sens, 
+                    newdata = sst_grid,
+                    re_form = NA,            # exclude spatial random field
+                    se_fit = TRUE)
+
+# ─── 3. Convert to response scale (binomial link is logit) ───
+sst_pred <- sst_pred %>%
+  mutate(
+    fit_resp = plogis(est),
+    lwr_resp = plogis(est - 1.96 * est_se),
+    upr_resp = plogis(est + 1.96 * est_se)
+  )
+
+# ─── 4. Back-transform x-axis to original units (so the plot is interpretable) ───
+sst_mean <- mean(cabezon_env_constrained$temp_surf, na.rm = TRUE)
+sst_sd   <- sd(cabezon_env_constrained$temp_surf, na.rm = TRUE)
+sst_pred$temp_surf <- sst_pred$temp_surf_z * sst_sd + sst_mean
+
+# ─── 5. Plot ───
+sst_partial <- ggplot(sst_pred, aes(x = temp_surf, y = fit_resp)) +
+  geom_ribbon(aes(ymin = lwr_resp, ymax = upr_resp), 
+              fill = "steelblue", alpha = 0.25) +
+  geom_line(color = "steelblue", linewidth = 0.9) +
+  labs(x = "Sea surface temperature (°C)",
+       y = "Predicted probability of larval presence",
+       title = "Partial effect of SST") +
+  theme_minimal()
+
+sst_partial
+```
+
+```{r SSO partial effects plot}
+library(dplyr)
+library(ggplot2)
+
+# ─── 1. Build prediction grid for SST ───
+# Sequence across observed range, hold other covariates at their means
+sso_grid <- data.frame(
+  o2_surf_z = seq(min(cabezon_env_constrained$o2_surf_z, na.rm = TRUE),
+                    max(cabezon_env_constrained$o2_surf_z, na.rm = TRUE),
+                    length.out = 100),
+  sal_surf_z  = mean(cabezon_env_constrained$sal_surf_z, na.rm = TRUE),
+  temp_surf_z   = mean(cabezon_env_constrained$temp_surf_z, na.rm = TRUE),
+  mean_cpue_z = mean(cabezon_env_constrained$mean_cpue_z, na.rm = TRUE),
+  # spatial coords needed by sdmTMB even if marginalized — pick any valid point
+  X = mean(cabezon_env_constrained$X, na.rm = TRUE),
+  Y = mean(cabezon_env_constrained$Y, na.rm = TRUE)
+)
+
+# ─── 2. Predict, marginalizing over spatial field ───
+sso_pred <- predict(m2_sdm_sens, 
+                    newdata = sso_grid,
+                    re_form = NA,            # exclude spatial random field
+                    se_fit = TRUE)
+
+# ─── 3. Convert to response scale (binomial link is logit) ───
+sso_pred <- sso_pred %>%
+  mutate(
+    fit_resp = plogis(est),
+    lwr_resp = plogis(est - 1.96 * est_se),
+    upr_resp = plogis(est + 1.96 * est_se)
+  )
+
+# ─── 4. Back-transform x-axis to original units (so the plot is interpretable) ───
+sso_mean <- mean(cabezon_env_constrained$o2_surf, na.rm = TRUE)
+sso_sd   <- sd(cabezon_env_constrained$o2_surf, na.rm = TRUE)
+sso_pred$o2_surf <- sso_pred$o2_surf_z * sso_sd + sso_mean
+
+# ─── 5. Plot ───
+sso_partial <- ggplot(sso_pred, aes(x = o2_surf, y = fit_resp)) +
+  geom_ribbon(aes(ymin = lwr_resp, ymax = upr_resp), 
+              fill = "coral", alpha = 0.25) +
+  geom_line(color = "coral", linewidth = 0.9) +
+  labs(x = "Sea surface dissolved oxygen",
+       y = "Predicted probability of larval presence",
+       title = "Partial effect of SSO") +
+  theme_minimal()
+
+sso_partial
+```
+
+```{r combined partial effects plots for SST and SSO}
+library(patchwork)
+sst_partial + sso_partial + plot_annotation(
+  title = "Partial effects of environmental covariates on cabezon larval presence",
+  caption = "Predicted probability of larval detection across the observed range of each covariate, with all other covariates held at their means and spatial random field marginalized."
+)
+```
+
+
+
