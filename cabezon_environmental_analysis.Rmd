@@ -1062,14 +1062,20 @@ sso_partial <- ggplot(sso_pred, aes(x = o2_surf, y = fit_resp)) +
   theme_minimal()
 
 sso_partial
+
 ```
 
 ```{r combined partial effects plots for SST and SSO}
 library(patchwork)
-sst_partial + sso_partial + plot_annotation(
+partial_effects <- sst_partial + sso_partial + plot_annotation(
   title = "Partial effects of environmental covariates on cabezon larval presence",
   caption = "Predicted probability of larval detection across the observed range of each covariate, with all other covariates held at their means and spatial random field marginalized."
 )
+
+partial_effects
+
+ggsave("figures/partial_effects.png", partial_effects,
+       width = 8, height = 6.5, dpi = 300)
 ```
 
 
