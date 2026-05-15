@@ -767,6 +767,9 @@ ss_cab_fit_dln1 <- ss_cab_fit_dln3
 ## 4.1. ss_cab_fit1 — Full Delta-Gamma Model
 
 ```{r 4.1. ss_cab_fit1 diagnostics, cache = T}
+
+summary(ss_cab_fit_dln3)
+
 #---- 4.1.a. Calibration summaries
 
 set.seed(my.seed)
@@ -1877,17 +1880,17 @@ library(funtimes)
 
 pdf(NULL)
 
-ccf_age0   <- ccf_boot(ss_dln_fy_combined_obs$larvae_index,
-                       ss_dln_fy_combined_obs$age0,
+ccf_age0   <- ccf_boot(ss_dln3_combined_obs$larvae_index,
+                       ss_dln3_combined_obs$age0,
                        lag.max = 10, plot = "Spearman", B = 1000)
-ccf_recdev <- ccf_boot(ss_dln_fy_combined_obs$larvae_index,
-                       ss_dln_fy_combined_obs$rec_dev,
+ccf_recdev <- ccf_boot(ss_dln3_combined_obs$larvae_index,
+                       ss_dln3_combined_obs$rec_dev,
                        lag.max = 10, plot = "Spearman", B = 1000)
-ccf_ssb    <- ccf_boot(ss_dln_fy_combined_obs$larvae_index,
-                       ss_dln_fy_combined_obs$ssb,
+ccf_ssb    <- ccf_boot(ss_dln3_combined_obs$larvae_index,
+                       ss_dln3_combined_obs$ssb,
                        lag.max = 10, plot = "Spearman", B = 1000)
-ccf_dssb   <- ccf_boot(diff(ss_dln_fy_combined_obs$larvae_index),
-                       diff(ss_dln_fy_combined_obs$ssb),
+ccf_dssb   <- ccf_boot(diff(ss_dln3_combined_obs$larvae_index),
+                       diff(ss_dln3_combined_obs$ssb),
                        lag.max = 10, plot = "Spearman", B = 1000)
 
 dev.off()
@@ -1958,6 +1961,179 @@ ggsave("figures/ccf_panel.png", p_ccf,
        width = 8, height = 6.5, dpi = 300)
 ```
 
+```{r sampling effort figures}
+#ss_plot_data_year
+#ss_plot_data_ms 
+
+library(scales)
+
+month_data <- ss_plot_data_ms %>%
+  filter(group_var == "Month") %>%
+  mutate(
+    level = recode(as.character(level),
+      "1" = "January", "2" = "February", "3" = "March"),
+    level = factor(level, levels = c("January", "February", "March"))
+  )
+
+p_month <- ggplot(month_data, aes(x = level, y = count, fill = tow_type)) +
+  geom_col(width = 0.6, color = "white", linewidth = 0.3) +
+  shared_fill +
+  scale_y_continuous(
+    labels = comma,
+    expand = expansion(mult = c(0, 0.05))
+  ) +
+  labs(
+    title = "Cabezon Larvae: Positive vs. Total Tows",
+    subtitle = "Sampling effort by month",
+    y = "Number of Tows"
+  ) +
+  shared_bar_theme +
+  theme(axis.text.x = element_text(angle = 0, hjust = 0.5))
+
+# Refined fill palette
+shared_fill <- scale_fill_manual(
+  values = c("negative_tows" = "grey88", "positive_tows" = "#2C5F8D"),
+  labels = c("negative_tows" = "Larvae Absent", "positive_tows" = "Larvae Present"),
+  name = NULL
+)
+
+# Refined shared theme
+shared_bar_theme <- theme_minimal(base_size = 12) +
+  theme(
+    strip.text         = element_text(face = "bold", size = 13, margin = margin(b = 8)),
+    axis.text.x        = element_text(angle = 45, hjust = 1, size = 10),
+    axis.text.y        = element_text(size = 10),
+    axis.title.y       = element_text(size = 11, margin = margin(r = 10)),
+    axis.title.x       = element_blank(),
+    legend.position    = "bottom",
+    legend.text        = element_text(size = 11),
+    legend.key.size    = unit(0.5, "cm"),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.y = element_blank(),
+    panel.grid.major.y = element_line(color = "grey92", linewidth = 0.4),
+    plot.title         = element_text(face = "bold", size = 15, margin = margin(b = 4)),
+    plot.subtitle      = element_text(color = "grey40", size = 10, margin = margin(b = 12)),
+    plot.margin        = margin(15, 15, 10, 15)
+  )
+
+# For the year plot
+p_year <- ggplot(ss_plot_data_year, aes(x = year, y = count, fill = tow_type)) +
+  geom_col(width = 0.75, color = "white", linewidth = 0.2) +
+  shared_fill +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.05))) +
+  labs(
+    title = "Cabezon Larvae: Positive vs. Total Tows",
+    subtitle = "Annual sampling effort, 1981–2015",
+    y = "Number of Tows"
+  ) +
+  shared_bar_theme
+
+p_month
+p_year
+
+ggsave("figures/tows-by-month.png", p_month,
+       width = 9.85, height = 6.8, dpi = 300)
+
+ggsave("figures/tows-by-year.png", p_year,
+       width = 9.85, height = 6.8, dpi = 300)
+
+
+obs_aggregate <- obs_plot %>%
+  group_by(station_id) %>%
+  summarise(
+    X_m = mean(X_m, na.rm = TRUE),
+    Y_m = mean(Y_m, na.rm = TRUE),
+    n_visits = n(),
+    n_positive = sum(larvae_positive, na.rm = TRUE),
+    mean_abundance = mean(larvae_100m3, na.rm = TRUE),
+    max_abundance = max(larvae_100m3, na.rm = TRUE),
+    ever_positive = any(larvae_positive, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Compute padded plot limits (10% buffer on each side)
+x_range <- range(obs_aggregate$X_m, na.rm = TRUE)
+y_range <- range(obs_aggregate$Y_m, na.rm = TRUE)
+x_buffer <- diff(x_range) * 0.10
+y_buffer <- diff(y_range) * 0.10
+
+xlim_padded <- c(x_range[1] - x_buffer, x_range[2] + x_buffer)
+ylim_padded <- c(y_range[1] - y_buffer, y_range[2] + y_buffer)
+
+ggplot() +
+  geom_sf(
+    data = ca_coast,
+    inherit.aes = FALSE,
+    fill = "grey80",
+    color = "grey40"
+  ) +
+  geom_sf(
+    data = calcofi_lines,
+    inherit.aes = FALSE,
+    color = "grey95",
+    linewidth = 0.25
+  ) +
+  geom_point(
+    data = obs_aggregate %>% filter(!ever_positive),
+    aes(x = X_m, y = Y_m),
+    size = 0.4,
+    alpha = 0.4
+  ) +
+  geom_point(
+    data = obs_aggregate %>% filter(ever_positive),
+    aes(x = X_m, y = Y_m, size = mean_abundance),
+    alpha = 0.7,
+    color = "#2C5F8D"
+  ) +
+  coord_sf(
+    crs = st_crs(utm_crs),
+    xlim = xlim_padded,
+    ylim = ylim_padded,
+    expand = FALSE
+  ) +
+  scale_size_continuous(
+    name = "Mean larvae / 100 m³",
+    range = c(1, 8)
+  ) +
+  labs(
+    title = "Observed cabezon larval abundance by CalCOFI station",
+    subtitle = "Aggregated across all sampling years",
+    x = NULL,
+    y = NULL
+  ) +
+  theme_minimal()
+```
+
+```{r preferred larval index figure}
+library(scales)  # for comma formatting
+
+ggplot(ss_dln3_cab_index, aes(x = year, y = est)) +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), 
+              fill = "#2C5F8D", alpha = 0.2) +
+  geom_line(color = "#1A3E5C", linewidth = 0.7) +
+  geom_point(color = "#1A3E5C", size = 1.5) +
+  scale_x_continuous(breaks = seq(1980, 2015, by = 5)) +
+  scale_y_continuous(labels = comma, 
+                     limits = c(0, NA),
+                     expand = expansion(mult = c(0, 0.05))) +
+  labs(
+    title = "Preferred Cabezon larval abundance index, 1981–2015",
+    subtitle = "DLn-IID: Delta-lognormal model, IID encounter spatiotemporal field",
+    x = NULL,
+    y = "Estimated abundance index",
+    caption = "Shaded band: 95% CI."
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    plot.subtitle = element_text(color = "grey40", margin = margin(b = 12)),
+    plot.caption = element_text(color = "grey50", size = 9, hjust = 0),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_line(color = "grey92"),
+    axis.title.y = element_text(margin = margin(r = 10)),
+    plot.margin = margin(15, 20, 15, 15)
+  )
+```
 
 
 # Additional Models
