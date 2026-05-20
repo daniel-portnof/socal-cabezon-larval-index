@@ -1774,6 +1774,15 @@ obs_plot <- cabezon_shelf_spawn |>
     larvae_positive = larvae_100m3 > 0
   )
 
+x_range <- range(pred_plot$X_m, na.rm = TRUE)
+y_range <- range(pred_plot$Y_m, na.rm = TRUE)
+
+x_buffer <- diff(x_range) * 0.05
+y_buffer <- diff(y_range) * 0.05
+
+xlim_padded <- c(x_range[1] - x_buffer, x_range[2] + x_buffer)
+ylim_padded <- c(y_range[1] - y_buffer, y_range[2] + y_buffer)
+
 ggplot() +
   geom_sf(
     data = ca_coast,
@@ -1785,7 +1794,7 @@ ggplot() +
     data = calcofi_lines,
     inherit.aes = FALSE,
     color = "grey95",
-    linewidth = 0.25
+    linewidth = 0.6
   ) +
   geom_point(
     data = obs_plot |> filter(!larvae_positive),
@@ -1799,10 +1808,10 @@ ggplot() +
     alpha = 0.7
   ) +
   coord_sf(
-    crs = st_crs(utm_crs),
-    xlim = range(obs_plot$X_m, na.rm = TRUE),
-    ylim = range(obs_plot$Y_m, na.rm = TRUE),
-    expand = FALSE
+  crs = st_crs(utm_crs),
+  xlim = xlim_padded,
+  ylim = ylim_padded,
+  expand = FALSE
   ) +
   facet_wrap(~ year) +
   scale_size_continuous(
@@ -1820,18 +1829,56 @@ ggplot() +
 ggplot() +
   geom_raster(
     data = pred_plot,
-    aes(x = X_m, y = Y_m, fill = est1)
+    aes(x = X_m, y = Y_m, fill = log1p(est))
   ) +
-  geom_sf(data = ca_coast, inherit.aes = FALSE, fill = "grey80") +
+  geom_sf(
+    data = ca_coast,
+    inherit.aes = FALSE,
+    fill = "beige",
+    color = "black",
+    linewidth = 0.2
+  ) +
+#  geom_sf(
+#    data = calcofi_lines,
+#    inherit.aes = FALSE,
+#    color = "white",
+#    linewidth = 1.2,
+#    alpha = 0.35
+#  ) +
+#  geom_point(
+#    data = obs_aggregate %>% filter(ever_positive),
+#    aes(x = X_m, y = Y_m),
+#    inherit.aes = FALSE,
+#    size = 2.5,
+#    color = "goldenrod",
+#    alpha = 1
+#  ) +
   coord_sf(
     crs = st_crs(utm_crs),
     xlim = range(pred_plot$X_m, na.rm = TRUE),
     ylim = range(pred_plot$Y_m, na.rm = TRUE),
     expand = FALSE
   ) +
-  facet_wrap(~ year) +
-  scale_fill_viridis_c(name = "Predicted larvae") +
-  theme_minimal()
+  scale_fill_viridis_c(
+  option = "mako",
+  name = "Predicted larval abundance"
+  ) +
+  labs(
+    title = "Persistent spatial structure in modeled larval abundance",
+    subtitle = "Log-transformed expected abundance from delta-lognormal index model",
+    x = NULL,
+    y = NULL
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    panel.border = element_rect(color = "grey65", fill = NA, linewidth = 0.6),
+    plot.title = element_text(face = "bold", size = 17),
+    plot.subtitle = element_text(size = 12, color = "grey35"),
+    axis.text = element_text(size = 10),
+    legend.title = element_text(size = 11),
+    legend.text = element_text(size = 10),
+    panel.grid = element_line(color = "grey90", linewidth = 0.2)
+  )
 
 # Plot showing hurdle (abundance); same across years
 ggplot() +
@@ -1846,8 +1893,10 @@ ggplot() +
     ylim = range(pred_plot$Y_m, na.rm = TRUE),
     expand = FALSE
   ) +
-  scale_fill_viridis_c(name = "Predicted larvae") +
+  scale_fill_viridis_c(option = "mako",
+                       name = "Predicted larvae") +
   theme_minimal()
+
 
 ggplot() +
   geom_raster(
@@ -2031,11 +2080,11 @@ p_year <- ggplot(ss_plot_data_year, aes(x = year, y = count, fill = tow_type)) +
 p_month
 p_year
 
-ggsave("figures/tows-by-month.png", p_month,
-       width = 9.85, height = 6.8, dpi = 300)
+#ggsave("figures/tows-by-month.png", p_month,
+#       width = 9.85, height = 6.8, dpi = 300)
 
-ggsave("figures/tows-by-year.png", p_year,
-       width = 9.85, height = 6.8, dpi = 300)
+#ggsave("figures/tows-by-year.png", p_year,
+#       width = 9.85, height = 6.8, dpi = 300)
 
 
 obs_aggregate <- obs_plot %>%
@@ -2044,14 +2093,25 @@ obs_aggregate <- obs_plot %>%
     X_m = mean(X_m, na.rm = TRUE),
     Y_m = mean(Y_m, na.rm = TRUE),
     n_visits = n(),
-    n_positive = sum(larvae_positive, na.rm = TRUE),
+    n_positive = sum(larvae_100m3 > 0, na.rm = TRUE),
+
     mean_abundance = mean(larvae_100m3, na.rm = TRUE),
+    mean_positive_abundance = ifelse(
+      sum(larvae_100m3 > 0, na.rm = TRUE) > 0,
+      mean(larvae_100m3[larvae_100m3 > 0], na.rm = TRUE),
+      NA_real_
+    ),
+    sum_abundance = sum(larvae_100m3, na.rm = TRUE),
     max_abundance = max(larvae_100m3, na.rm = TRUE),
-    ever_positive = any(larvae_positive, na.rm = TRUE),
+
+    ever_positive = any(larvae_100m3 > 0, na.rm = TRUE),
     .groups = "drop"
+  ) %>%
+  mutate(
+    plot_abundance = mean_positive_abundance
   )
 
-# Compute padded plot limits (10% buffer on each side)
+# Compute padded plot limits
 x_range <- range(obs_aggregate$X_m, na.rm = TRUE)
 y_range <- range(obs_aggregate$Y_m, na.rm = TRUE)
 x_buffer <- diff(x_range) * 0.10
@@ -2081,7 +2141,7 @@ ggplot() +
   ) +
   geom_point(
     data = obs_aggregate %>% filter(ever_positive),
-    aes(x = X_m, y = Y_m, size = mean_abundance),
+    aes(x = X_m, y = Y_m, size = plot_abundance),
     alpha = 0.7,
     color = "#2C5F8D"
   ) +
@@ -2092,22 +2152,26 @@ ggplot() +
     expand = FALSE
   ) +
   scale_size_continuous(
-    name = "Mean larvae / 100 m³",
+    name = "Mean larvae / 100 m³\npositive tows only",
     range = c(1, 8)
   ) +
   labs(
     title = "Observed cabezon larval abundance by CalCOFI station",
-    subtitle = "Aggregated across all sampling years",
+    subtitle = "Mean density from positive tows only, aggregated by station",
     x = NULL,
     y = NULL
   ) +
   theme_minimal()
+
+
+
+  
 ```
 
 ```{r preferred larval index figure}
 library(scales)  # for comma formatting
 
-ggplot(ss_dln3_cab_index, aes(x = year, y = est)) +
+p_index <- ggplot(ss_dln3_cab_index, aes(x = year, y = est)) +
   geom_ribbon(aes(ymin = lwr, ymax = upr), 
               fill = "#2C5F8D", alpha = 0.2) +
   geom_line(color = "#1A3E5C", linewidth = 0.7) +
@@ -2117,22 +2181,238 @@ ggplot(ss_dln3_cab_index, aes(x = year, y = est)) +
                      limits = c(0, NA),
                      expand = expansion(mult = c(0, 0.05))) +
   labs(
-    title = "Preferred Cabezon larval abundance index, 1981–2015",
+    title = "Estimated cabezon larval abundance index, 1981–2015",
     subtitle = "DLn-IID: Delta-lognormal model, IID encounter spatiotemporal field",
     x = NULL,
     y = "Estimated abundance index",
     caption = "Shaded band: 95% CI."
   ) +
-  theme_minimal(base_size = 12) +
+  theme_minimal(base_size = 16) +
   theme(
-    plot.title = element_text(face = "bold", size = 14),
-    plot.subtitle = element_text(color = "grey40", margin = margin(b = 12)),
-    plot.caption = element_text(color = "grey50", size = 9, hjust = 0),
+    plot.title = element_text(face = "bold", size = 18),
+    plot.subtitle = element_text(color = "grey40", margin = margin(b = 15)),
+    plot.caption = element_text(color = "grey50", size = 11, hjust = 0),
     panel.grid.minor = element_blank(),
     panel.grid.major.x = element_line(color = "grey92"),
-    axis.title.y = element_text(margin = margin(r = 10)),
+    axis.title.y = element_text(size = 16, margin = margin(r = 10)),
+    axis.text = element_text(size = 13),
     plot.margin = margin(15, 20, 15, 15)
+  ) 
+
+ggsave(
+  "C:/Users/machs/SynologyDrive/Dan's Files/SIO/0_capstone/6_figures/preferred_index.png",
+  plot = p_index,
+  width = 12.5,
+  height = 5.5,
+  units = "in",
+  dpi = 300
+)
+```
+
+```{r combined prediction + observation plots}
+library(sf)
+library(dplyr)
+library(ggplot2)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(scales)
+library(patchwork)
+
+# California state polygon
+ca_state <- ne_states(
+  country = "United States of America",
+  returnclass = "sf"
+) %>%
+  filter(name == "California")
+
+# Mexico country polygon
+mexico <- ne_countries(
+  country = "Mexico",
+  scale = "medium",
+  returnclass = "sf"
+)
+
+# Combine and project
+land_sf <- bind_rows(
+  ca_state %>% mutate(label_name = "California"),
+  mexico %>% mutate(label_name = "Mexico")
+) %>%
+  st_make_valid() %>%
+  st_transform(utm_crs)
+
+label_pts <- tibble::tibble(
+  name = "California",
+  lon = -119.0,
+  lat = 34.7
+) %>%
+  st_as_sf(coords = c("lon", "lat"), crs = 4326) %>%
+  st_transform(utm_crs)
+
+x_range <- range(pred_plot$X_m, na.rm = TRUE)
+y_range <- range(pred_plot$Y_m, na.rm = TRUE)
+
+x_buffer <- diff(x_range) * 0.06
+y_buffer <- diff(y_range) * 0.06
+
+xlim_common <- c(x_range[1] - x_buffer, x_range[2] + x_buffer)
+ylim_common <- c(y_range[1] - y_buffer, y_range[2] + y_buffer)
+
+map_theme_shared <- theme_minimal(base_size = 14) +
+  theme(
+    panel.border = element_rect(color = "grey65", fill = NA, linewidth = 0.6),
+    panel.grid.major = element_line(color = "grey90", linewidth = 0.2),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold", size = 17),
+    plot.subtitle = element_text(size = 12, color = "grey35"),
+    axis.text = element_text(size = 10),
+    axis.title = element_blank(),
+    legend.title = element_text(size = 11),
+    legend.text = element_text(size = 10),
+    plot.margin = margin(10, 14, 10, 10)
   )
+
+p_model <- ggplot() +
+  geom_raster(
+    data = pred_plot,
+    aes(x = X_m, y = Y_m, fill = log1p(est))
+  ) +
+  geom_sf(
+    data = land_sf,
+    inherit.aes = FALSE,
+    fill = "#E8E5D0",
+    color = "grey35",
+    linewidth = 0.3
+  ) +
+#  geom_sf(
+#    data = calcofi_lines,
+#    inherit.aes = FALSE,
+#    color = "white",
+#    linewidth = 0.45,
+#    alpha = 0.30
+#  ) +
+  geom_sf_text(
+    data = label_pts,
+    aes(label = name),
+    color = "grey30",
+    size = 5,
+    fontface = "italic"
+  ) +
+  coord_sf(
+    crs = st_crs(utm_crs),
+    xlim = xlim_common,
+    ylim = ylim_common,
+    expand = FALSE,
+    clip = "on"
+  ) +
+  scale_fill_viridis_c(
+    option = "mako",
+    name = "log(1 + predicted\nlarvae / 100 m³)"
+  ) +
+  labs(
+    title = "Persistent spatial structure in modeled larval abundance",
+    subtitle = "Log-transformed expected abundance from delta-lognormal index model"
+  ) +
+  map_theme_shared +
+  theme(
+    legend.position = c(0.95, 0.95),
+    legend.justification = c(1, 1),
+    legend.background = element_rect(
+      fill = scales::alpha("white", 0.78),
+      color = "grey75",
+      linewidth = 0.3
+    ),
+    legend.key.height = unit(0.5, "cm"),
+    legend.key.width = unit(0.38, "cm")
+  )
+
+p_obs <- ggplot() +
+  geom_sf(
+    data = land_sf,
+    inherit.aes = FALSE,
+    fill = "#E8E5D0",
+    color = "grey35",
+    linewidth = 0.3
+  ) +
+  geom_sf(
+    data = calcofi_lines,
+    inherit.aes = FALSE,
+    color = "dodgerblue4",
+    linewidth = 0.35,
+    alpha = 0.45
+  ) +
+  geom_point(
+    data = obs_aggregate %>% filter(ever_positive),
+    aes(x = X_m, y = Y_m, size = plot_abundance),
+    color = "dodgerblue4",
+    alpha = 0.75
+  ) +
+  geom_sf_text(
+    data = label_pts,
+    aes(label = name),
+    color = "grey30",
+    size = 5,
+    fontface = "italic"
+  ) +
+  
+  coord_sf(
+    crs = st_crs(utm_crs),
+    xlim = xlim_common,
+    ylim = ylim_common,
+    expand = FALSE,
+    clip = "on"
+  ) +
+  scale_size_continuous(
+    name = "Mean larvae / 100 m³\npositive tows only",
+    range = c(2.2, 11.5),
+    breaks = c(5, 10, 15, 20)
+  ) +
+  labs(
+    title = "Observed cabezon larval abundance by CalCOFI station",
+    subtitle = "Mean density from positive tows only, aggregated by station"
+  ) +
+  map_theme_shared +
+  theme(
+    legend.position = c(0.97, 0.97),
+    legend.justification = c(1, 1),
+    legend.background = element_rect(
+      fill = scales::alpha("white", 0.78),
+      color = "grey75",
+      linewidth = 0.3
+    ),
+    legend.key.height = unit(0.5, "cm"),
+    legend.key.width = unit(0.38, "cm")
+  )
+
+p_obs
+
+p_model
+
+ggsave(
+  "C:/Users/machs/SynologyDrive/Dan's Files/SIO/0_capstone/6_figures/p_obs_poster.png",
+  plot = p_obs,
+  width = 9,
+  height = 7,
+  units = "in",
+  dpi = 300
+)
+
+ggsave(
+  "C:/Users/machs/SynologyDrive/Dan's Files/SIO/0_capstone/6_figures/p_model_poster.png",
+  plot = p_model,
+  width = 9,
+  height = 7,
+  units = "in",
+  dpi = 300
+)
+
+#ggsave(
+#  "figures/obs_model_side_by_side.png",
+#  p_obs + p_model + plot_layout(widths = c(1, 1)),
+#  width = 14,
+#  height = 7,
+#  units = "in",
+#  dpi = 300
+#)
 ```
 
 
@@ -2452,6 +2732,8 @@ ggplot() +
   facet_wrap(~ year) +
   scale_fill_viridis_c(name = "Predicted larvae") +
   theme_minimal()
+
+
 ```
 
 ## 10.8. ss_cab_fit2a — STAR correlation analysis
