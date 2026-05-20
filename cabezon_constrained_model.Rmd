@@ -163,6 +163,7 @@ plot(cabezon$volume_sampled, cabezon$larvae_100m3)
 
 pos_vals <- cabezon$larvae_100m3[cabezon$larvae_100m3 > 0]
 hist(log(pos_vals), breaks = 50, main = "log(positive larvae_100m3)")
+hist(log(cabezon$larvae_100m3[cabezon$larvae_100m3 > 0]))
 
 cabezon %>%
   filter(larvae_100m3 > 0) %>%
@@ -452,6 +453,33 @@ cabezon_shelf_spawn %>%
   labs(title    = "Cabezon Larval Observations by Station and Season",
        subtitle = "Positive tows only; white = no positive tows recorded",
        x = NULL, y = "South \u2190 Station \u2192 North")
+
+ss_pos_vals <- cabezon_shelf_spawn$larvae_100m3[cabezon_shelf_spawn$larvae_100m3 > 0]
+hist(log(ss_pos_vals), breaks = 50, main = "log(positive larvae_100m3)")
+hist(log(cabezon_shelf_spawn$larvae_100m3[cabezon_shelf_spawn$larvae_100m3 > 0]))
+
+cabezon_shelf_spawn %>%
+  filter(larvae_100m3 > 0) %>%
+  group_by(year) %>%
+  summarize(m = mean(larvae_100m3), v = var(larvae_100m3), n = n()) %>%
+  filter(n > 5) %>%
+   ggplot(aes(log(m), log(v))) + geom_point() + geom_smooth(method = "lm") +
+  geom_abline(slope = 2, intercept = 0, linetype = "dashed", color = "red") +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "blue") +
+  labs(title = "Mean-variance relationship (dashed: red=gamma slope 2, blue=Poisson slope 1)")
+
+# Back out the raw count from density and volume
+cabezon_shelf_spawn %>%
+  filter(larvae_100m3 > 0) %>%
+  mutate(
+    raw_count_est = larvae_100m3 * volume_sampled / 100,
+    log_density = log(larvae_100m3)
+  ) %>%
+  ggplot(aes(log_density, fill = factor(round(raw_count_est)))) +
+  geom_histogram(bins = 50, position = "stack") +
+  scale_fill_viridis_d() +
+  labs(fill = "Estimated raw count",
+       title = "Does multi-modality decompose into integer count strata?")
 
 ```
 
@@ -1649,7 +1677,7 @@ ss_dln_fy_pred_obs %>%
 
 ss_dln_fy_combined_lagged <- ss_dln_fy_combined_obs %>%
   arrange(year) %>%
-  left_joint(
+  left_join(
     ss_dln_fy_combined_obs %>%
       dplyr::select(year, age0_lead1 = age0, rec_dev_lead1 = rec_dev) %>%
       mutate(year = year -1),
@@ -2023,7 +2051,7 @@ p_year <- ggplot(ss_plot_data_year, aes(x = year, y = count, fill = tow_type)) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.05))) +
   labs(
     title = "Cabezon Larvae: Positive vs. Total Tows",
-    subtitle = "Annual sampling effort, 1981–2015",
+    subtitle = "Annual sampling effort, spawning season (Jan - Mar) 1981–2015",
     y = "Number of Tows"
   ) +
   shared_bar_theme
@@ -2102,6 +2130,46 @@ ggplot() +
     y = NULL
   ) +
   theme_minimal()
+
+
+p_effort <- ggplot() +
+  geom_sf(
+    data = ca_coast,
+    inherit.aes = FALSE,
+    fill = "grey80",
+    color = "grey40"
+  ) +
+  geom_sf(
+    data = calcofi_lines,
+    inherit.aes = FALSE,
+    color = "grey95",
+    linewidth = 0.25
+  ) +
+  geom_point(
+    data = obs_aggregate,
+    aes(x = X_m, y = Y_m, size = n_visits),
+    alpha = 0.7,
+    color = "#2C5F8D"
+  ) +
+  coord_sf(
+    crs = st_crs(utm_crs),
+    xlim = xlim_padded,
+    ylim = ylim_padded,
+    expand = FALSE
+  ) +
+  scale_size_continuous(
+    name = "Number of tows",
+    range = c(1, 8)
+  ) +
+  labs(
+    title = "CalCOFI sampling effort by station",
+    subtitle = "Total tows aggregated across all sampling years, 1981–2015",
+    x = NULL,
+    y = NULL
+  ) +
+  theme_minimal()
+
+p_effort
 ```
 
 ```{r preferred larval index figure}
@@ -2134,6 +2202,288 @@ ggplot(ss_dln3_cab_index, aes(x = year, y = est)) +
     plot.margin = margin(15, 20, 15, 15)
   )
 ```
+
+```{r study region figure}
+# =============================================================
+# Cabezon abundance across CalCOFI core grid
+# Adds US + Mexico land, removes coastal border artifacts,
+# moves Mexico label, and enlarges CalCOFI station markers
+# =============================================================
+
+library(sf)
+library(dplyr)
+library(stringr)
+library(ggplot2)
+library(rnaturalearth)
+library(tibble)
+library(scales)
+
+# ---- 0. Map settings ---------------------------------------------------
+
+kml_path <- "CalCOFI_75StandardStations.kml"  # adjust if needed
+
+shelf_station_max <- 60
+concave_ratio     <- 0.4
+zoom_pad          <- 0.18
+
+# Increase this if red border lines still hug the coast.
+# Decrease if too much of the desired border disappears.
+coast_clip_km <- 10
+
+# Remove tiny leftover red line fragments after clipping.
+# Increase if you still see small hanging red pieces.
+min_border_segment_km <- 12
+
+ocean_col  <- "#CFE3F2"
+land_col   <- "#E8DEC3"
+grid_col   <- "grey55"
+border_col <- "#B23A48"
+bubble_col <- "#2C5F8D"
+
+core_lines <- c(76.7, 80.0, 81.8, 83.3, 86.7, 90.0, 93.3)
+
+# ---- 1. Build land layer: US + Mexico ---------------------------------
+# This fixes the issue where Baja/Mexico reads as water.
+
+land_ne <- ne_countries(
+  country = c("United States of America", "Mexico"),
+  scale = 10,
+  returnclass = "sf"
+) %>%
+  st_make_valid() %>%
+  st_transform(utm_crs)
+
+# If you want to keep the old object name:
+ca_coast <- land_ne
+
+# ---- 2. Parse + clean CalCOFI KML --------------------------------------
+
+stations <- st_read(kml_path, quiet = TRUE) %>%
+  st_zm(drop = TRUE) %>%
+  mutate(
+    nm   = as.character(Name),
+    line = suppressWarnings(as.numeric(str_extract(nm, "^[0-9]+\\.[0-9]+"))),
+    stn  = suppressWarnings(as.numeric(str_extract(nm, "(?<=\\s)[0-9]+\\.[0-9]+")))
+  ) %>%
+  filter(!is.na(line), !is.na(stn)) %>%
+  distinct(nm, .keep_all = TRUE) %>%
+  filter(line %in% core_lines, stn >= 27, stn <= 120) %>%
+  st_transform(utm_crs)
+
+# ---- 3. CalCOFI transect lines ----------------------------------------
+
+transects <- stations %>%
+  group_by(line) %>%
+  filter(n() >= 2) %>%
+  arrange(stn, .by_group = TRUE) %>%
+  summarise(do_union = FALSE, .groups = "drop") %>%
+  st_cast("LINESTRING")
+
+# ---- 4. Seaward-only shelf study border -------------------------------
+
+shelf <- stations %>%
+  filter(stn <= shelf_station_max)
+
+hull <- st_concave_hull(st_union(shelf), ratio = concave_ratio)
+
+land_union <- ca_coast %>%
+  st_make_valid() %>%
+  st_union()
+
+# Remove land from the study-region hull
+region_poly <- st_difference(hull, land_union)
+
+# Take boundary of the ocean-only polygon
+region_bdry <- st_boundary(region_poly)
+
+# Remove boundary pieces close to land/coast
+region_sea <- st_difference(
+  region_bdry,
+  st_buffer(land_union, coast_clip_km * 1000)
+)
+
+# Clean geometry collection, keep only meaningful line pieces
+region_sea <- st_collection_extract(region_sea, "LINESTRING") %>%
+  st_sf(geometry = ., crs = st_crs(utm_crs)) %>%
+  mutate(length_km = as.numeric(st_length(geometry)) / 1000) %>%
+  filter(length_km >= min_border_segment_km)
+
+# ---- 4b. Remove lingering eastern border fragments --------------------
+
+# First keep only line geometries
+region_sea <- st_collection_extract(region_sea, "LINESTRING")
+
+# Remove tiny fragments
+region_sea <- st_sf(geometry = region_sea, crs = st_crs(utm_crs)) %>%
+  mutate(length_km = as.numeric(st_length(geometry)) / 1000) %>%
+  filter(length_km >= 20)
+
+# Then explicitly clip away the far-eastern remnants
+# Move this longitude west/east if needed
+east_cutoff_lon <- -117.55
+
+west_mask_ll <- st_as_sfc(
+  st_bbox(
+    c(
+      xmin = -126,
+      xmax = east_cutoff_lon,
+      ymin = 28.5,
+      ymax = 36.5
+    ),
+    crs = 4326
+  )
+)
+
+region_sea <- region_sea %>%
+  st_transform(4326) %>%
+  st_intersection(west_mask_ll) %>%
+  st_transform(utm_crs)
+
+# ---- 5. Zoomed-out limits ---------------------------------------------
+
+bb   <- st_bbox(stations)
+xpad <- (bb["xmax"] - bb["xmin"]) * zoom_pad
+ypad <- (bb["ymax"] - bb["ymin"]) * zoom_pad
+
+xlim <- c(bb["xmin"] - xpad, bb["xmax"] + xpad)
+ylim <- c(bb["ymin"] - ypad, bb["ymax"] + ypad)
+
+# ---- 6. Labels ---------------------------------------------------------
+# Adjust lon/lat here if you want to move labels manually.
+
+california_ll <- tibble(
+  label = "California",
+  lon = -118.05,
+  lat = 35.05
+)
+
+mexico_ll <- tibble(
+  label = "Mexico",
+  lon = -116.75,
+  lat = 32.20
+)
+
+california_sf <- st_as_sf(california_ll, coords = c("lon", "lat"), crs = 4326) %>%
+  st_transform(utm_crs)
+
+mexico_sf <- st_as_sf(mexico_ll, coords = c("lon", "lat"), crs = 4326) %>%
+  st_transform(utm_crs)
+
+california_xy <- bind_cols(
+  st_drop_geometry(california_sf),
+  as_tibble(st_coordinates(california_sf)) %>%
+    rename(X_m = X, Y_m = Y)
+)
+
+mexico_xy <- bind_cols(
+  st_drop_geometry(mexico_sf),
+  as_tibble(st_coordinates(mexico_sf)) %>%
+    rename(X_m = X, Y_m = Y)
+)
+
+# ---- 7. Plot -----------------------------------------------------------
+
+p_grid <- ggplot() +
+  geom_sf(
+    data = ca_coast,
+    inherit.aes = FALSE,
+    fill = land_col,
+    color = "grey55",
+    linewidth = 0.3
+  ) +
+
+  geom_sf(
+    data = transects,
+    inherit.aes = FALSE,
+    color = "grey65",
+    linewidth = 0.45,
+    alpha = 0.8
+  ) +
+
+  # CalCOFI station markers: increase size here
+  geom_sf(
+    data = stations,
+    inherit.aes = FALSE,
+    shape = 21,
+    size = 1.6,
+    stroke = 0.35,
+    fill = "white",
+    color = "grey35"
+  ) +
+
+  geom_sf(
+    data = region_sea,
+    inherit.aes = FALSE,
+    color = border_col,
+    linewidth = 0.9
+  ) +
+
+  geom_point(
+    data = obs_aggregate %>% filter(!ever_positive),
+    aes(x = X_m, y = Y_m),
+    size = 0.8,
+    alpha = 0.45,
+    color = "grey45"
+  ) +
+
+  geom_point(
+    data = obs_aggregate %>% filter(ever_positive),
+    aes(x = X_m, y = Y_m, size = mean_abundance),
+    alpha = 0.75,
+    color = bubble_col
+  ) +
+
+  geom_text(
+    data = labels_xy,
+    aes(x = X_m, y = Y_m, label = label),
+    size = 3.4,
+    fontface = "italic",
+    color = "grey25",
+    hjust = 0
+  ) +
+
+  coord_sf(
+    crs = st_crs(utm_crs),
+    xlim = xlim,
+    ylim = ylim,
+    expand = FALSE
+  ) +
+
+  # Abundance bubble size: increase range here
+  scale_size_continuous(
+    name = "Mean larvae / 100 m³",
+    range = c(2, 10)
+  ) +
+
+  labs(
+    title = "Cabezon larval abundance across the CalCOFI core grid",
+    subtitle = "Aggregated across all sampling years; shelf study region outlined",
+    x = NULL,
+    y = NULL
+  ) +
+
+  theme_minimal(base_size = 12) +
+  theme(
+    panel.background = element_rect(fill = ocean_col, color = NA),
+    panel.grid.major = element_line(color = "grey88", linewidth = 0.25),
+    panel.grid.minor = element_blank(),
+
+    legend.position = c(0.88, 0.16),
+    legend.justification = c(1, 0),
+    legend.background = element_rect(
+      fill = scales::alpha(NA, 0.75),
+      color = NA
+    ),
+    legend.key = element_rect(fill = NA, color = NA),
+
+    plot.title = element_text(face = "bold", size = 15),
+    plot.subtitle = element_text(color = "grey35", size = 10)
+  )
+
+p_grid
+
+```
+
 
 
 # Additional Models
