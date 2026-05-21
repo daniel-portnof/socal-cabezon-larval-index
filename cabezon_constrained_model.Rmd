@@ -2228,11 +2228,11 @@ zoom_pad          <- 0.18
 
 # Increase this if red border lines still hug the coast.
 # Decrease if too much of the desired border disappears.
-coast_clip_km <- 10
+coast_clip_km <- 6
 
 # Remove tiny leftover red line fragments after clipping.
 # Increase if you still see small hanging red pieces.
-min_border_segment_km <- 12
+min_border_segment_km <- 8
 
 ocean_col  <- "#CFE3F2"
 land_col   <- "#E8DEC3"
@@ -2267,7 +2267,7 @@ stations <- st_read(kml_path, quiet = TRUE) %>%
   ) %>%
   filter(!is.na(line), !is.na(stn)) %>%
   distinct(nm, .keep_all = TRUE) %>%
-  filter(line %in% core_lines, stn >= 27, stn <= 120) %>%
+  filter(line %in% core_lines, stn >= 26.7, stn <= 120) %>%
   st_transform(utm_crs)
 
 # ---- 3. CalCOFI transect lines ----------------------------------------
@@ -2279,109 +2279,45 @@ transects <- stations %>%
   summarise(do_union = FALSE, .groups = "drop") %>%
   st_cast("LINESTRING")
 
-# ---- 4. Seaward-only shelf study border -------------------------------
+# ---- 4. Study-region outline: open C-shape -----------------------------
 
-shelf <- stations %>%
-  filter(stn <= shelf_station_max)
-
-hull <- st_concave_hull(st_union(shelf), ratio = concave_ratio)
-
-land_union <- ca_coast %>%
-  st_make_valid() %>%
-  st_union()
-
-# Remove land from the study-region hull
-region_poly <- st_difference(hull, land_union)
-
-# Take boundary of the ocean-only polygon
-region_bdry <- st_boundary(region_poly)
-
-# Remove boundary pieces close to land/coast
-region_sea <- st_difference(
-  region_bdry,
-  st_buffer(land_union, coast_clip_km * 1000)
+outline_spec <- tibble::tribble(
+  ~order, ~line_target, ~stn_target,
+  1,      76.7,         49.0,
+  2,      76.7,         60.0,
+  3,      93.3,         60.0,
+  4,      93.3,         26.7
 )
 
-# Clean geometry collection, keep only meaningful line pieces
-region_sea <- st_collection_extract(region_sea, "LINESTRING") %>%
-  st_sf(geometry = ., crs = st_crs(utm_crs)) %>%
-  mutate(length_km = as.numeric(st_length(geometry)) / 1000) %>%
-  filter(length_km >= min_border_segment_km)
+outline_nodes <- purrr::pmap_dfr(
+  outline_spec,
+  function(order, line_target, stn_target) {
+    stations %>%
+      filter(
+        dplyr::near(line, line_target, tol = 0.05),
+        dplyr::near(stn,  stn_target,  tol = 0.15)
+      ) %>%
+      slice(1) %>%
+      mutate(order = order)
+  }
+) %>%
+  arrange(order)
 
-# ---- 4b. Remove lingering eastern border fragments --------------------
+if (nrow(outline_nodes) != 4) {
+  print(outline_nodes %>% st_drop_geometry())
+  stop("Did not find exactly 4 outline stations. Check line/station values or tolerances.")
+}
 
-# First keep only line geometries
-region_sea <- st_collection_extract(region_sea, "LINESTRING")
+# IMPORTANT: do NOT close the loop
+outline_coords <- st_coordinates(outline_nodes)
 
-# Remove tiny fragments
-region_sea <- st_sf(geometry = region_sea, crs = st_crs(utm_crs)) %>%
-  mutate(length_km = as.numeric(st_length(geometry)) / 1000) %>%
-  filter(length_km >= 20)
-
-# Then explicitly clip away the far-eastern remnants
-# Move this longitude west/east if needed
-east_cutoff_lon <- -117.55
-
-west_mask_ll <- st_as_sfc(
-  st_bbox(
-    c(
-      xmin = -126,
-      xmax = east_cutoff_lon,
-      ymin = 28.5,
-      ymax = 36.5
-    ),
-    crs = 4326
+region_outline <- st_sf(
+  geometry = st_sfc(
+    st_linestring(outline_coords[, 1:2]),
+    crs = st_crs(utm_crs)
   )
 )
 
-region_sea <- region_sea %>%
-  st_transform(4326) %>%
-  st_intersection(west_mask_ll) %>%
-  st_transform(utm_crs)
-
-# ---- 5. Zoomed-out limits ---------------------------------------------
-
-bb   <- st_bbox(stations)
-xpad <- (bb["xmax"] - bb["xmin"]) * zoom_pad
-ypad <- (bb["ymax"] - bb["ymin"]) * zoom_pad
-
-xlim <- c(bb["xmin"] - xpad, bb["xmax"] + xpad)
-ylim <- c(bb["ymin"] - ypad, bb["ymax"] + ypad)
-
-# ---- 6. Labels ---------------------------------------------------------
-# Adjust lon/lat here if you want to move labels manually.
-
-california_ll <- tibble(
-  label = "California",
-  lon = -118.05,
-  lat = 35.05
-)
-
-mexico_ll <- tibble(
-  label = "Mexico",
-  lon = -116.75,
-  lat = 32.20
-)
-
-california_sf <- st_as_sf(california_ll, coords = c("lon", "lat"), crs = 4326) %>%
-  st_transform(utm_crs)
-
-mexico_sf <- st_as_sf(mexico_ll, coords = c("lon", "lat"), crs = 4326) %>%
-  st_transform(utm_crs)
-
-california_xy <- bind_cols(
-  st_drop_geometry(california_sf),
-  as_tibble(st_coordinates(california_sf)) %>%
-    rename(X_m = X, Y_m = Y)
-)
-
-mexico_xy <- bind_cols(
-  st_drop_geometry(mexico_sf),
-  as_tibble(st_coordinates(mexico_sf)) %>%
-    rename(X_m = X, Y_m = Y)
-)
-
-# ---- 7. Plot -----------------------------------------------------------
 
 p_grid <- ggplot() +
   geom_sf(
@@ -2389,56 +2325,54 @@ p_grid <- ggplot() +
     inherit.aes = FALSE,
     fill = land_col,
     color = "grey55",
-    linewidth = 0.3
+    linewidth = 0.45
   ) +
 
+  # CalCOFI transect lines
   geom_sf(
     data = transects,
     inherit.aes = FALSE,
-    color = "grey65",
-    linewidth = 0.45,
-    alpha = 0.8
+    color = "grey50",
+    linewidth = 1.2,
+    alpha = 0.9
   ) +
 
-  # CalCOFI station markers: increase size here
+  # CalCOFI stations
   geom_sf(
     data = stations,
     inherit.aes = FALSE,
     shape = 21,
-    size = 1.6,
-    stroke = 0.35,
+    size = 7,
+    stroke = 0.65,
     fill = "white",
-    color = "grey35"
+    color = "grey10"
   ) +
 
+  # Shelf-restricted study-region outline: open C-shape
   geom_sf(
-    data = region_sea,
+    data = region_outline,
     inherit.aes = FALSE,
     color = border_col,
-    linewidth = 0.9
-  ) +
-
-  geom_point(
-    data = obs_aggregate %>% filter(!ever_positive),
-    aes(x = X_m, y = Y_m),
-    size = 0.8,
-    alpha = 0.45,
-    color = "grey45"
-  ) +
-
-  geom_point(
-    data = obs_aggregate %>% filter(ever_positive),
-    aes(x = X_m, y = Y_m, size = mean_abundance),
-    alpha = 0.75,
-    color = bubble_col
+    linewidth = 2,
+    lineend = "round",
+    linejoin = "round"
   ) +
 
   geom_text(
-    data = labels_xy,
+    data = california_xy,
     aes(x = X_m, y = Y_m, label = label),
-    size = 3.4,
+    size = 7.0,
     fontface = "italic",
-    color = "grey25",
+    color = "grey15",
+    hjust = 0
+  ) +
+
+  geom_text(
+    data = mexico_xy,
+    aes(x = X_m, y = Y_m, label = label),
+    size = 7,
+    fontface = "italic",
+    color = "grey15",
     hjust = 0
   ) +
 
@@ -2449,38 +2383,54 @@ p_grid <- ggplot() +
     expand = FALSE
   ) +
 
-  # Abundance bubble size: increase range here
-  scale_size_continuous(
-    name = "Mean larvae / 100 m³",
-    range = c(2, 10)
-  ) +
-
   labs(
-    title = "Cabezon larval abundance across the CalCOFI core grid",
-    subtitle = "Aggregated across all sampling years; shelf study region outlined",
+    title = "CalCOFI core grid and shelf-restricted study region",
+    subtitle = "Core CalCOFI stations shown; study region restricted to shelf-associated stations",
     x = NULL,
     y = NULL
   ) +
 
-  theme_minimal(base_size = 12) +
+  theme_minimal(base_size = 18) +
   theme(
     panel.background = element_rect(fill = ocean_col, color = NA),
-    panel.grid.major = element_line(color = "grey88", linewidth = 0.25),
+    panel.grid.major = element_line(color = "grey82", linewidth = 0.45),
     panel.grid.minor = element_blank(),
 
-    legend.position = c(0.88, 0.16),
-    legend.justification = c(1, 0),
-    legend.background = element_rect(
-      fill = scales::alpha(NA, 0.75),
-      color = NA
+    panel.border = element_rect(
+      color = "grey75",
+      fill = NA,
+      linewidth = 1.2
     ),
-    legend.key = element_rect(fill = NA, color = NA),
+    
+    axis.text = element_text(size = 17, color = "grey20"),
+    axis.title = element_blank(),
 
-    plot.title = element_text(face = "bold", size = 15),
-    plot.subtitle = element_text(color = "grey35", size = 10)
+    legend.position = "none",
+
+    plot.title = element_text(
+      face = "bold",
+      size = 28,
+      color = "black",
+      margin = margin(b = 8)
+    ),
+    plot.subtitle = element_text(
+      color = "grey30",
+      size = 20,
+      margin = margin(b = 14)
+    ),
+    plot.margin = margin(16, 18, 16, 18)
   )
 
 p_grid
+
+ggsave(
+  "figures/calcofi-core-grid-study-region-poster.png",
+  p_grid,
+  width = 16,
+  height = 11,
+  units = "in",
+  dpi = 300
+)
 
 ```
 
