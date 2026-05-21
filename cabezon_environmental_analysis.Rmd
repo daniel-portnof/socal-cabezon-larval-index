@@ -1012,6 +1012,88 @@ sst_partial <- ggplot(sst_pred, aes(x = temp_surf, y = fit_resp)) +
   theme_minimal()
 
 sst_partial
+
+library(ggplot2)
+library(scales)
+
+sst_partial <- ggplot(sst_pred, aes(x = temp_surf, y = fit_resp)) +
+  geom_ribbon(
+    aes(ymin = lwr_resp, ymax = upr_resp),
+    fill = "dodgerblue4",
+    alpha = 0.22
+  ) +
+  geom_line(
+    color = "dodgerblue4",
+    linewidth = 1.6
+  ) +
+  scale_y_continuous(
+    labels = percent_format(accuracy = 1),
+    limits = c(0, NA),
+    expand = expansion(mult = c(0, 0.04))
+  ) +
+  scale_x_continuous(
+    expand = expansion(mult = c(0.02, 0.02))
+  ) +
+  labs(
+    title = "Sea surface temperature and larval occurrence",
+    subtitle = "Partial effect from presence/absence model; other covariates held at their means",
+    x = "Sea surface temperature (°C)",
+    y = "Predicted probability of larval presence"
+  ) +
+  theme_minimal(base_size = 18) +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 26,
+      color = "black",
+      margin = margin(b = 6)
+    ),
+    plot.subtitle = element_text(
+      size = 18,
+      color = "grey30",
+      margin = margin(b = 14)
+    ),
+
+    axis.title.x = element_text(
+      size = 20,
+      face = "bold",
+      margin = margin(t = 12)
+    ),
+    axis.title.y = element_text(
+      size = 20,
+      face = "bold",
+      margin = margin(r = 12)
+    ),
+    axis.text = element_text(
+      size = 17,
+      color = "grey20"
+    ),
+
+    panel.grid.major = element_line(
+      color = "grey86",
+      linewidth = 0.45
+    ),
+    panel.grid.minor = element_blank(),
+
+    panel.border = element_rect(
+      color = "grey78",
+      fill = NA,
+      linewidth = 0.45
+    ),
+
+    plot.margin = margin(16, 18, 16, 18)
+  )
+
+sst_partial
+
+ggsave(
+  "figures/sst-partial-effect-poster.png",
+  sst_partial,
+  width = 10,
+  height = 7,
+  units = "in",
+  dpi = 300
+)
 ```
 
 ```{r SSO partial effects plot}
@@ -1054,8 +1136,8 @@ sso_pred$o2_surf <- sso_pred$o2_surf_z * sso_sd + sso_mean
 # ─── 5. Plot ───
 sso_partial <- ggplot(sso_pred, aes(x = o2_surf, y = fit_resp)) +
   geom_ribbon(aes(ymin = lwr_resp, ymax = upr_resp), 
-              fill = "coral", alpha = 0.25) +
-  geom_line(color = "coral", linewidth = 0.9) +
+              fill = "gold", alpha = 0.25) +
+  geom_line(color = "gold", linewidth = 0.9) +
   labs(x = "Sea surface dissolved oxygen",
        y = "Predicted probability of larval presence",
        title = "Partial effect of SSO") +
@@ -1063,19 +1145,186 @@ sso_partial <- ggplot(sso_pred, aes(x = o2_surf, y = fit_resp)) +
 
 sso_partial
 
+library(ggplot2)
+library(scales)
+
+sso_partial <- ggplot(sso_pred, aes(x = o2_surf, y = fit_resp)) +
+  geom_ribbon(
+    aes(ymin = lwr_resp, ymax = upr_resp),
+    fill = "goldenrod4",
+    alpha = 0.22
+  ) +
+  geom_line(
+    color = "goldenrod4",
+    linewidth = 1.6
+  ) +
+  scale_y_continuous(
+    labels = percent_format(accuracy = 1),
+    limits = c(0, NA),
+    expand = expansion(mult = c(0, 0.04))
+  ) +
+  scale_x_continuous(
+    expand = expansion(mult = c(0.02, 0.02))
+  ) +
+  labs(
+    title = "Dissolved oxygen and larval occurrence",
+    subtitle = "Partial effect from presence/absence model; other covariates held at their means",
+    x = "Sea surface dissolved oxygen",
+    y = "Predicted probability of larval presence"
+  ) +
+  theme_minimal(base_size = 18) +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 26,
+      color = "black",
+      margin = margin(b = 6)
+    ),
+    plot.subtitle = element_text(
+      size = 18,
+      color = "grey30",
+      margin = margin(b = 14)
+    ),
+
+    axis.title.x = element_text(
+      size = 20,
+      face = "bold",
+      margin = margin(t = 12)
+    ),
+    axis.title.y = element_text(
+      size = 20,
+      face = "bold",
+      margin = margin(r = 12)
+    ),
+    axis.text = element_text(
+      size = 17,
+      color = "grey20"
+    ),
+
+    panel.grid.major = element_line(
+      color = "grey86",
+      linewidth = 0.45
+    ),
+    panel.grid.minor = element_blank(),
+
+    panel.border = element_rect(
+      color = "grey78",
+      fill = NA,
+      linewidth = 0.45
+    ),
+
+    plot.margin = margin(16, 18, 16, 18)
+  )
+
+sso_partial
+
+ggsave(
+  "figures/sso-partial-effect-poster.png",
+  sso_partial,
+  width = 10,
+  height = 7,
+  units = "in",
+  dpi = 300
+)
+
 ```
 
 ```{r combined partial effects plots for SST and SSO}
-library(patchwork)
-partial_effects <- sst_partial + sso_partial + plot_annotation(
-  title = "Partial effects of environmental covariates on cabezon larval presence",
-  caption = "Predicted probability of larval detection across the observed range of each covariate, with all other covariates held at their means and spatial random field marginalized."
+
+partial_effects <- bind_rows(
+  sst_pred %>%
+    transmute(
+      x_value   = temp_surf,
+      fit_resp,
+      lwr_resp,
+      upr_resp,
+      effect    = "Sea surface temperature (°C)"
+    ),
+  sso_pred %>%
+    transmute(
+      x_value   = o2_surf,
+      fit_resp,
+      lwr_resp,
+      upr_resp,
+      effect    = "Sea surface dissolved oxygen (ml/L)"
+    )
+)%>%
+  mutate(
+    effect = factor(
+      effect,
+      levels = c(
+        "Sea surface temperature (°C)",
+        "Sea surface dissolved oxygen (ml/L)"
+      )
+    )
+  )
+
+partial_faceted <- ggplot(
+  partial_effects,
+  aes(x = x_value, y = fit_resp, fill = effect, color = effect)
+) +
+  geom_ribbon(
+    aes(ymin = lwr_resp, ymax = upr_resp),
+    alpha = 0.20,
+    color = NA
+  ) +
+  geom_line(
+    linewidth = 1.5
+  ) +
+  facet_wrap(~ effect, scales = "free_x", nrow = 1) +
+  scale_color_manual(
+    values = c(
+      "Sea surface temperature (°C)" = "dodgerblue4",
+      "Sea surface dissolved oxygen (ml/L)" = "darkolivegreen"
+    )
+  ) +
+  scale_fill_manual(
+    values = c(
+      "Sea surface temperature (°C)" = "dodgerblue4",
+      "Sea surface dissolved oxygen (ml/L)" = "darkolivegreen"
+    )
+  ) +
+    scale_y_continuous(
+    labels = percent_format(accuracy = 1),
+    limits = c(0, NA),
+    expand = expansion(mult = c(0, 0.04))
+  ) +
+  labs(
+    title = "Larval occurrence varies with sea surface temperature and oxygen",
+    subtitle = "Partial effects from presence/absence model; other covariates held at their means",
+    x = NULL,
+    y = "Predicted probability of larval presence"
+  ) +
+  theme_minimal(base_size = 18) +
+  theme(
+    plot.title = element_text(face = "bold", size = 26, margin = margin(b = 6)),
+    plot.subtitle = element_text(size = 18, color = "grey40", margin = margin(b = 14)),
+    axis.title.y = element_text(size = 20, face = "bold", margin = margin(r = 12)),
+    axis.text = element_text(size = 16, color = "grey40"),
+
+    strip.text = element_text(size = 18, face = "bold"),
+    strip.background = element_rect(fill = "grey95", color = "grey80", linewidth = 0.4),
+
+    panel.grid.major = element_line(color = "grey86", linewidth = 0.45),
+    panel.grid.minor = element_blank(),
+
+    panel.border = element_rect(color = "grey78", fill = NA, linewidth = 0.45),
+    plot.margin = margin(16, 18, 16, 18),
+    legend.position = "none"
+  )
+
+partial_faceted
+
+
+ggsave(
+  "figures/partial-effects-faceted-poster.png",
+  partial_faceted,
+  width = 16,
+  height = 8,
+  units = "in",
+  dpi = 300,
+  bg = "white"
 )
-
-partial_effects
-
-ggsave("figures/partial_effects.png", partial_effects,
-       width = 8, height = 6.5, dpi = 300)
 ```
 
 
