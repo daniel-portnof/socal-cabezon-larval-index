@@ -1731,13 +1731,6 @@ ss_map_pred <- predict(
   type = "response"
 )
 
-pred_plot <- ss_map_pred |>
-  mutate(
-    expected = est1 * est2,
-    X_m = X * 1000,
-    Y_m = Y * 1000
-  )
-
 ca_coast <- ne_states(
   country = "United States of America",
   returnclass = "sf"
@@ -1760,10 +1753,12 @@ calcofi_lines <- calcofi_stations |>
   st_cast("LINESTRING")
 
 pred_plot <- ss_map_pred |>
-  mutate(
-    X_m = X * 1000,
-    Y_m = Y * 1000
-  )
+  mutate(X_m = X * 1000, Y_m = Y * 1000) |>
+  summarise(
+    est = mean(est),
+    est1 = mean(est1),
+    est2 = mean(est2),
+    .by = c(X_m, Y_m))
 
 
 # Plot showing larval observations by station over time
@@ -1897,10 +1892,12 @@ ggplot() +
                        name = "Predicted larvae") +
   theme_minimal()
 
+pred_plot_yearly <- ss_map_pred |>
+  mutate(X_m = X * 1000, Y_m = Y * 1000)
 
 ggplot() +
   geom_raster(
-    data = pred_plot,
+    data = pred_plot_yearly,
     aes(x = X_m, y = Y_m, fill = log(est))
   ) +
   geom_sf(data = ca_coast, inherit.aes = FALSE, fill = "grey80") +
@@ -2288,7 +2285,21 @@ p_model <- ggplot() +
 #    inherit.aes = FALSE,
 #    color = "white",
 #    linewidth = 0.45,
-#    alpha = 0.30
+#    alpha = 1
+#  ) +
+#    geom_sf(
+#    data = calcofi_lines,
+#    inherit.aes = FALSE,
+#    color = "white",
+#    linewidth = 0.65,
+#    alpha = 1
+#  ) +
+#  geom_point(
+#    data = obs_aggregate %>% filter(ever_positive),
+#    aes(x = X_m, y = Y_m),
+#    size = 3,
+#    color = "white",
+#    alpha = 0.75
 #  ) +
   geom_sf_text(
     data = label_pts,
@@ -2305,7 +2316,7 @@ p_model <- ggplot() +
     clip = "on"
   ) +
   scale_fill_viridis_c(
-    option = "mako",
+    option = "rocket",
     name = "log(1 + predicted\nlarvae / 100 m³)"
   ) +
   labs(
@@ -2324,6 +2335,8 @@ p_model <- ggplot() +
     legend.key.height = unit(0.5, "cm"),
     legend.key.width = unit(0.38, "cm")
   )
+
+p_model
 
 p_obs <- ggplot() +
   geom_sf(
@@ -2372,7 +2385,7 @@ p_obs <- ggplot() +
   ) +
   map_theme_shared +
   theme(
-    legend.position = c(0.97, 0.97),
+    legend.position = c(0.98, 0.98),
     legend.justification = c(1, 1),
     legend.background = element_rect(
       fill = scales::alpha("white", 0.78),
@@ -2397,7 +2410,7 @@ ggsave(
 )
 
 ggsave(
-  "C:/Users/machs/SynologyDrive/Dan's Files/SIO/0_capstone/6_figures/p_model_poster.png",
+  "C:/Users/machs/SynologyDrive/Dan's Files/SIO/0_capstone/6_figures/p_model_poster_rocket.png",
   plot = p_model,
   width = 9,
   height = 7,
@@ -2413,6 +2426,119 @@ ggsave(
 #  units = "in",
 #  dpi = 300
 #)
+```
+
+```{r index vs SSB}
+library(dplyr)
+library(ggplot2)
+library(scales)
+
+plot_df <- ss_dln3_combined_obs %>%
+  filter(year >= 1981, year <= 2015)
+
+scale_factor_ssb_dln3 <- max(plot_df$larvae_index, na.rm = TRUE) /
+  max(plot_df$ssb, na.rm = TRUE)
+
+p_index_ssb <- ggplot(plot_df, aes(x = year)) +
+  # SSB ribbon + line (scaled to primary axis)
+  geom_ribbon(
+    aes(
+      ymin = ssb_lo * scale_factor_ssb_dln3,
+      ymax = ssb_hi * scale_factor_ssb_dln3
+    ),
+    fill = "coral4",
+    alpha = 0.18
+  ) +
+  geom_line(
+    aes(y = ssb * scale_factor_ssb_dln3),
+    color = "coral4",
+    linewidth = 1.0
+  ) +
+
+  # Larval index ribbon + line
+  geom_ribbon(
+    aes(ymin = lwr, ymax = upr),
+    fill = "dodgerblue4",
+    alpha = 0.20
+  ) +
+  geom_line(
+    aes(y = larvae_index),
+    color = "dodgerblue4",
+    linewidth = 1.0
+  ) +
+
+  scale_x_continuous(
+    breaks = seq(1984, 2015, by = 4),
+    expand = expansion(mult = c(0.01, 0.03))
+  ) +
+  scale_y_continuous(
+    name = "Larval abundance index",
+    labels = comma,
+    sec.axis = sec_axis(
+      ~ . / scale_factor_ssb_dln3,
+      name = "Spawning stock biomass (mt)",
+      labels = comma
+    )
+  ) +
+  labs(
+    title = "Estimated larval abundance index and spawning stock biomass",
+    subtitle = "Southern California cabezon, 1984–2015; ribbons show 95% uncertainty intervals",
+    x = NULL
+  ) +
+  theme_minimal(base_size = 16) +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 18,
+      lineheight = 0.95,
+      margin = margin(b = 8)
+    ),
+    plot.subtitle = element_text(
+      size = 17,
+      color = "grey30",
+      linheight = 1.0,
+      margin = margin(b = 14)
+    ),
+    axis.title.y = element_text(
+      size = 19,
+      face = "bold",
+      color = "dodgerblue4",
+      margin = margin(r = 12)
+    ),
+    axis.title.y.right = element_text(
+      size = 19,
+      face = "bold",
+      color = "coral4",
+      margin = margin(l = 12)
+    ),
+
+    axis.text.x = element_text(size = 16, color = "grey25"),
+    axis.text.y = element_text(size = 16, color = "dodgerblue4"),
+    axis.text.y.right = element_text(size = 16, color = "coral4"),
+
+    panel.grid.major = element_line(color = "grey86", linewidth = 0.45),
+    panel.grid.minor = element_blank(),
+
+    panel.border = element_rect(
+      color = "grey78",
+      fill = NA,
+      linewidth = 0.45
+    ),
+
+    plot.margin = margin(16, 18, 16, 18)
+  )
+
+p_index_ssb
+
+ggsave(
+  "C:/Users/machs/SynologyDrive/Dan's Files/SIO/0_capstone/6_figures/idx-vs-ssb.png",
+  p_index_ssb,
+  width = 12.5,
+  height = 6.5,
+  units = "in",
+  dpi = 300,
+  bg = "white"
+)
 ```
 
 
