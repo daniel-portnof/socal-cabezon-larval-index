@@ -1286,7 +1286,7 @@ partial_faceted <- ggplot(
   ) +
     scale_y_continuous(
     labels = percent_format(accuracy = 1),
-    limits = c(0, NA),
+    limits = c(0, 0.85),
     expand = expansion(mult = c(0, 0.04))
   ) +
   labs(
@@ -1327,5 +1327,68 @@ ggsave(
 )
 ```
 
+```{r environmental model comparison table}
+
+library(flextable)
+library(dplyr)
+
+# --- Paste your AIC output here ---
+aic_vals <- AIC(m1_sdm, m2_sdm, m3_sdm, m4_sdm, m5_sdm)
+
+# Build comparison table
+sdm_aic_table <- aic_vals %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column("Model") %>%
+  mutate(
+    Model = case_when(
+      Model == "m1_sdm" ~ "M1",
+      Model == "m2_sdm" ~ "M2",
+      Model == "m3_sdm" ~ "M3",
+      Model == "m4_sdm" ~ "M4",
+      Model == "m5_sdm" ~ "M5"
+    ),
+    Covariates = case_when(
+      Model == "M1" ~ "SST + SSS",
+      Model == "M2" ~ "SST + SSS + SSO",
+      Model == "M3" ~ "SST + SSS + SSCh",
+      Model == "M4" ~ "SSS + SSO + SSCh",
+      Model == "M5" ~ "SST + SSS + SSO + SSCh"
+    ),
+    dAIC = AIC - min(AIC),
+    AIC_weight = exp(-0.5 * dAIC) / sum(exp(-0.5 * dAIC))
+  ) %>%
+  arrange(dAIC) %>%
+  rename(K = df) %>%
+  dplyr::select(Model, Covariates, K, AIC, dAIC, AIC_weight)
+
+# All models include: spatial random field + mean_cpue_z offset
+# noted in table footnote below
+
+ft_env <- flextable(sdm_aic_table) %>%
+  set_header_labels(
+    Model      = "Model",
+    Covariates = "Covariates",
+    K          = "K",
+    AIC        = "AIC",
+    dAIC       = "\u0394AIC",
+    AIC_weight = "AIC Weight"
+  ) %>%
+  colformat_double(j = "AIC",        digits = 2) %>%
+  colformat_double(j = "dAIC",       digits = 2) %>%
+  colformat_double(j = "AIC_weight", digits = 3) %>%
+  bold(i = ~ dAIC == 0) %>%          # bold the preferred model row
+  add_footer_lines(
+    "All models include mean annual CPUE (mean_cpue_z) and a spatial random field. 
+     Response variable: larval presence (binomial). K = number of estimated parameters. 
+     Preferred model shown in bold."
+  ) %>%
+  set_table_properties(layout = "autofit") %>%
+  theme_booktabs()
+
+ft_env
+
+save_as_docx(ft_env, path = "/Users/danportnof/Library/CloudStorage/SynologyDrive-Basilica/Dan\'s\ Files/SIO/0_capstone/6_figures/env_model_comparison_table.docx")
+
+```
 
 
