@@ -483,7 +483,7 @@ cabezon_shelf_spawn$fyear <- as.factor(cabezon_shelf_spawn$year)
 # NULL Delta-Gamma model
 
 ss_cab_null <- sdmTMB(
-  larvae_100m3 ~ 0 + fyear,
+  larvae_100m3 ~ 1,
   data = cabezon_shelf_spawn,
   mesh = ss_cab_mesh,
   time = "year",
@@ -499,7 +499,7 @@ sanity(ss_cab_null)
 # NULL Delta-Lognormal model
 
 ss_cab_null_dln <- sdmTMB(
-  larvae_100m3 ~ 0 + fyear,
+  larvae_100m3 ~ 1,
   data = cabezon_shelf_spawn,
   mesh = ss_cab_mesh,
   time = "year",
@@ -516,7 +516,7 @@ AIC(ss_cab_null_dln)
 # NULL Tweedie model
 
 ss_cab_null_tw <- sdmTMB(
-  larvae_100m3 ~ 0 + fyear,
+  larvae_100m3 ~1,
   data = cabezon_shelf_spawn,
   mesh = ss_cab_mesh,
   time = "year",
@@ -588,7 +588,7 @@ sanity(ss_cab_fit_dln1)
 
 AIC(ss_cab_fit_dln1)
 
-# Delta-Lognormal: Global Intercept, spatial on, delta AR1, spatiotemporal delta AR1, spatiotemporal lognormal iid
+# Delta-Lognormal: Global Intercept, spatial on, spatiotemporal delta AR1, spatiotemporal lognormal iid
 ss_cab_fit_dln2 <- sdmTMB(
   larvae_100m3 ~ 1,
   data = cabezon_shelf_spawn,
@@ -622,7 +622,7 @@ sanity(ss_cab_fit_dln3)
 
 AIC(ss_cab_fit_dln3)
 
-# Delta-Lognormal: fixed year effect, spatial on, spatiotemopral off
+# Delta-Lognormal: fixed year effect, spatial on, spatiotemporal off
 ss_cab_fit_dln4 <- sdmTMB(
   larvae_100m3 ~ 0 + fyear,
   data = cabezon_shelf_spawn,
@@ -656,7 +656,7 @@ sanity(ss_cab_fit_dln5)
 
 AIC(ss_cab_fit_dln5)
 
-# Delta-Lognormal: fixed year effect, spatial on, iid delta spatiotemporal, gamma spatiotemporal off
+# Delta-Lognormal: fixed year effect, spatial on, iid delta spatiotemporal, lognormal spatiotemporal off
 ss_cab_fit_dln6 <- sdmTMB(
   larvae_100m3 ~ 0 + fyear,
   data = cabezon_shelf_spawn,
@@ -713,14 +713,14 @@ AIC_table <- data.frame(
     "ss_cab_fit_dln7"
   ),
   model = c(
-    "Delta-Lognormal: Global Intercept, spatial on, spatiotemporal off",
-    "Delta-Lognormal Global Intercept + spatial + spatiotemporal delta AR1 + spatiotemporal lognormal AR1 (Spawning Season)",
-    "Delta-Lognormal Global Intercept + spatial + spatiotemporal delta AR1 + spatiotemporal lognormal iid (Spawning Season)",
-    "Delta-Lognormal Global Intercept + spatial + spatiotemporal off (Spawning Season)",
-    "Delta-Lognormal fixed year effect + spatial + spatiotemporal off (Spawning Season)",
-    "Delta-Lognormal fixed year effect + spatial + spatiotemporal delta iid + spatiotemporal lognormal iid (Spawning Season)",
-    "Delta-Lognormal fixed year effect + spatial + spatiotemporal delta iid + spatiotemporal lognormal off (Spawning Season)",
-    "Delta-Lognormal Global Intercept + spatial + spatiotemporal delta AR1 + spatiotemporal lognormal off (Spawning Season)"
+    "Delta-Lognormal Global Intercept, spatial on, spatiotemporal off",
+    "Delta-Lognormal Global Intercept + spatial + spatiotemporal delta AR1 + spatiotemporal lognormal AR1",
+    "Delta-Lognormal Global Intercept + spatial + spatiotemporal delta AR1 + spatiotemporal lognormal iid",
+    "Delta-Lognormal Global Intercept + spatial + spatiotemporal delta iid",
+    "Delta-Lognormal fixed year effect + spatial + spatiotemporal off",
+    "Delta-Lognormal fixed year effect + spatial + spatiotemporal delta iid + spatiotemporal lognormal iid",
+    "Delta-Lognormal fixed year effect + spatial + spatiotemporal delta iid + spatiotemporal lognormal off",
+    "Delta-Lognormal Global Intercept + spatial + spatiotemporal delta AR1 + spatiotemporal lognormal off"
   ),
   AIC = c(
     AIC(ss_cab_fit_dln0),
@@ -758,7 +758,6 @@ ss_cab_fit_dg1 <- sdmTMB(
 sanity(ss_cab_fit_dg1)
 AIC(ss_cab_fit_dg1)
 
-ss_cab_fit_dln1 <- ss_cab_fit_dln3
 ```
 
 
@@ -2069,10 +2068,17 @@ p_year <- ggplot(ss_plot_data_year, aes(x = year, y = count, fill = tow_type)) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.05))) +
   labs(
     title = "Cabezon Larvae: Positive vs. Total Tows",
-    subtitle = "Annual sampling effort, 1981–2015",
-    y = "Number of Tows"
+    subtitle = "Annual sampling effort, 1981\u20132015",
+    y = "Number of Tows",
+    caption = "Stacked bars show larvae-present tows (blue) against total sampling effort (grey).\nElevated effort in some years (1981, 1984, 1991, 1994, 2009, 2012) reflects expanded grid coverage or event-specific surveys."
   ) +
-  shared_bar_theme
+  shared_bar_theme +
+  theme(
+    plot.caption = element_text(
+      hjust = 0, size = 9, color = "grey30",
+      margin = margin(t = 10), lineheight = 1.1
+    )
+  )
 
 p_month
 p_year
@@ -2109,6 +2115,16 @@ obs_aggregate <- obs_plot %>%
   )
 
 # Compute padded plot limits
+
+library(rnaturalearth)
+
+# Get both US and Mexico landmass
+na_coast <- ne_countries(
+  scale = "medium",  # or "large" if you have rnaturalearthhires
+  country = c("United States of America", "Mexico"),
+  returnclass = "sf"
+)
+
 x_range <- range(obs_aggregate$X_m, na.rm = TRUE)
 y_range <- range(obs_aggregate$Y_m, na.rm = TRUE)
 x_buffer <- diff(x_range) * 0.10
@@ -2117,30 +2133,114 @@ y_buffer <- diff(y_range) * 0.10
 xlim_padded <- c(x_range[1] - x_buffer, x_range[2] + x_buffer)
 ylim_padded <- c(y_range[1] - y_buffer, y_range[2] + y_buffer)
 
-ggplot() +
+library(marmap)
+library(ggplot2)
+library(sf)
+library(dplyr)
+
+# Fetch bathymetry (you've already done this; included for completeness)
+bathy <- getNOAA.bathy(
+  lon1 = -122, lon2 = -116.5,
+  lat1 = 31, lat2 = 35.5,
+  resolution = 1
+)
+bathy_df <- fortify.bathy(bathy)
+
+# Color palette
+ocean_color <- "#CFE3F2"
+land_color  <- "#E8DEC3"
+contour_color <- "grey50"
+
+# Region label coordinates ----
+# Define in lon/lat, then transform to your UTM CRS
+labels_sf <- st_as_sf(
+  data.frame(
+    name = c("California", "Mexico"),
+    lon = c(-118, -117),
+    lat = c(34.8, 32.4)
+  ),
+  coords = c("lon", "lat"),
+  crs = 4326
+) |>
+  st_transform(st_crs(utm_crs))
+
+label_coords <- st_coordinates(labels_sf)
+X_california_label <- label_coords[1, "X"]
+Y_california_label <- label_coords[1, "Y"]
+X_mexico_label     <- label_coords[2, "X"]
+Y_mexico_label     <- label_coords[2, "Y"]
+
+# Transform bathymetry contour to UTM ----
+# Extract just the 200m contour line as sf, transform to UTM
+bathy_sf <- bathy_df |>
+  filter(z >= -1000 & z <= 0) |>  # trim to relevant depth range for speed
+  st_as_sf(coords = c("x", "y"), crs = 4326)
+
+# Simpler approach: draw the contour in lon/lat space and let coord_sf reproject
+# We do this by converting bathy to a stars/terra raster, extracting the contour
+# as an sf LINESTRING, then transforming.
+
+library(terra)
+bathy_rast <- marmap::as.raster(bathy)
+bathy_terra <- terra::rast(bathy_rast)
+contour_levels <- c(-200, -1000, -2000)
+contour_lines <- terra::as.contour(bathy_terra, levels = contour_levels) |>
+  sf::st_as_sf() |>
+  sf::st_set_crs(4326) |>
+  sf::st_transform(st_crs(utm_crs))
+
+# Plot ----
+p_effort_grid <- ggplot() +
+  # 200m isobath
   geom_sf(
-    data = ca_coast,
-    inherit.aes = FALSE,
-    fill = "grey80",
-    color = "grey40"
+    data = contour_lines,
+    aes(alpha = factor(level)),
+    color = contour_color,
+    linewidth = 0.3,
+    linetype = "dashed",
+    show.legend = FALSE
   ) +
+  # Land
+  geom_sf(
+    data = na_coast,
+    inherit.aes = FALSE,
+    fill = land_color,
+    color = "grey40",
+    linewidth = 0.3
+  ) +
+  # CalCOFI grid lines
   geom_sf(
     data = calcofi_lines,
     inherit.aes = FALSE,
-    color = "grey95",
+    color = "grey75",
     linewidth = 0.25
   ) +
+  # Negative tows (small open circles for full sampling footprint)
   geom_point(
     data = obs_aggregate %>% filter(!ever_positive),
     aes(x = X_m, y = Y_m),
-    size = 0.4,
-    alpha = 0.4
+    size = 0.6,
+    alpha = 0.5,
+    color = "grey40",
+    shape = 1
   ) +
+  # Positive tows (sized filled bubbles)
   geom_point(
     data = obs_aggregate %>% filter(ever_positive),
     aes(x = X_m, y = Y_m, size = plot_abundance),
-    alpha = 0.7,
+    alpha = 0.75,
     color = "#2C5F8D"
+  ) +
+  # Region labels
+  annotate("text",
+    x = X_california_label, y = Y_california_label,
+    label = "California",
+    color = "grey25", size = 4, fontface = "italic"
+  ) +
+  annotate("text",
+    x = X_mexico_label, y = Y_mexico_label,
+    label = "Mexico",
+    color = "grey25", size = 4, fontface = "italic"
   ) +
   coord_sf(
     crs = st_crs(utm_crs),
@@ -2149,19 +2249,33 @@ ggplot() +
     expand = FALSE
   ) +
   scale_size_continuous(
-    name = "Mean larvae / 100 m³\npositive tows only",
+    name = "Mean larvae / 100 m\u00b3\n(positive tows)",
     range = c(1, 8)
   ) +
   labs(
     title = "Observed cabezon larval abundance by CalCOFI station",
-    subtitle = "Mean density from positive tows only, aggregated by station",
+    subtitle = "Mean density from positive tows, aggregated by station, 1981\u20132015",
     x = NULL,
     y = NULL
   ) +
-  theme_minimal()
+  theme_minimal(base_size = 12) +
+  theme(
+    panel.background = element_rect(fill = ocean_color, color = NA),
+    panel.grid.major = element_line(color = "white", linewidth = 0.2),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold", size = 14),
+    plot.subtitle = element_text(color = "grey40", size = 10, margin = margin(b = 10)),
+    legend.position = "right"
+  )
 
-
-
+ggsave(
+  "C:/Users/machs/SynologyDrive/Dan's Files/SIO/0_capstone/6_figures/core-grid-study-region-effort.png",
+  p_effort_grid,
+  width = 16,
+  height = 11,
+  units = "in",
+  dpi = 300
+)
   
 ```
 
@@ -2539,6 +2653,95 @@ ggsave(
   dpi = 300,
   bg = "white"
 )
+```
+
+```{r index model comparison table}
+
+library(flextable)
+
+aic_table <- data.frame(
+  Label = c("DLn0", "DLn1", "DLn2", "DLn3", "DLn4", "DLn5", "DLn6", "DLn7"),
+  Intercept = c("Global", "Global", "Global", "Global",
+                "Year FE", "Year FE", "Year FE", "Global"),
+  Spatial = c("on", "on", "on", "on", "on", "on", "on", "on"),
+  ST_binomial = c("off", "AR1", "AR1", "IID", "off", "IID", "IID", "AR1"),
+  ST_lognormal = c("off", "AR1", "IID", "off", "off", "IID", "off", "off"),
+  AIC = c(
+    AIC(ss_cab_fit_dln0),
+    AIC(ss_cab_fit_dln1),
+    AIC(ss_cab_fit_dln2),
+    AIC(ss_cab_fit_dln3),
+    AIC(ss_cab_fit_dln4),
+    AIC(ss_cab_fit_dln5),
+    AIC(ss_cab_fit_dln6),
+    AIC(ss_cab_fit_dln7)
+  )
+)
+
+# Compute ΔAIC and sort
+aic_table$delta_AIC <- aic_table$AIC - min(aic_table$AIC)
+aic_table <- aic_table[order(aic_table$AIC), ]
+
+# Round for display
+aic_table$AIC <- round(aic_table$AIC, 1)
+aic_table$delta_AIC <- round(aic_table$delta_AIC, 1)
+
+# Build the flextable
+ft <- flextable(aic_table) |>
+  set_header_labels(
+    Label = "Model",
+    Intercept = "Intercept",
+    Spatial = "Spatial RF",
+    ST_binomial = "ST RF (binomial)",
+    ST_lognormal = "ST RF (lognormal)",
+    AIC = "AIC",
+    delta_AIC = "\u0394AIC"
+  ) |>
+  align(j = c("AIC", "delta_AIC"), align = "right", part = "all") |>
+  align(j = c("Intercept", "Spatial", "ST_binomial", "ST_lognormal"),
+        align = "center", part = "all") |>
+  bold(i = 1) |>  # bold the top (best) row
+  add_footer_lines(
+    values = c(
+      "Model: candidate model identifier. Intercept: global intercept (\"Global\") or fixed year effects (\"Year FE\"). Spatial RF: spatial random field (always on both components). ST RF: spatiotemporal random field structure on the binomial (presence) and lognormal (positive density) components. \u0394AIC: difference from best-fit (lowest-AIC) model. All models fit using sdmTMB (Anderson et al., 2024) with delta-lognormal family."
+    )
+  ) |>
+  autofit() |>
+  fontsize(size = 10, part = "all") |>
+  fontsize(size = 9, part = "footer")
+
+ft
+
+save_as_docx(ft, path = "C:/Users/machs/SynologyDrive/Dan's Files/SIO/0_capstone/6_figures/model_selection_table.docx")
+
+
+```
+
+```{r preferred model notation}
+# One-time setup if you don't have tinytex
+install.packages("tinytex")
+tinytex::install_tinytex()  # installs a minimal LaTeX distribution
+
+# Then for the equations:
+library(tinytex)
+
+# Write a standalone .tex file
+tex_source <- r"(
+\documentclass[border=10pt]{standalone}
+\usepackage{amsmath}
+\begin{document}
+$\begin{aligned}
+\textrm{logit}(p_{st}) &= X_{st}\beta^{(1)} + \omega_s^{(1)} + \varepsilon_{st}^{(1)} \\
+\ln(\mu_{st}) &= X_{st}\beta^{(2)} + \omega_s^{(2)} \\
+\omega_s^{(k)} &\sim \textrm{MVNormal}\left(0, \Sigma_{\omega^{(k)}}\right), \quad k \in \{1,2\} \\
+\varepsilon_{st}^{(1)} &\sim \textrm{MVNormal}\left(0, \Sigma_{\varepsilon^{(1)}}\right)
+\end{aligned}$
+\end{document}
+)"
+
+writeLines(tex_source, "model_eq.tex")
+pdflatex("model_eq.tex")  # produces model_eq.pdf
+
 ```
 
 
