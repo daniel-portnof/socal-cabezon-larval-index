@@ -778,15 +778,12 @@ ss_cab_fit_dg1 <- sdmTMB(
   spatial = list("on", "on"),
   spatiotemporal = list("ar1", "off"),
   offset = NULL,
-  extra_time = 1982,
-  priors = sdmTMBpriors(matern_s = pc_matern(range_gt = 50,
-                                             sigma_lt = 5))
+  extra_time = 1982
 )
 
 sanity(ss_cab_fit_dg1)
 AIC(ss_cab_fit_dg1)
 
-ss_cab_fit_dln1 <- ss_cab_fit_dln3
 ```
 
 
@@ -1157,6 +1154,75 @@ ggplot(ss_dln3_combined_obs %>% filter(year >= 1984, year <= 2015),
   labs(title = "SoCal Cabezon: Larval Index vs. SSB (1984–2015), Delta-Lognormal",
        x = "Year") +
   theme_bw()
+
+# ---- Larval Index vs. Recruitment Deviations ----
+# Rec devs are log-scale and centered at 0, so a multiplicative scale_factor
+# doesn't behave nicely. Instead, shift + scale rec devs into the index range.
+
+idx_range_dln3   <- range(ss_dln3_combined_obs$larvae_index, na.rm = TRUE)
+recdev_range_dln3 <- range(c(ss_dln3_combined_obs$rec_dev_lo,
+                             ss_dln3_combined_obs$rec_dev_hi), na.rm = TRUE)
+
+# Linear map from rec dev space -> index space
+slope_rd_dln3 <- diff(idx_range_dln3) / diff(recdev_range_dln3)
+intercept_rd_dln3 <- idx_range_dln3[1] - slope_rd_dln3 * recdev_range_dln3[1]
+
+ggplot(ss_dln3_combined_obs %>% filter(year >= 1984, year <= 2015),
+       aes(x = year)) +
+  # Rec devs scaled to primary axis units
+  geom_ribbon(aes(ymin = intercept_rd_dln3 + slope_rd_dln3 * rec_dev_lo,
+                  ymax = intercept_rd_dln3 + slope_rd_dln3 * rec_dev_hi),
+              fill = "darkgreen", alpha = 0.25) +
+  geom_line(aes(y = intercept_rd_dln3 + slope_rd_dln3 * rec_dev),
+            color = "darkgreen", linewidth = 0.8) +
+  geom_hline(yintercept = intercept_rd_dln3 + slope_rd_dln3 * 0,
+             linetype = "dashed", color = "darkgreen", alpha = 0.6) +
+  # Larvae index on primary axis
+  geom_ribbon(aes(ymin = lwr, ymax = upr), fill = "coral", alpha = 0.3) +
+  geom_line(aes(y = larvae_index), color = "coral", linewidth = 0.8) +
+  scale_y_continuous(
+    name = "Estimated Larval Abundance Index; Delta-Lognormal AR1 (encounter)",
+    sec.axis = sec_axis(~ (. - intercept_rd_dln3) / slope_rd_dln3,
+                        name = "Recruitment Deviation (log-scale)")
+  ) +
+  scale_x_continuous(breaks = seq(1984, 2015, by = 4)) +
+  labs(title = "SoCal Cabezon: Larval Index vs. Recruitment Deviations (1984–2015), Delta-Lognormal",
+       x = "Year") +
+  theme_bw()
+
+
+# ---- Larval Index vs. Age-0 Recruits ----
+# Age-0 is strictly positive like SSB, so the multiplicative scale_factor approach works.
+
+scale_factor_age0_dln3 <- max(ss_dln3_combined_obs$larvae_index, na.rm = TRUE) /
+  max(ss_dln3_combined_obs$age0, na.rm = TRUE)
+
+ggplot(ss_dln3_combined_obs %>% filter(year >= 1984, year <= 2015),
+       aes(x = year)) +
+  # Age-0 scaled UP to primary axis units
+  geom_ribbon(aes(ymin = age0_lo * scale_factor_age0_dln3,
+                  ymax = age0_hi * scale_factor_age0_dln3),
+              fill = "purple", alpha = 0.25) +
+  geom_line(aes(y = age0 * scale_factor_age0_dln3),
+            color = "purple", linewidth = 0.8) +
+  # Larvae index on primary axis
+  geom_ribbon(aes(ymin = lwr, ymax = upr), fill = "coral", alpha = 0.3) +
+  geom_line(aes(y = larvae_index), color = "coral", linewidth = 0.8) +
+  scale_y_continuous(
+    name = "Estimated Larval Abundance Index; Delta-Lognormal AR1 (encounter)",
+    sec.axis = sec_axis(~ . / scale_factor_age0_dln3,
+                        name = "Age-0 Recruits")
+  ) +
+  scale_x_continuous(breaks = seq(1984, 2015, by = 4)) +
+  labs(title = "SoCal Cabezon: Larval Index vs. Age-0 Recruits (1984–2015), Delta-Lognormal",
+       x = "Year") +
+  theme_bw()
+
+cog <- get_cog(ss_dln3_cab_map, format = "wide", bias_correct = FALSE)
+ggplot(cog, aes(est_x, est_y, colour = year)) +
+  geom_pointrange(aes(xmin = lwr_x, xmax = upr_x)) +
+  geom_pointrange(aes(ymin = lwr_y, ymax = upr_y)) +
+  scale_colour_viridis_c()
 ```
 
 ```{r 5.1.2. ss_cab_fit1 STAR comparisons station extrapolation, cache = T}
@@ -1903,11 +1969,17 @@ library(ggplot2)
 library(funtimes)
 
 # ── 1. EXTRACT CCF RESULTS ──────────────────────────────────────────────
-# ccf_boot prints a plot AND returns a data frame invisibly.
-# Suppress printed plots by routing to a null PDF device.
+# Compute LOESS residuals first
+loess_df <- ss_dln3_combined_obs %>%
+  arrange(year) %>%
+  mutate(
+    loess_index = predict(loess(larvae_index ~ year, span = 0.5)),
+    loess_ssb   = predict(loess(ssb ~ year, span = 0.5)),
+    resid_index = larvae_index - loess_index,
+    resid_ssb   = ssb - loess_ssb
+  )
 
 pdf(NULL)
-
 ccf_age0   <- ccf_boot(ss_dln3_combined_obs$larvae_index,
                        ss_dln3_combined_obs$age0,
                        lag.max = 10, plot = "Spearman", B = 1000)
@@ -1917,38 +1989,36 @@ ccf_recdev <- ccf_boot(ss_dln3_combined_obs$larvae_index,
 ccf_ssb    <- ccf_boot(ss_dln3_combined_obs$larvae_index,
                        ss_dln3_combined_obs$ssb,
                        lag.max = 10, plot = "Spearman", B = 1000)
-ccf_dssb   <- ccf_boot(diff(ss_dln3_combined_obs$larvae_index),
-                       diff(ss_dln3_combined_obs$ssb),
+# Swap: LOESS-detrended instead of first-differenced
+ccf_dssb   <- ccf_boot(loess_df$resid_index,
+                       loess_df$resid_ssb,
                        lag.max = 10, plot = "Spearman", B = 1000)
-
 dev.off()
 
 # ── 2. ASSEMBLE TIDY DATA FRAME ─────────────────────────────────────────
-# Keep Spearman columns only; flag significance (point falls outside CI band).
-
 tidy_ccf <- function(df, panel_label) {
   df |>
     transmute(
-      lag    = Lag,
-      r      = r_S,
-      lower  = lower_S,
-      upper  = upper_S,
-      sig    = r < lower | r > upper,
-      panel  = panel_label
+      lag   = Lag,
+      r     = r_S,
+      lower = lower_S,
+      upper = upper_S,
+      sig   = r < lower | r > upper,
+      panel = panel_label
     )
 }
 
 ccf_df <- bind_rows(
   tidy_ccf(ccf_age0,   "Age-0 recruits"),
   tidy_ccf(ccf_recdev, "Recruitment deviations"),
-  tidy_ccf(ccf_ssb,    "SSB"),
-  tidy_ccf(ccf_dssb,   "\u0394 Larval index vs. \u0394 SSB")
+  tidy_ccf(ccf_ssb,    "SSB (raw)"),
+  tidy_ccf(ccf_dssb,   "SSB (LOESS-detrended)")
 )
 
 ccf_df$panel <- factor(
   ccf_df$panel,
   levels = c("Age-0 recruits", "Recruitment deviations",
-             "SSB", "\u0394 Larval index vs. \u0394 SSB")
+             "SSB (raw)", "SSB (LOESS-detrended)")
 )
 
 # ── 3. PUBLICATION FIGURE ───────────────────────────────────────────────
@@ -1966,10 +2036,10 @@ p_ccf <- ggplot(ccf_df, aes(x = lag, y = r)) +
   facet_wrap(~ panel, ncol = 2) +
   scale_x_continuous(breaks = seq(-10, 10, 2)) +
   labs(
-    x = "Lag (years)",
-    y = "Spearman cross-correlation",
-    title = "Cross-correlations: restricted larval index vs. stock assessment outputs",
-    subtitle = "Delta-lognormal fixed-year model; blue band = bootstrap 95% CI (B = 1000)"
+    x        = "Lag (years)",
+    y        = "Spearman cross-correlation",
+    title    = "Cross-correlations: restricted larval index vs. stock assessment outputs",
+    subtitle = "Delta-lognormal IID model; blue band = bootstrap 95% CI (B = 1000)"
   ) +
   theme_bw(base_size = 11) +
   theme(
@@ -1985,9 +2055,136 @@ p_ccf <- ggplot(ccf_df, aes(x = lag, y = r)) +
 
 p_ccf
 
+
 ggsave("figures/ccf_panel.png", p_ccf,
        width = 8, height = 6.5, dpi = 300)
+
+
 ```
+
+```{r CCF alternative figure}
+library(patchwork)
+
+# --- Compute LOESS smooths and residuals ---
+loess_df <- ss_dln3_combined_obs %>%
+  filter(year >= 1984, year <= 2015) %>%
+  arrange(year) %>%
+  mutate(
+    loess_index = predict(loess(larvae_index ~ year, span = 0.5)),
+    loess_ssb   = predict(loess(ssb ~ year, span = 0.5)),
+    resid_index = larvae_index - loess_index,
+    resid_ssb   = ssb - loess_ssb
+  )
+
+# Scale factor for dual axis
+scale_factor <- max(loess_df$larvae_index, na.rm = TRUE) /
+                max(loess_df$ssb, na.rm = TRUE)
+
+# Rescale SSB residuals to index space for visual comparison
+resid_scale  <- sd(loess_df$resid_index, na.rm = TRUE) /
+                sd(loess_df$resid_ssb,   na.rm = TRUE)
+
+# --- Panel A: Raw series + LOESS smooths ---
+p_raw <- ggplot(loess_df, aes(x = year)) +
+  # SSB ribbon + line
+  geom_ribbon(aes(ymin = ssb_lo * scale_factor,
+                  ymax = ssb_hi * scale_factor),
+              fill = "steelblue", alpha = 0.2) +
+  geom_line(aes(y = ssb * scale_factor),
+            color = "steelblue", linewidth = 0.8, alpha = 0.5) +
+  # SSB LOESS smooth
+  geom_line(aes(y = loess_ssb * scale_factor),
+            color = "steelblue", linewidth = 1.3) +
+  # Larval index ribbon + line
+  geom_ribbon(aes(ymin = lwr, ymax = upr),
+              fill = "coral", alpha = 0.2) +
+  geom_line(aes(y = larvae_index),
+            color = "coral", linewidth = 0.8, alpha = 0.5) +
+  # Index LOESS smooth
+  geom_line(aes(y = loess_index),
+            color = "coral", linewidth = 1.3) +
+  scale_y_continuous(
+    name = "Larval abundance index",
+    sec.axis = sec_axis(~ . / scale_factor, name = "SSB (mt)")
+  ) +
+  scale_x_continuous(breaks = seq(1984, 2015, by = 4)) +
+  labs(title = "A. Raw series with LOESS smooths (span = 0.5)",
+       x = NULL) +
+  theme_bw() +
+  theme(axis.title.y.left  = element_text(color = "coral"),
+        axis.title.y.right = element_text(color = "steelblue"))
+
+# --- Panel B: Detrended residuals ---
+p_resid <- ggplot(loess_df, aes(x = year)) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey50") +
+  geom_line(aes(y = resid_index),
+            color = "coral", linewidth = 0.8) +
+  geom_point(aes(y = resid_index),
+             color = "coral", size = 1.5) +
+  geom_line(aes(y = resid_ssb * resid_scale),
+            color = "steelblue", linewidth = 0.8) +
+  geom_point(aes(y = resid_ssb * resid_scale),
+             color = "steelblue", size = 1.5) +
+  scale_y_continuous(
+    name = "Larval index residual",
+    sec.axis = sec_axis(~ . / resid_scale, name = "SSB residual (mt)")
+  ) +
+  scale_x_continuous(breaks = seq(1984, 2015, by = 4)) +
+  labs(title = "B. Detrended residuals (raw \u2212 LOESS smooth)",
+       x = "Year") +
+  theme_bw() +
+  theme(axis.title.y.left  = element_text(color = "coral"),
+        axis.title.y.right = element_text(color = "steelblue"))
+
+# --- Combine ---
+p_raw / p_resid
+
+# --- CCF on LOESS-detrended residuals ---
+
+# Compute residuals (reusing loess_df from the plot code)
+loess_df <- ss_dln3_combined_obs %>%
+  filter(year >= 1984, year <= 2015) %>%
+  arrange(year) %>%
+  mutate(
+    loess_index = predict(loess(larvae_index ~ year, span = 0.5)),
+    loess_ssb   = predict(loess(ssb ~ year, span = 0.5)),
+    resid_index = larvae_index - loess_index,
+    resid_ssb   = ssb - loess_ssb
+  )
+
+# CCF with bootstrap CIs on detrended residuals
+ccf_boot(
+  x       = loess_df$resid_index,
+  y       = loess_df$resid_ssb,
+  lag.max = 10,
+  plot    = "Spearman",
+  B       = 1000
+); title(main = "CCF: Detrended Larval Index vs. Detrended SSB (LOESS residuals, span = 0.5)")
+
+
+# --- Windowed CCF on LOESS residuals (1997-2012) ---
+
+loess_window <- ss_dln3_combined_obs %>%
+  filter(year >= 1999, year <= 2009) %>%
+  arrange(year) %>%
+  mutate(
+    loess_index = predict(loess(larvae_index ~ year, span = 0.5)),
+    loess_ssb   = predict(loess(ssb ~ year, span = 0.5)),
+    resid_index = larvae_index - loess_index,
+    resid_ssb   = ssb - loess_ssb
+  )
+
+# With only ~15 obs, pull lag.max in to 5 to avoid
+# burning too many degrees of freedom at the outer lags
+ccf_boot(
+  x       = loess_window$resid_index,
+  y       = loess_window$resid_ssb,
+  lag.max = 5,
+  plot    = "Spearman",
+  B       = 1000
+); title(main = "CCF: Detrended Larval Index vs. Detrended SSB\n1997-2012 window (LOESS residuals, span = 0.5)")
+```
+
 
 ```{r sampling effort figures}
 #ss_plot_data_year
@@ -2245,6 +2442,31 @@ core_lines <- c(76.7, 80.0, 81.8, 83.3, 86.7, 90.0, 93.3)
 # ---- 1. Build land layer: US + Mexico ---------------------------------
 # This fixes the issue where Baja/Mexico reads as water.
 
+# ---- Label coordinates (lon/lat → UTM) --------------------------------
+
+# Helper: convert a lon/lat point to UTM (matching utm_crs)
+to_utm <- function(lon, lat, crs) {
+  pt <- st_sfc(st_point(c(lon, lat)), crs = 4326) %>%
+    st_transform(crs)
+  coords <- st_coordinates(pt)
+  list(X_m = coords[1], Y_m = coords[2])
+}
+
+ca  <- to_utm(-118, 34.8, utm_crs)   # central coast / LA area
+mex <- to_utm(-117, 32.4, utm_crs)   # northern Baja
+
+california_xy <- tibble(
+  X_m   = ca$X_m,
+  Y_m   = ca$Y_m,
+  label = "California"
+)
+
+mexico_xy <- tibble(
+  X_m   = mex$X_m,
+  Y_m   = mex$Y_m,
+  label = "Mexico"
+)
+
 land_ne <- ne_countries(
   country = c("United States of America", "Mexico"),
   scale = 10,
@@ -2318,6 +2540,15 @@ region_outline <- st_sf(
   )
 )
 
+# ---- 5. Map extent from station bounding box ---------------------------
+
+bbox <- st_bbox(stations)
+
+x_range <- bbox["xmax"] - bbox["xmin"]
+y_range <- bbox["ymax"] - bbox["ymin"]
+
+xlim <- c(bbox["xmin"] - zoom_pad * x_range, bbox["xmax"] + zoom_pad * x_range)
+ylim <- c(bbox["ymin"] - zoom_pad * y_range, bbox["ymax"] + zoom_pad * y_range)
 
 p_grid <- ggplot() +
   geom_sf(
@@ -2384,8 +2615,8 @@ p_grid <- ggplot() +
   ) +
 
   labs(
-    title = "CalCOFI core grid and shelf-restricted study region",
-    subtitle = "Core CalCOFI stations shown; study region restricted to shelf-associated stations",
+    title = "CalCOFI core grid and SCB-restricted study region",
+    subtitle = "Core CalCOFI stations shown; study region restricted to nearshore-associated stations",
     x = NULL,
     y = NULL
   ) +
@@ -2432,6 +2663,105 @@ ggsave(
   dpi = 300
 )
 
+```
+
+```{r AIC comparison table}
+library(dplyr)
+library(tibble)
+library(knitr)
+library(kableExtra)
+
+# ---- Build a clean, structured AIC table ----
+# Define model components explicitly rather than parsing the description strings.
+# This is cleaner, less error-prone, and easier to maintain when you add models.
+
+aic_table_clean <- tibble::tribble(
+  ~fit_name,         ~fixed,             ~spatial, ~st_enc, ~st_pos,  ~AIC,
+  "ss_cab_fit_dln0", "Intercept",        "On",     "Off",   "Off",    AIC(ss_cab_fit_dln0),
+  "ss_cab_fit_dln1", "Intercept",        "On",     "AR1",   "AR1",    AIC(ss_cab_fit_dln1),
+  "ss_cab_fit_dln2", "Intercept",        "On",     "AR1",   "IID",    AIC(ss_cab_fit_dln2),
+  "ss_cab_fit_dln3", "Intercept",        "On",     "IID",   "Off",    AIC(ss_cab_fit_dln3),
+  "ss_cab_fit_dln4", "Year (fixed)",     "On",     "Off",   "Off",    AIC(ss_cab_fit_dln4),
+  "ss_cab_fit_dln5", "Year (fixed)",     "On",     "IID",   "IID",    AIC(ss_cab_fit_dln5),
+  "ss_cab_fit_dln6", "Year (fixed)",     "On",     "IID",   "Off",    AIC(ss_cab_fit_dln6),
+  "ss_cab_fit_dln7", "Intercept",        "On",     "AR1",   "Off",    AIC(ss_cab_fit_dln7)
+) %>%
+  mutate(
+    delta_AIC = AIC - min(AIC),
+    weight = exp(-0.5 * delta_AIC) / sum(exp(-0.5 * delta_AIC)),
+    model_id = sub("ss_cab_fit_", "M", fit_name)  # cleaner row labels: M dln0, M dln1, ...
+  ) %>%
+  arrange(delta_AIC) %>%
+  select(model_id, fixed, spatial, st_enc, st_pos, AIC, delta_AIC, weight)
+
+# ---- Render to LaTeX ----
+
+aic_table_clean %>%
+  mutate(
+    AIC = sprintf("%.1f", AIC),
+    delta_AIC = sprintf("%.2f", delta_AIC),
+    weight = sprintf("%.3f", weight)
+  ) %>%
+  kable(
+    format = "latex",
+    booktabs = TRUE,
+    col.names = c("Model", "Fixed effects", "Spatial", 
+                  "ST (encounter)", "ST (positive)", 
+                  "AIC", "$\\Delta$AIC", "$w_i$"),
+    align = c("l", "l", "c", "c", "c", "r", "r", "r"),
+    caption = paste(
+      "Model selection results for delta-lognormal species distribution models",
+      "of cabezon (\\textit{Scorpaenichthys marmoratus}) larvae in the Southern",
+      "California Bight, January--March, ranked by AIC. ST = spatiotemporal",
+      "random field; AR1 = first-order autoregressive; IID = independent and",
+      "identically distributed across years; $w_i$ = AIC model weight."
+    ),
+    label = "tab:aic-cabezon-dln",
+    escape = FALSE
+  ) %>%
+  kable_styling(
+    latex_options = c("booktabs", "hold_position"),
+    font_size = 9,
+    position = "center"
+  ) %>%
+  row_spec(0, bold = TRUE) %>%
+  # Optionally highlight the top model
+  row_spec(1, bold = TRUE)
+
+# Print to a .tex file you can \input{} into your manuscript
+aic_latex <- aic_table_clean %>%
+  mutate(
+    AIC = sprintf("%.1f", AIC),
+    delta_AIC = sprintf("%.2f", delta_AIC),
+    weight = sprintf("%.3f", weight)
+  ) %>%
+  kable(
+    format = "latex",
+    booktabs = TRUE,
+    col.names = c("Model", "Fixed effects", "Spatial", 
+                  "ST (encounter)", "ST (positive)", 
+                  "AIC", "$\\Delta$AIC", "$w_i$"),
+    align = c("l", "l", "c", "c", "c", "r", "r", "r"),
+    caption = paste(
+      "Model selection results for delta-lognormal species distribution models",
+      "of cabezon (\\textit{Scorpaenichthys marmoratus}) larvae in the Southern",
+      "California Bight, January--March, ranked by AIC. ST = spatiotemporal",
+      "random field; AR1 = first-order autoregressive; IID = independent and",
+      "identically distributed across years; $w_i$ = AIC model weight."
+    ),
+    label = "tab:aic-cabezon-dln",
+    escape = FALSE
+  ) %>%
+  kable_styling(
+    latex_options = c("booktabs", "hold_position"),
+    font_size = 9,
+    position = "center"
+  ) %>%
+  row_spec(0, bold = TRUE) %>%
+  # Optionally highlight the top model
+  row_spec(1, bold = TRUE)
+
+writeLines(as.character(aic_latex), "outputs/aic_table.tex")
 ```
 
 
