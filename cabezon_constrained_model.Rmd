@@ -784,6 +784,48 @@ ss_cab_fit_dg1 <- sdmTMB(
 sanity(ss_cab_fit_dg1)
 AIC(ss_cab_fit_dg1)
 
+tw_iid_fit <- sdmTMB(
+  larvae_100m3 ~ 1,
+  data = cabezon_shelf_spawn,
+  mesh = ss_cab_mesh,
+  time = "year",
+  family = tweedie(),
+  spatial = "on",
+  spatiotemporal = "iid",
+  offset = NULL,
+  extra_time = 1982
+)
+sanity(tw_iid_fit)
+
+tw_stoff_fit <- sdmTMB(
+  larvae_100m3 ~ 1,
+  data = cabezon_shelf_spawn,
+  mesh = ss_cab_mesh,
+  time = "year",
+  family = tweedie(),
+  spatial = "on",
+  spatiotemporal = "off",
+  offset = NULL,
+  extra_time = 1982
+)
+sanity(tw_stoff_fit)
+
+tw_ar1_fit <- sdmTMB(
+  larvae_100m3 ~ 1,
+  data = cabezon_shelf_spawn,
+  mesh = ss_cab_mesh,
+  time = "year",
+  family = tweedie(),
+  spatial = "on",
+  spatiotemporal = "ar1",
+  offset = NULL,
+  extra_time = 1982
+)
+sanity(tw_ar1_fit)
+
+AIC(tw_iid_fit, tw_stoff_fit, tw_ar1_fit)
+
+
 ```
 
 
@@ -2767,6 +2809,126 @@ writeLines(as.character(aic_latex), "outputs/aic_table.tex")
 
 
 # Additional Models
+
+
+## 10.6. Tweedie IID heatmap & index
+
+```{r}
+
+tw_iid_pred_grid <- expand.grid(
+  X = seq(min(cabezon_shelf_spawn$X), max(cabezon_shelf_spawn$X), by = 5),
+  Y = seq(min(cabezon_shelf_spawn$Y), max(cabezon_shelf_spawn$Y), by = 5)
+) %>%
+  tidyr::crossing(year = as.integer(sort(unique(cabezon_shelf_spawn$year)))) %>%
+  mutate(fyear = as.factor(year))
+
+tw_iid_pred_map <- predict(tw_iid_fit, newdata = tw_iid_pred_grid, return_tmb_object = TRUE)
+tw_iid_pred_index <- get_index(tw_iid_pred_map, area = 1, bias_correct = TRUE)
+
+library(dplyr)
+library(ggplot2)
+library(sf)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(viridis)
+
+utm_crs <- 32611
+
+# Predict over full grid x year
+tw_iid_pred_map <- predict(
+  tw_iid_fit,
+  newdata = tw_iid_pred_grid,
+  type = "response"
+)
+
+# Average predictions across years at each spatial grid cell
+tw_iid_avg_pred_plot <- tw_iid_pred_map |>
+  mutate(
+    X_m = X * 1000,
+    Y_m = Y * 1000,
+    pred = est
+  ) |>
+  group_by(X, Y, X_m, Y_m) |>
+  summarize(
+    avg_pred = mean(pred, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# California coastline
+ca_coast <- ne_states(
+  country = "United States of America",
+  returnclass = "sf"
+) |>
+  dplyr::filter(name == "California") |>
+  st_transform(utm_crs)
+
+# Observed-data bounds for study-region crop
+obs_plot <- cabezon_shelf_spawn |>
+  mutate(
+    X_m = X * 1000,
+    Y_m = Y * 1000
+  )
+
+# Average prediction heatmap across all years
+ggplot() +
+  geom_raster(
+    data = tw_iid_avg_pred_plot,
+    aes(x = X_m, y = Y_m, fill = log1p(avg_pred))
+  ) +
+  geom_sf(
+    data = ca_coast,
+    inherit.aes = FALSE,
+    fill = "grey80",
+    color = "grey40"
+  ) +
+  geom_sf(
+    data = calcofi_lines,
+    inherit.aes = FALSE,
+    color = "grey95",
+    linewidth = 0.25
+  ) +
+  coord_sf(
+    crs = st_crs(utm_crs),
+    xlim = range(obs_plot$X_m, na.rm = TRUE),
+    ylim = range(obs_plot$Y_m, na.rm = TRUE),
+    expand = FALSE
+  ) +
+  scale_fill_viridis_c(
+    name = "Mean predicted\nlarvae / 100 m³"
+  ) +
+  labs(
+    title = "Average predicted cabezon larval abundance across years",
+    subtitle = "Predictions averaged across years at each spatial grid cell",
+    x = NULL,
+    y = NULL
+  ) +
+  theme_minimal()
+
+ggplot(tw_iid_pred_index, aes(x = year, y = est)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), alpha = 0.3) +
+  labs(y = "Estimated abundance index", x = "Year",
+       title = "Abundance Index: Tweedie on Global Intercept with IID (encounter) Spatiotemporal Field")
+
+df <- dplyr::inner_join(ss_dln3_cab_index, tw_iid_pred_index, by = "year")  # est_dln, est_twd
+
+cor(df$est.x, df$est.y, method = "spearman")        # primary: rank, scale- and outlier-robust
+cor(log(df$est.x), log(df$est.y))                   # secondary: Pearson on log scale tames the spike
+
+ccf_boot(
+  x = tw_iid_pred_index$est,
+  y = ss_dln3_cab_index$est,
+  lag.max = 10,
+  plot = "Spearman",
+  B = 1000
+); title(main = "CCF: Restricted Larval Index vs. Age-0 Recruits (Delta-Lognormal)")
+
+funtimes::ccf_boot(df$est.x, df$est.y,              # consistent with your SSB methods
+                   lag.max = 3, plot = "Spearman")    # read the lag-0 value + CI
+
+# leverage check: the influential years
+cor(df$est.x[df$year != 2004], df$est.y[df$year != 2004], method = "spearman")
+```
 
 
 ##10.7. ss_cab_fit2a — Tweedie with iid spatiotemporal
