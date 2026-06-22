@@ -1121,7 +1121,7 @@ ss_dln3_combined_obs <- ss_dln3_combined %>%
 ccf_boot(
   x = ss_dln3_combined_obs$larvae_index,
   y = ss_dln3_combined_obs$age0,
-  lag.max = 10,
+  lag.max = 5,
   plot = "Spearman",
   B = 1000
 ); title(main = "CCF: Restricted Larval Index vs. Age-0 Recruits (Delta-Lognormal)")
@@ -1129,7 +1129,7 @@ ccf_boot(
 ccf_boot(
   x = ss_dln3_combined_obs$larvae_index,
   y = ss_dln3_combined_obs$rec_dev,
-  lag.max = 10,
+  lag.max = 5,
   plot = "Spearman",
   B = 1000
 ); title(main = "CCF: Restricted Larval Index vs. Recruitment Deviations (Delta-Lognormal)")
@@ -1138,7 +1138,7 @@ ccf_boot(
 ccf_boot(
   x = ss_dln3_combined_obs$larvae_index,
   y = ss_dln3_combined_obs$ssb,
-  lag.max = 10,
+  lag.max = 5,
   plot = "Spearman",
   B = 1000
 ); title(main = "CCF: Restricted Larval Index vs. SSB (Delta-Lognormal)")
@@ -1146,7 +1146,7 @@ ccf_boot(
 ccf_boot(
   x = diff(ss_dln3_combined_obs$larvae_index),
   y = diff(ss_dln3_combined_obs$ssb),
-  lag.max = 10,
+  lag.max = 5,
   plot = "Spearman",
   B = 1000
 ); title(main = "CCF: Δ Larval Index vs. Δ SSB (Delta-Lognormal)")
@@ -1154,7 +1154,7 @@ ccf_boot(
 ccf_boot(
   x = ss_dln3_combined_obs$larvae_index,
   y = diff(ss_dln3_combined_obs$ssb),
-  lag.max = 10,
+  lag.max = 5,
   plot = "Spearman",
   B = 1000
 ); title(main = "CCF: Larval Index vs. Δ SSB (Delta-Lognormal)")
@@ -2809,6 +2809,117 @@ writeLines(as.character(aic_latex), "outputs/aic_table.tex")
 
 
 # Additional Models
+
+```{r power analysis on ccfs}
+# =====================================================================
+# Power analysis for the sieve-bootstrap CCF (funtimes::ccf_boot)
+# Plants a known lagged correlation into surrogate series matched to the
+# AR structure of YOUR real series, then asks how often ccf_boot detects it.
+#
+# Fixes vs. first draft (all verified against funtimes source):
+#   * `level` is the confidence-level arg (NOT `cl`; `cl` = number of cores).
+#   * Result columns are r_S / lower_S / upper_S (Spearman, matching the
+#     main analysis) -- not rP/lower/upper.
+#   * ccf_boot calls ARest() internally with default ar.method = "HVK",
+#     which can return NON-STATIONARY coefficients on short surrogate draws,
+#     crashing arima.sim. ar.method = "yw" (Yule-Walker) is always stationary
+#     and fixes the crash. This is a minor, conservative deviation from the
+#     HVK default; see note (B) at the bottom.
+#   * cl = 1L forces sequential bootstrap so ccf_boot does NOT spawn/destroy
+#     a parallel cluster on every call (which would be ruinously slow here).
+# =====================================================================
+library(funtimes)
+
+index_ts  <- ss_dln3_combined_obs$larvae_index
+assess_ts <- ss_dln3_combined_obs$rec_dev
+
+# ---- 1. Fit AR models so surrogates inherit each series' autocorrelation ----
+fit_ar <- function(x) {
+  x <- as.numeric(scale(x))
+  m <- ar(x, order.max = 3, method = "yule-walker", aic = TRUE)
+  list(phi = as.numeric(m$ar), order = m$order)
+}
+sim_ar <- function(phi, n, burn = 200) {
+  if (length(phi) == 0) return(rnorm(n))
+  as.numeric(arima.sim(list(ar = phi), n = n, n.start = burn))
+}
+
+# ---- 2. One simulated dataset with a planted lag-L correlation r ----
+make_pair <- function(r, n, lag, fitS, fitI) {
+  S <- as.numeric(scale(sim_ar(fitS$phi, n)))
+  e <- as.numeric(scale(sim_ar(fitI$phi, n)))
+  I <- numeric(n)
+  if (lag >= 0) {
+    idx <- (lag + 1):n
+    I[idx] <- r * S[1:(n - lag)] + sqrt(1 - r^2) * e[idx]
+    if (lag > 0) I[1:lag] <- e[1:lag]
+  } else {
+    L <- -lag; idx <- 1:(n - L)
+    I[idx] <- r * S[(L + 1):n] + sqrt(1 - r^2) * e[idx]
+    I[(n - L + 1):n] <- e[(n - L + 1):n]
+  }
+  data.frame(I = I, S = S)
+}
+
+# ---- 3. Detection via YOUR procedure: ccf_boot, check the lag-L band ----
+detect <- function(pair, lag, B = 300, level = 0.95, ar.method = "yw") {
+  cc <- tryCatch(
+    ccf_boot(pair$I, pair$S,
+             lag.max   = max(5, abs(lag)),
+             plot      = "none",
+             level     = level,
+             B         = B,
+             cl        = 1L,            # sequential: no cluster spawned per call
+             ar.method = ar.method),    # forwarded to ARest(); "yw" = stationary
+    error = function(e) NULL)
+  if (is.null(cc)) return(NA)
+  row <- which(cc$Lag == lag)
+  obs <- cc$r_S[row]                    # Spearman, matching the main analysis
+  (obs < cc$lower_S[row]) || (obs > cc$upper_S[row])
+}
+
+# ---- 4. Power at a given r (redraws on the rare residual failure) ----
+power_at_r <- function(r, n, lag, fitS, fitI, M = 200, B = 300,
+                       level = 0.95, ar.method = "yw", max_tries = 5) {
+  hits <- 0L; done <- 0L; fails <- 0L
+  while (done < M) {
+    d <- NA; tries <- 0L
+    while (is.na(d) && tries < max_tries) {
+      d <- detect(make_pair(r, n, lag, fitS, fitI), lag,
+                  B = B, level = level, ar.method = ar.method)
+      tries <- tries + 1L
+      if (is.na(d)) fails <- fails + 1L
+    }
+    if (is.na(d)) next
+    hits <- hits + d; done <- done + 1L
+  }
+  if (fails > 0) message(sprintf("  (r=%.2f: %d bootstrap refit failures, redrawn)", r, fails))
+  hits / M
+}
+
+# ---- 5. Sweep r, report power curve and minimum detectable r ----
+run_sweep <- function(index_ts, assess_ts, lag = 0,
+                      r_grid = seq(0.3, 0.8, 0.05),
+                      M = 200, B = 300, level = 0.95, ar.method = "yw") {
+  n    <- min(length(index_ts), length(assess_ts))
+  fitI <- fit_ar(index_ts)
+  fitS <- fit_ar(assess_ts)
+  cat(sprintf("n = %d | index AR(%d) | assessment AR(%d), phi1 = %.2f | ar.method = %s\n",
+              n, fitI$order, fitS$order,
+              if (length(fitS$phi)) fitS$phi[1] else 0, ar.method))
+  pw  <- sapply(r_grid, power_at_r, n = n, lag = lag,
+                fitS = fitS, fitI = fitI, M = M, B = B,
+                level = level, ar.method = ar.method)
+  mdr <- if (any(pw >= 0.8) && any(pw < 0.8)) approx(pw, r_grid, xout = 0.8)$y else NA
+  print(data.frame(r = r_grid, power = round(pw, 2)))
+  cat(sprintf("Minimum detectable |r| at 80%% power: %.2f\n", mdr))
+  invisible(list(grid = r_grid, power = pw, mdr = mdr))
+}
+
+# ---- 6. Run it ----
+set.seed(20260605)
+run_sweep(index_ts, assess_ts, lag = 0)    # repeat per assessment quantity, and for lag = 3, etc.
+```
 
 
 ## 10.6. Tweedie IID heatmap & index
