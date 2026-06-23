@@ -958,8 +958,7 @@ ggplot(cabezon_env_complete, aes(x = o2_surf_z, y = temp_surf_z, color = cabezon
 ggplot(cabezon_env_complete, aes(x = o2_surf, y = temp_surf, color = cabezon_present)) +
   geom_point()
 
-range(cabezon_env_complete$larvae_100m3)
-range(ss_full_cab_index_obs$est)
+
 ```
 
 # Figures
@@ -1004,8 +1003,8 @@ sst_pred$temp_surf <- sst_pred$temp_surf_z * sst_sd + sst_mean
 # ─── 5. Plot ───
 sst_partial <- ggplot(sst_pred, aes(x = temp_surf, y = fit_resp)) +
   geom_ribbon(aes(ymin = lwr_resp, ymax = upr_resp), 
-              fill = "steelblue", alpha = 0.25) +
-  geom_line(color = "steelblue", linewidth = 0.9) +
+              fill = "dodgerblue4", alpha = 0.25) +
+  geom_line(color = "dodgerblue4", linewidth = 0.9) +
   labs(x = "Sea surface temperature (°C)",
        y = "Predicted probability of larval presence",
        title = "Partial effect of SST") +
@@ -1136,8 +1135,8 @@ sso_pred$o2_surf <- sso_pred$o2_surf_z * sso_sd + sso_mean
 # ─── 5. Plot ───
 sso_partial <- ggplot(sso_pred, aes(x = o2_surf, y = fit_resp)) +
   geom_ribbon(aes(ymin = lwr_resp, ymax = upr_resp), 
-              fill = "gold", alpha = 0.25) +
-  geom_line(color = "gold", linewidth = 0.9) +
+              fill = "darkolivegreen", alpha = 0.25) +
+  geom_line(color = "darkolivegreen", linewidth = 0.9) +
   labs(x = "Sea surface dissolved oxygen",
        y = "Predicted probability of larval presence",
        title = "Partial effect of SSO") +
@@ -1145,8 +1144,62 @@ sso_partial <- ggplot(sso_pred, aes(x = o2_surf, y = fit_resp)) +
 
 sso_partial
 
+```
+
+```{r combined partial effects plots for SST and SSO}
+library(patchwork)
 library(ggplot2)
 library(scales)
+
+# ─── SST partial plot ───
+sst_partial <- ggplot(sst_pred, aes(x = temp_surf, y = fit_resp)) +
+  geom_ribbon(aes(ymin = lwr_resp, ymax = upr_resp),
+              fill = "dodgerblue4", alpha = 0.25) +
+  geom_line(color = "dodgerblue4", linewidth = 0.9) +
+    scale_y_continuous(
+    labels = percent_format(accuracy = 1),
+    limits = c(0, 0.85),
+    expand = expansion(mult = c(0, 0.04))
+  ) +
+  labs(
+    x = "Sea surface temperature (°C)",
+    y = "Predicted probability of larval presence",
+    title = "Partial effect of SST"
+  ) +
+  theme_minimal()
+
+# ─── SSO partial plot ───
+sso_partial <- ggplot(sso_pred, aes(x = o2_surf, y = fit_resp)) +
+  geom_ribbon(aes(ymin = lwr_resp, ymax = upr_resp),
+              fill = "darkolivegreen", alpha = 0.25) +
+  geom_line(color = "darkolivegreen", linewidth = 0.9) +
+  scale_y_continuous(
+      labels = percent_format(accuracy = 1),
+    limits = c(0, 0.85),
+    expand = expansion(mult = c(0, 0.04))
+  ) +
+  labs(
+    x = expression("Sea surface dissolved oxygen (mL L"^{-1}*")"),
+    y = "Predicted probability of larval presence",
+    title = "Partial effect of SSO"
+  ) +
+  theme_minimal()
+
+# ─── Combine with patchwork ───
+library(patchwork)
+partial_effects <- sst_partial + sso_partial +
+  plot_annotation(
+    title   = "Partial effects of environmental covariates on cabezon larval presence",
+    caption = "Predicted probability of larval detection across the observed range of each covariate, with all other covariates held at their means and spatial random field set to zero."
+  )
+
+partial_effects
+
+ggsave("C:/Users/machs/SynologyDrive/Dan's Files/SIO/0_capstone/6_figures/partial_effects_paper.png", partial_effects,
+       width = 8, height = 4, units = "in", dpi = 300)
+```
+
+```{r combined partial effects plot poster}
 
 sso_partial <- ggplot(sso_pred, aes(x = o2_surf, y = fit_resp)) +
   geom_ribbon(
@@ -1332,7 +1385,6 @@ ggsave(
 library(flextable)
 library(dplyr)
 
-# --- Paste your AIC output here ---
 aic_vals <- AIC(m1_sdm, m2_sdm, m3_sdm, m4_sdm, m5_sdm)
 
 # Build comparison table
