@@ -1,0 +1,2185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://earth.google.com/kml/2.2">
+<Document>
+  <name>CalCOFI 75 Standard Stations</name>
+  <description><![CDATA[75 CalCOFI Station Pattern]]></description>
+  <Style id="style57">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style112">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style28">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style46">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style113">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style40">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style135">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style126">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style44">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/pink-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style81">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style104">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style82">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style52">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style94">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style5">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style14">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style98">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/pink-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style116">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style119">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/pink-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style41">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style31">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style70">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style90">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style47">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style68">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style2">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style115">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style108">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style17">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style118">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/pink-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style67">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style107">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style114">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style6">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style27">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style48">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style60">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style43">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style13">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style53">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style56">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style49">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style95">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/pink-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style20">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/pink-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style3">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/pink-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style97">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style105">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style51">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style78">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style85">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style89">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style62">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style111">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style128">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style15">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style136">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style133">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style124">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style121">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/pink-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style19">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/pink-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style73">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style64">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style123">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style122">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style45">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style100">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style72">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style83">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style4">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style110">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style120">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style1">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style127">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style117">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style87">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/yellow-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style50">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style92">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style79">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style106">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style58">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style37">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style77">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style35">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style75">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style22">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style103">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style129">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style25">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style74">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style84">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style9">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style101">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style65">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style32">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style61">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style29">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style33">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style18">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style34">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style26">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style99">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style134">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style80">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style125">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style38">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style16">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style10">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style55">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style130">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style36">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style102">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style91">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style8">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style131">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style7">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style42">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style39">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style71">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style66">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style86">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style11">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style12">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style76">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style132">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style23">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style88">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style69">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style21">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style54">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style63">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style93">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style59">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style96">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style30">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style24">
+    <IconStyle>
+      <Icon>
+        <href>http://oceaninfo-dev.ucsd.edu/ichthyoplankton/template/images/bullet_white.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Style id="style109">
+    <IconStyle>
+      <Icon>
+        <href>http://maps.gstatic.com/intl/en_us/mapfiles/ms/micons/blue-dot.png</href>
+      </Icon>
+    </IconStyle>
+  </Style>
+  <Placemark>
+    <name>076.7 049.0</name>
+    <Snippet>CalCOFI StationLat: 35.088Lon: -120.777</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 35.088<br>Lon: -120.777<br></p></p><p></p></p>
+<p></p></p><p></p></p>
+<p></p></p><p></p></p>
+<p></p></p><p></p></p>]]></description>
+    <styleUrl>#style57</styleUrl>
+    <Point>
+      <coordinates>-120.777000,35.088001,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>076.7 051.0</name>
+    <Snippet>CalCOFI StationLat: 35.022Lon: -120.918</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 35.022<br>Lon: -120.918<br></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p>]]></description>
+    <styleUrl>#style112</styleUrl>
+    <Point>
+      <coordinates>-120.917999,35.021999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>076.7 055.0</name>
+    <Snippet>CalCOFI StationLat: 34.888Lon: -121.198</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 34.888<br>Lon: -121.198<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style28</styleUrl>
+    <Point>
+      <coordinates>-121.197998,34.888000,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>076.7 060.0</name>
+    <Snippet>CalCOFI StationLat: 34.722Lon: -121.548</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 34.722<br>Lon: -121.548<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style46</styleUrl>
+    <Point>
+      <coordinates>-121.547997,34.722000,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>076.7 070.0</name>
+    <Snippet>CalCOFI StationLat: 34.388Lon: -122.246</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 34.388<br>Lon: -122.246<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style113</styleUrl>
+    <Point>
+      <coordinates>-122.246002,34.388000,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>076.7 080.0</name>
+    <Snippet>CalCOFI StationLat: 34.055Lon: -122.941</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 34.055<br>Lon: -122.941<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style40</styleUrl>
+    <Point>
+      <coordinates>-122.941002,34.055000,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>076.7 090.0</name>
+    <Snippet>CalCOFI StationLat: 33.722Lon: -123.633</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.722<br>Lon: -123.633<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style135</styleUrl>
+    <Point>
+      <coordinates>-123.633003,33.722000,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>076.7 100.0</name>
+    <Snippet>CalCOFI StationLat: 33.388Lon: -124.323</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.388<br>Lon: -124.323<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style126</styleUrl>
+    <Point>
+      <coordinates>-124.322998,33.388000,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>080.0 050.5</name>
+    <Snippet>CalCOFI StationLat: 34.46Lon: -120.49</Snippet>
+    <description><![CDATA[<p>CalCOFI SCCOOS Station<br>Lat: 34.46<br>Lon: -120.49<br></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p>]]></description>
+    <styleUrl>#style44</styleUrl>
+    <Point>
+      <coordinates>-120.489998,34.459999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>080.0 051.0</name>
+    <Snippet>CalCOFI StationLat: 34.45Lon: -120.524</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 34.45<br>Lon: -120.524<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style81</styleUrl>
+    <Point>
+      <coordinates>-120.524002,34.450001,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>080.0 055.0</name>
+    <Snippet>CalCOFI StationLat: 34.317Lon: -120.802</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 34.317<br>Lon: -120.802<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style104</styleUrl>
+    <Point>
+      <coordinates>-120.802002,34.317001,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>080.0 060.0</name>
+    <Snippet>CalCOFI StationLat: 34.15Lon: -121.15</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 34.15<br>Lon: -121.15<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style82</styleUrl>
+    <Point>
+      <coordinates>-121.150002,34.150002,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>080.0 070.0</name>
+    <Snippet>CalCOFI StationLat: 33.817Lon: -121.843</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.817<br>Lon: -121.843<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style52</styleUrl>
+    <Point>
+      <coordinates>-121.843002,33.817001,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>080.0 080.0</name>
+    <Snippet>CalCOFI StationLat: 33.483Lon: -122.533</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.483<br>Lon: -122.533<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style94</styleUrl>
+    <Point>
+      <coordinates>-122.532997,33.483002,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>080.0 090.0</name>
+    <Snippet>CalCOFI StationLat: 33.15Lon: -123.221</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.15<br>Lon: -123.221<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style5</styleUrl>
+    <Point>
+      <coordinates>-123.221001,33.150002,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>080.0 100.0</name>
+    <Snippet>CalCOFI StationLat: 32.817Lon: -123.906</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 32.817<br>Lon: -123.906<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style14</styleUrl>
+    <Point>
+      <coordinates>-123.905998,32.817001,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>081.7 043.5</name>
+    <Snippet>CalCOFI StationLat: 34.41Lon: -119.8</Snippet>
+    <description><![CDATA[<p>CalCOFI SCCOOS Station<br>Lat: 34.41<br>Lon: -119.8<br></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p>]]></description>
+    <styleUrl>#style98</styleUrl>
+    <Point>
+      <coordinates>-119.800003,34.410000,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>081.8 046.9</name>
+    <Snippet>CalCOFI StationLat: 34.275Lon: -120.025</Snippet>
+    <description><![CDATA[<p>CalCOFI Santa Barbara Basin Station<br>Lat: 34.275<br>Lon: -120.025<br></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p>]]></description>
+    <styleUrl>#style116</styleUrl>
+    <Point>
+      <coordinates>-120.025002,34.275002,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>083.3 039.4</name>
+    <Snippet>CalCOFI StationLat: 34.26Lon: -119.32</Snippet>
+    <description><![CDATA[<p>CalCOFI SCCOOS Station<br>Lat: 34.26<br>Lon: -119.32<br></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p><p></p></p>]]></description>
+    <styleUrl>#style119</styleUrl>
+    <Point>
+      <coordinates>-119.320000,34.259998,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>083.3 040.6</name>
+    <Snippet>CalCOFI StationLat: 34.225Lon: -119.411</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 34.225<br>Lon: -119.411<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style41</styleUrl>
+    <Point>
+      <coordinates>-119.411003,34.224998,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>083.3 042.0</name>
+    <Snippet>CalCOFI StationLat: 34.178Lon: -119.508</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 34.178<br>Lon: -119.508<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style31</styleUrl>
+    <Point>
+      <coordinates>-119.508003,34.178001,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>083.3 051.0</name>
+    <Snippet>CalCOFI StationLat: 33.878Lon: -120.133</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.878<br>Lon: -120.133<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style70</styleUrl>
+    <Point>
+      <coordinates>-120.133003,33.877998,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>083.3 055.0</name>
+    <Snippet>CalCOFI StationLat: 33.745Lon: -120.409</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.745<br>Lon: -120.409<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style90</styleUrl>
+    <Point>
+      <coordinates>-120.408997,33.744999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>083.3 060.0</name>
+    <Snippet>CalCOFI StationLat: 33.578Lon: -120.754</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.578<br>Lon: -120.754<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style47</styleUrl>
+    <Point>
+      <coordinates>-120.753998,33.577999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>083.3 070.0</name>
+    <Snippet>CalCOFI StationLat: 33.245Lon: -121.443</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.245<br>Lon: -121.443<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style68</styleUrl>
+    <Point>
+      <coordinates>-121.443001,33.244999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>083.3 080.0</name>
+    <Snippet>CalCOFI StationLat: 32.912Lon: -122.129</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 32.912<br>Lon: -122.129<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style2</styleUrl>
+    <Point>
+      <coordinates>-122.128998,32.911999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>083.3 090.0</name>
+    <Snippet>CalCOFI StationLat: 32.578Lon: -122.812</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 32.578<br>Lon: -122.812<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style115</styleUrl>
+    <Point>
+      <coordinates>-122.811996,32.577999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>083.3 100.0</name>
+    <Snippet>CalCOFI StationLat: 32.245Lon: -123.492</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 32.245<br>Lon: -123.492<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style108</styleUrl>
+    <Point>
+      <coordinates>-123.491997,32.244999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>083.3 110.0</name>
+    <Snippet>CalCOFI StationLat: 31.912Lon: -124.17</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 31.912<br>Lon: -124.17<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style17</styleUrl>
+    <Point>
+      <coordinates>-124.169998,31.912001,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>085.4 035.8</name>
+    <Snippet>CalCOFI StationLat: 34.01Lon: -118.83</Snippet>
+    <description><![CDATA[<p>CalCOFI SCCOOS Station<br>Lat: 34.01<br>Lon: -118.83<br></p></p><p></p></p><p></p></p><p></p></p>]]></description>
+    <styleUrl>#style118</styleUrl>
+    <Point>
+      <coordinates>-118.830002,34.009998,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>086.7 033.0</name>
+    <Snippet>CalCOFI StationLat: 33.889Lon: -118.49</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.889<br>Lon: -118.49<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style67</styleUrl>
+    <Point>
+      <coordinates>-118.489998,33.889000,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>086.7 035.0</name>
+    <Snippet>CalCOFI StationLat: 33.823Lon: -118.629</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.823<br>Lon: -118.629<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style107</styleUrl>
+    <Point>
+      <coordinates>-118.628998,33.823002,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>086.7 040.0</name>
+    <Snippet>CalCOFI StationLat: 33.656Lon: -118.974</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.656<br>Lon: -118.974<br></p></p><p></p></p><p></p></p><p></p></p>]]></description>
+    <styleUrl>#style114</styleUrl>
+    <Point>
+      <coordinates>-118.973999,33.655998,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>086.7 045.0</name>
+    <Snippet>CalCOFI StationLat: 33.489Lon: -119.319</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.489<br>Lon: -119.319<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style6</styleUrl>
+    <Point>
+      <coordinates>-119.319000,33.488998,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>086.7 050.0</name>
+    <Snippet>CalCOFI StationLat: 33.323Lon: -119.663</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.323<br>Lon: -119.663<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style27</styleUrl>
+    <Point>
+      <coordinates>-119.663002,33.323002,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>086.7 055.0</name>
+    <Snippet>CalCOFI StationLat: 33.156Lon: -120.007</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.156<br>Lon: -120.007<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style48</styleUrl>
+    <Point>
+      <coordinates>-120.007004,33.155998,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>086.7 060.0</name>
+    <Snippet>CalCOFI StationLat: 32.989Lon: -120.35</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 32.989<br>Lon: -120.35<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style60</styleUrl>
+    <Point>
+      <coordinates>-120.349998,32.988998,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>086.7 070.0</name>
+    <Snippet>CalCOFI StationLat: 32.656Lon: -121.033</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 32.656<br>Lon: -121.033<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style43</styleUrl>
+    <Point>
+      <coordinates>-121.032997,32.655998,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>086.7 080.0</name>
+    <Snippet>CalCOFI StationLat: 32.323Lon: -121.715</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 32.323<br>Lon: -121.715<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style13</styleUrl>
+    <Point>
+      <coordinates>-121.714996,32.323002,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>086.7 090.0</name>
+    <Snippet>CalCOFI StationLat: 31.99Lon: -122.393</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 31.99<br>Lon: -122.393<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style53</styleUrl>
+    <Point>
+      <coordinates>-122.392998,31.990000,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>086.7 100.0</name>
+    <Snippet>CalCOFI StationLat: 31.656Lon: -123.069</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 31.656<br>Lon: -123.069<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style56</styleUrl>
+    <Point>
+      <coordinates>-123.069000,31.656000,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>086.7 110.0</name>
+    <Snippet>CalCOFI StationLat: 31.323Lon: -123.743</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 31.323<br>Lon: -123.743<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style49</styleUrl>
+    <Point>
+      <coordinates>-123.742996,31.323000,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>086.8 032.5</name>
+    <Snippet>CalCOFI StationLat: 33.89Lon: -118.44</Snippet>
+    <description><![CDATA[<p>CalCOFI SCCOOS Station<br>Lat: 33.89<br>Lon: -118.44<br></p></p><p></p></p><p></p></p><p></p></p>]]></description>
+    <styleUrl>#style95</styleUrl>
+    <Point>
+      <coordinates>-118.440002,33.889999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>088.5 030.1</name>
+    <Snippet>CalCOFI StationLat: 33.67Lon: -118.09</Snippet>
+    <description><![CDATA[<p>CalCOFI SCCOOS Station<br>Lat: 33.67<br>Lon: -118.09<br></p></p><p></p></p><p></p></p><p></p></p>]]></description>
+    <styleUrl>#style20</styleUrl>
+    <Point>
+      <coordinates>-118.089996,33.669998,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>090.0 027.7</name>
+    <Snippet>CalCOFI StationLat: 33.5Lon: -117.75</Snippet>
+    <description><![CDATA[<p>CalCOFI SCCOOS Station<br>Lat: 33.5<br>Lon: -117.75<br></p></p><p></p></p><p></p></p><p></p></p>]]></description>
+    <styleUrl>#style3</styleUrl>
+    <Point>
+      <coordinates>-117.750000,33.500000,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>090.0 028.0</name>
+    <Snippet>CalCOFI StationLat: 33.485Lon: -117.768</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.485<br>Lon: -117.768<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style97</styleUrl>
+    <Point>
+      <coordinates>-117.767998,33.485001,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>090.0 030.0</name>
+    <Snippet>CalCOFI StationLat: 33.418Lon: -117.906</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.418<br>Lon: -117.906<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style105</styleUrl>
+    <Point>
+      <coordinates>-117.905998,33.417999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>090.0 035.0</name>
+    <Snippet>CalCOFI StationLat: 33.251Lon: -118.25</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.251<br>Lon: -118.25<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style51</styleUrl>
+    <Point>
+      <coordinates>-118.250000,33.250999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>090.0 037.0</name>
+    <Snippet>CalCOFI StationLat: 33.185Lon: -118.387</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.185<br>Lon: -118.387<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style78</styleUrl>
+    <Point>
+      <coordinates>-118.387001,33.185001,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>090.0 045.0</name>
+    <Snippet>CalCOFI StationLat: 32.918Lon: -118.936</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 32.918<br>Lon: -118.936<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style85</styleUrl>
+    <Point>
+      <coordinates>-118.935997,32.917999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>090.0 053.0</name>
+    <Snippet>CalCOFI StationLat: 32.651Lon: -119.482</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 32.651<br>Lon: -119.482<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style89</styleUrl>
+    <Point>
+      <coordinates>-119.482002,32.651001,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>090.0 060.0</name>
+    <Snippet>CalCOFI StationLat: 32.418Lon: -119.959</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 32.418<br>Lon: -119.959<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style62</styleUrl>
+    <Point>
+      <coordinates>-119.959000,32.417999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>090.0 070.0</name>
+    <Snippet>CalCOFI StationLat: 32.085Lon: -120.639</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 32.085<br>Lon: -120.639<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style111</styleUrl>
+    <Point>
+      <coordinates>-120.639000,32.084999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>090.0 080.0</name>
+    <Snippet>CalCOFI StationLat: 31.751Lon: -121.316</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 31.751<br>Lon: -121.316<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style128</styleUrl>
+    <Point>
+      <coordinates>-121.316002,31.750999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>090.0 090.0</name>
+    <Snippet>CalCOFI StationLat: 31.418Lon: -121.99</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 31.418<br>Lon: -121.99<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style15</styleUrl>
+    <Point>
+      <coordinates>-121.989998,31.417999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>090.0 100.0</name>
+    <Snippet>CalCOFI StationLat: 31.085Lon: -122.662</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 31.085<br>Lon: -122.662<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style136</styleUrl>
+    <Point>
+      <coordinates>-122.662003,31.084999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>090.0 110.0</name>
+    <Snippet>CalCOFI StationLat: 30.751Lon: -123.332</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 30.751<br>Lon: -123.332<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style133</styleUrl>
+    <Point>
+      <coordinates>-123.332001,30.750999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>090.0 120.0</name>
+    <Snippet>CalCOFI StationLat: 30.418Lon: -123.999</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 30.418<br>Lon: -123.999<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style124</styleUrl>
+    <Point>
+      <coordinates>-123.999001,30.417999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>091.7 026.4</name>
+    <Snippet>CalCOFI StationLat: 33.25Lon: -117.46</Snippet>
+    <description><![CDATA[<p>CalCOFI SCCOOS Station<br>Lat: 33.25<br>Lon: -117.46<br></p></p><p></p></p><p></p></p><p></p></p>]]></description>
+    <styleUrl>#style121</styleUrl>
+    <Point>
+      <coordinates>-117.459999,33.250000,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>093.4 026.4</name>
+    <Snippet>CalCOFI StationLat: 32.95Lon: -117.28</Snippet>
+    <description><![CDATA[<p>CalCOFI SCCOOS Station<br>Lat: 32.95<br>Lon: -117.28<br></p></p><p></p></p><p></p></p><p></p></p>]]></description>
+    <styleUrl>#style19</styleUrl>
+    <Point>
+      <coordinates>-117.279999,32.950001,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>093.3 026.7</name>
+    <Snippet>CalCOFI StationLat: 32.956Lon: -117.305</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 32.956<br>Lon: -117.305<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style73</styleUrl>
+    <Point>
+      <coordinates>-117.305000,32.956001,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>093.3 028.0</name>
+    <Snippet>CalCOFI StationLat: 32.913Lon: -117.394</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 32.913<br>Lon: -117.394<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style64</styleUrl>
+    <Point>
+      <coordinates>-117.393997,32.912998,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>093.3 030.0</name>
+    <Snippet>CalCOFI StationLat: 32.846Lon: -117.531</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 32.846<br>Lon: -117.531<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style123</styleUrl>
+    <Point>
+      <coordinates>-117.530998,32.846001,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>093.3 035.0</name>
+    <Snippet>CalCOFI StationLat: 32.68Lon: -117.873</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 32.68<br>Lon: -117.873<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style122</styleUrl>
+    <Point>
+      <coordinates>-117.873001,32.680000,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>093.3 040.0</name>
+    <Snippet>CalCOFI StationLat: 32.513Lon: -118.214</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 32.513<br>Lon: -118.214<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style45</styleUrl>
+    <Point>
+      <coordinates>-118.213997,32.513000,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>093.3 045.0</name>
+    <Snippet>CalCOFI StationLat: 32.346Lon: -118.554</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 32.346<br>Lon: -118.554<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style100</styleUrl>
+    <Point>
+      <coordinates>-118.554001,32.346001,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>093.3 050.0</name>
+    <Snippet>CalCOFI StationLat: 32.18Lon: -118.894</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 32.18<br>Lon: -118.894<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style72</styleUrl>
+    <Point>
+      <coordinates>-118.893997,32.180000,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>093.3 055.0</name>
+    <Snippet>CalCOFI StationLat: 32.013Lon: -119.233</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 32.013<br>Lon: -119.233<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style83</styleUrl>
+    <Point>
+      <coordinates>-119.233002,32.013000,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>093.3 060.0</name>
+    <Snippet>CalCOFI StationLat: 31.846Lon: -119.572</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 31.846<br>Lon: -119.572<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style4</styleUrl>
+    <Point>
+      <coordinates>-119.571999,31.846001,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>093.3 070.0</name>
+    <Snippet>CalCOFI StationLat: 31.513Lon: -120.247</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 31.513<br>Lon: -120.247<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style110</styleUrl>
+    <Point>
+      <coordinates>-120.247002,31.513000,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>093.3 080.0</name>
+    <Snippet>CalCOFI StationLat: 31.18Lon: -120.919</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 31.18<br>Lon: -120.919<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style120</styleUrl>
+    <Point>
+      <coordinates>-120.918999,31.180000,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>093.3 090.0</name>
+    <Snippet>CalCOFI StationLat: 30.846Lon: -121.59</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 30.846<br>Lon: -121.59<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style1</styleUrl>
+    <Point>
+      <coordinates>-121.589996,30.846001,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>093.3 100.0</name>
+    <Snippet>CalCOFI StationLat: 30.513Lon: -122.258</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 30.513<br>Lon: -122.258<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style127</styleUrl>
+    <Point>
+      <coordinates>-122.258003,30.513000,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>093.3 110.0</name>
+    <Snippet>CalCOFI StationLat: 30.18Lon: -122.923</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 30.18<br>Lon: -122.923<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style117</styleUrl>
+    <Point>
+      <coordinates>-122.922997,30.180000,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>093.3 120.0</name>
+    <Snippet>CalCOFI StationLat: 29.846Lon: -123.587</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 29.846<br>Lon: -123.587<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style87</styleUrl>
+    <Point>
+      <coordinates>-123.586998,29.846001,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>076.7 049.0</name>
+    <Snippet>CalCOFI StationLat: 35.088Lon: -120.777</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 35.088<br>Lon: -120.777<br></p></p><p></p></p>]]></description>
+    <styleUrl>#style50</styleUrl>
+    <Point>
+      <coordinates>-120.777000,35.088001,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>076.7 051.0</name>
+    <Snippet>CalCOFI StationLat: 35.022Lon: -120.918</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 35.022<br>Lon: -120.918<br></p></p>]]></description>
+    <styleUrl>#style92</styleUrl>
+    <Point>
+      <coordinates>-120.917999,35.021999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>076.7 055.0</name>
+    <Snippet>CalCOFI StationLat: 34.888Lon: -121.198</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 34.888<br>Lon: -121.198<br></p></p>]]></description>
+    <styleUrl>#style79</styleUrl>
+    <Point>
+      <coordinates>-121.197998,34.888000,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>076.7 060.0</name>
+    <Snippet>CalCOFI StationLat: 34.722Lon: -121.548</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 34.722<br>Lon: -121.548<br></p></p>]]></description>
+    <styleUrl>#style106</styleUrl>
+    <Point>
+      <coordinates>-121.547997,34.722000,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>076.7 070.0</name>
+    <Snippet>CalCOFI StationLat: 34.388Lon: -122.246</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 34.388<br>Lon: -122.246<br></p></p>]]></description>
+    <styleUrl>#style58</styleUrl>
+    <Point>
+      <coordinates>-122.246002,34.388000,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>076.7 080.0</name>
+    <Snippet>CalCOFI StationLat: 34.055Lon: -122.941</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 34.055<br>Lon: -122.941<br></p></p>]]></description>
+    <styleUrl>#style37</styleUrl>
+    <Point>
+      <coordinates>-122.941002,34.055000,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>076.7 090.0</name>
+    <Snippet>CalCOFI StationLat: 33.722Lon: -123.633</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.722<br>Lon: -123.633<br></p></p>]]></description>
+    <styleUrl>#style77</styleUrl>
+    <Point>
+      <coordinates>-123.633003,33.722000,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>076.7 100.0</name>
+    <Snippet>CalCOFI StationLat: 33.388Lon: -124.323</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.388<br>Lon: -124.323<br></p></p>]]></description>
+    <styleUrl>#style35</styleUrl>
+    <Point>
+      <coordinates>-124.322998,33.388000,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>080.0 050.5</name>
+    <Snippet>CalCOFI StationLat: 34.46Lon: -120.49</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 34.46<br>Lon: -120.49<br></p></p>]]></description>
+    <styleUrl>#style75</styleUrl>
+    <Point>
+      <coordinates>-120.489998,34.459999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>080.0 051.0</name>
+    <Snippet>CalCOFI StationLat: 34.45Lon: -120.524</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 34.45<br>Lon: -120.524<br></p></p>]]></description>
+    <styleUrl>#style22</styleUrl>
+    <Point>
+      <coordinates>-120.524002,34.450001,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>080.0 055.0</name>
+    <Snippet>CalCOFI StationLat: 34.317Lon: -120.802</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 34.317<br>Lon: -120.802<br></p></p>]]></description>
+    <styleUrl>#style103</styleUrl>
+    <Point>
+      <coordinates>-120.802002,34.317001,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>080.0 060.0</name>
+    <Snippet>CalCOFI StationLat: 34.15Lon: -121.15</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 34.15<br>Lon: -121.15<br></p></p>]]></description>
+    <styleUrl>#style129</styleUrl>
+    <Point>
+      <coordinates>-121.150002,34.150002,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>080.0 070.0</name>
+    <Snippet>CalCOFI StationLat: 33.817Lon: -121.843</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.817<br>Lon: -121.843<br></p></p>]]></description>
+    <styleUrl>#style25</styleUrl>
+    <Point>
+      <coordinates>-121.843002,33.817001,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>080.0 080.0</name>
+    <Snippet>CalCOFI StationLat: 33.483Lon: -122.533</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.483<br>Lon: -122.533<br></p></p>]]></description>
+    <styleUrl>#style74</styleUrl>
+    <Point>
+      <coordinates>-122.532997,33.483002,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>080.0 090.0</name>
+    <Snippet>CalCOFI StationLat: 33.15Lon: -123.221</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.15<br>Lon: -123.221<br></p></p>]]></description>
+    <styleUrl>#style84</styleUrl>
+    <Point>
+      <coordinates>-123.221001,33.150002,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>080.0 100.0</name>
+    <Snippet>CalCOFI StationLat: 32.817Lon: -123.906</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 32.817<br>Lon: -123.906<br></p></p>]]></description>
+    <styleUrl>#style9</styleUrl>
+    <Point>
+      <coordinates>-123.905998,32.817001,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>081.7 043.5</name>
+    <Snippet>CalCOFI StationLat: 34.41Lon: -119.8</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 34.41<br>Lon: -119.8<br></p></p>]]></description>
+    <styleUrl>#style101</styleUrl>
+    <Point>
+      <coordinates>-119.800003,34.410000,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>081.8 046.9</name>
+    <Snippet>CalCOFI StationLat: 34.275Lon: -120.025</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 34.275<br>Lon: -120.025<br></p></p>]]></description>
+    <styleUrl>#style65</styleUrl>
+    <Point>
+      <coordinates>-120.025002,34.275002,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>083.3 039.4</name>
+    <Snippet>CalCOFI StationLat: 34.26Lon: -119.32</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 34.26<br>Lon: -119.32<br></p></p>]]></description>
+    <styleUrl>#style32</styleUrl>
+    <Point>
+      <coordinates>-119.320000,34.259998,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>083.3 040.6</name>
+    <Snippet>CalCOFI StationLat: 34.225Lon: -119.411</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 34.225<br>Lon: -119.411<br></p></p>]]></description>
+    <styleUrl>#style61</styleUrl>
+    <Point>
+      <coordinates>-119.411003,34.224998,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>083.3 042.0</name>
+    <Snippet>CalCOFI StationLat: 34.178Lon: -119.508</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 34.178<br>Lon: -119.508<br></p></p>]]></description>
+    <styleUrl>#style29</styleUrl>
+    <Point>
+      <coordinates>-119.508003,34.178001,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>083.3 043.0</name>
+    <Snippet>CalCOFI StationLat: 34.145Lon: -119.578</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 34.145<br>Lon: -119.578<br></p></p>]]></description>
+    <styleUrl>#style33</styleUrl>
+    <Point>
+      <coordinates>-119.578003,34.145000,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>083.3 051.0</name>
+    <Snippet>CalCOFI StationLat: 33.878Lon: -120.133</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.878<br>Lon: -120.133<br></p></p>]]></description>
+    <styleUrl>#style18</styleUrl>
+    <Point>
+      <coordinates>-120.133003,33.877998,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>083.3 055.0</name>
+    <Snippet>CalCOFI StationLat: 33.745Lon: -120.409</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.745<br>Lon: -120.409<br></p></p>]]></description>
+    <styleUrl>#style34</styleUrl>
+    <Point>
+      <coordinates>-120.408997,33.744999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>083.3 060.0</name>
+    <Snippet>CalCOFI StationLat: 33.578Lon: -120.754</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.578<br>Lon: -120.754<br></p></p>]]></description>
+    <styleUrl>#style26</styleUrl>
+    <Point>
+      <coordinates>-120.753998,33.577999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>083.3 070.0</name>
+    <Snippet>CalCOFI StationLat: 33.245Lon: -121.443</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.245<br>Lon: -121.443<br></p></p>]]></description>
+    <styleUrl>#style99</styleUrl>
+    <Point>
+      <coordinates>-121.443001,33.244999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>083.3 080.0</name>
+    <Snippet>CalCOFI StationLat: 32.912Lon: -122.129</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 32.912<br>Lon: -122.129<br></p></p>]]></description>
+    <styleUrl>#style134</styleUrl>
+    <Point>
+      <coordinates>-122.128998,32.911999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>083.3 090.0</name>
+    <Snippet>CalCOFI StationLat: 32.578Lon: -122.812</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 32.578<br>Lon: -122.812<br></p></p>]]></description>
+    <styleUrl>#style80</styleUrl>
+    <Point>
+      <coordinates>-122.811996,32.577999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>083.3 100.0</name>
+    <Snippet>CalCOFI StationLat: 32.245Lon: -123.492</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 32.245<br>Lon: -123.492<br></p></p>]]></description>
+    <styleUrl>#style125</styleUrl>
+    <Point>
+      <coordinates>-123.491997,32.244999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>083.3 110.0</name>
+    <Snippet>CalCOFI StationLat: 31.912Lon: -124.17</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 31.912<br>Lon: -124.17<br></p></p>]]></description>
+    <styleUrl>#style38</styleUrl>
+    <Point>
+      <coordinates>-124.169998,31.912001,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>085.4 035.8</name>
+    <Snippet>CalCOFI StationLat: 34.01Lon: -118.83</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 34.01<br>Lon: -118.83<br></p></p>]]></description>
+    <styleUrl>#style16</styleUrl>
+    <Point>
+      <coordinates>-118.830002,34.009998,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>086.7 033.0</name>
+    <Snippet>CalCOFI StationLat: 33.889Lon: -118.49</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.889<br>Lon: -118.49<br></p></p>]]></description>
+    <styleUrl>#style10</styleUrl>
+    <Point>
+      <coordinates>-118.489998,33.889000,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>086.7 035.0</name>
+    <Snippet>CalCOFI StationLat: 33.823Lon: -118.629</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.823<br>Lon: -118.629<br></p></p>]]></description>
+    <styleUrl>#style55</styleUrl>
+    <Point>
+      <coordinates>-118.628998,33.823002,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>086.7 040.0</name>
+    <Snippet>CalCOFI StationLat: 33.656Lon: -118.974</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.656<br>Lon: -118.974<br></p></p>]]></description>
+    <styleUrl>#style130</styleUrl>
+    <Point>
+      <coordinates>-118.973999,33.655998,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>086.7 045.0</name>
+    <Snippet>CalCOFI StationLat: 33.489Lon: -119.319</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.489<br>Lon: -119.319<br></p></p>]]></description>
+    <styleUrl>#style36</styleUrl>
+    <Point>
+      <coordinates>-119.319000,33.488998,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>086.7 050.0</name>
+    <Snippet>CalCOFI StationLat: 33.323Lon: -119.663</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.323<br>Lon: -119.663<br></p></p>]]></description>
+    <styleUrl>#style102</styleUrl>
+    <Point>
+      <coordinates>-119.663002,33.323002,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>086.7 055.0</name>
+    <Snippet>CalCOFI StationLat: 33.156Lon: -120.007</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.156<br>Lon: -120.007<br></p></p>]]></description>
+    <styleUrl>#style91</styleUrl>
+    <Point>
+      <coordinates>-120.007004,33.155998,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>086.7 060.0</name>
+    <Snippet>CalCOFI StationLat: 32.989Lon: -120.35</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 32.989<br>Lon: -120.35<br></p></p>]]></description>
+    <styleUrl>#style8</styleUrl>
+    <Point>
+      <coordinates>-120.349998,32.988998,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>086.7 070.0</name>
+    <Snippet>CalCOFI StationLat: 32.656Lon: -121.033</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 32.656<br>Lon: -121.033<br></p></p>]]></description>
+    <styleUrl>#style131</styleUrl>
+    <Point>
+      <coordinates>-121.032997,32.655998,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>086.7 080.0</name>
+    <Snippet>CalCOFI StationLat: 32.323Lon: -121.715</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 32.323<br>Lon: -121.715<br></p></p>]]></description>
+    <styleUrl>#style7</styleUrl>
+    <Point>
+      <coordinates>-121.714996,32.323002,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>086.7 090.0</name>
+    <Snippet>CalCOFI StationLat: 31.99Lon: -122.393</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 31.99<br>Lon: -122.393<br></p></p>]]></description>
+    <styleUrl>#style42</styleUrl>
+    <Point>
+      <coordinates>-122.392998,31.990000,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>086.7 100.0</name>
+    <Snippet>CalCOFI StationLat: 31.656Lon: -123.069</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 31.656<br>Lon: -123.069<br></p></p>]]></description>
+    <styleUrl>#style39</styleUrl>
+    <Point>
+      <coordinates>-123.069000,31.656000,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>086.7 110.0</name>
+    <Snippet>CalCOFI StationLat: 31.323Lon: -123.743</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 31.323<br>Lon: -123.743<br></p></p>]]></description>
+    <styleUrl>#style71</styleUrl>
+    <Point>
+      <coordinates>-123.742996,31.323000,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>086.8 032.5</name>
+    <Snippet>CalCOFI StationLat: 33.89Lon: -118.44</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.89<br>Lon: -118.44<br></p></p>]]></description>
+    <styleUrl>#style66</styleUrl>
+    <Point>
+      <coordinates>-118.440002,33.889999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>088.5 030.1</name>
+    <Snippet>CalCOFI StationLat: 33.67Lon: -118.09</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.67<br>Lon: -118.09<br></p></p>]]></description>
+    <styleUrl>#style86</styleUrl>
+    <Point>
+      <coordinates>-118.089996,33.669998,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>090.0 027.7</name>
+    <Snippet>CalCOFI StationLat: 33.5Lon: -117.75</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.5<br>Lon: -117.75<br></p></p>]]></description>
+    <styleUrl>#style11</styleUrl>
+    <Point>
+      <coordinates>-117.750000,33.500000,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>090.0 028.0</name>
+    <Snippet>CalCOFI StationLat: 33.485Lon: -117.768</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.485<br>Lon: -117.768<br></p></p>]]></description>
+    <styleUrl>#style12</styleUrl>
+    <Point>
+      <coordinates>-117.767998,33.485001,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>090.0 030.0</name>
+    <Snippet>CalCOFI StationLat: 33.418Lon: -117.906</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.418<br>Lon: -117.906<br></p></p>]]></description>
+    <styleUrl>#style76</styleUrl>
+    <Point>
+      <coordinates>-117.905998,33.417999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>090.0 035.0</name>
+    <Snippet>CalCOFI StationLat: 33.251Lon: -118.25</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.251<br>Lon: -118.25<br></p></p>]]></description>
+    <styleUrl>#style132</styleUrl>
+    <Point>
+      <coordinates>-118.250000,33.250999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>090.0 037.0</name>
+    <Snippet>CalCOFI StationLat: 33.185Lon: -118.387</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.185<br>Lon: -118.387<br></p></p>]]></description>
+    <styleUrl>#style23</styleUrl>
+    <Point>
+      <coordinates>-118.387001,33.185001,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>090.0 045.0</name>
+    <Snippet>CalCOFI StationLat: 32.918Lon: -118.936</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 32.918<br>Lon: -118.936<br></p></p>]]></description>
+    <styleUrl>#style88</styleUrl>
+    <Point>
+      <coordinates>-118.935997,32.917999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>090.0 053.0</name>
+    <Snippet>CalCOFI StationLat: 32.651Lon: -119.482</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 32.651<br>Lon: -119.482<br></p></p>]]></description>
+    <styleUrl>#style69</styleUrl>
+    <Point>
+      <coordinates>-119.482002,32.651001,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>090.0 060.0</name>
+    <Snippet>CalCOFI StationLat: 32.418Lon: -119.959</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 32.418<br>Lon: -119.959<br></p></p>]]></description>
+    <styleUrl>#style21</styleUrl>
+    <Point>
+      <coordinates>-119.959000,32.417999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>090.0 070.0</name>
+    <Snippet>CalCOFI StationLat: 32.085Lon: -120.639</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 32.085<br>Lon: -120.639<br></p></p>]]></description>
+    <styleUrl>#style54</styleUrl>
+    <Point>
+      <coordinates>-120.639000,32.084999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>090.0 080.0</name>
+    <Snippet>CalCOFI StationLat: 31.751Lon: -121.316</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 31.751<br>Lon: -121.316<br></p></p>]]></description>
+    <styleUrl>#style63</styleUrl>
+    <Point>
+      <coordinates>-121.316002,31.750999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>090.0 090.0</name>
+    <Snippet>CalCOFI StationLat: 31.418Lon: -121.99</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 31.418<br>Lon: -121.99<br></p></p>]]></description>
+    <styleUrl>#style93</styleUrl>
+    <Point>
+      <coordinates>-121.989998,31.417999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>090.0 100.0</name>
+    <Snippet>CalCOFI StationLat: 31.085Lon: -122.662</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 31.085<br>Lon: -122.662<br></p></p>]]></description>
+    <styleUrl>#style59</styleUrl>
+    <Point>
+      <coordinates>-122.662003,31.084999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>090.0 110.0</name>
+    <Snippet>CalCOFI StationLat: 30.751Lon: -123.332</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 30.751<br>Lon: -123.332<br></p></p>]]></description>
+    <styleUrl>#style96</styleUrl>
+    <Point>
+      <coordinates>-123.332001,30.750999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>090.0 120.0</name>
+    <Snippet>CalCOFI StationLat: 30.418Lon: -123.999</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 30.418<br>Lon: -123.999<br></p></p>]]></description>
+    <styleUrl>#style30</styleUrl>
+    <Point>
+      <coordinates>-123.999001,30.417999,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>091.7 026.4</name>
+    <Snippet>CalCOFI StationLat: 33.25Lon: -117.46</Snippet>
+    <description><![CDATA[<p>CalCOFI Station<br>Lat: 33.25<br>Lon: -117.46<br></p></p>]]></description>
+    <styleUrl>#style24</styleUrl>
+    <Point>
+      <coordinates>-117.459999,33.250000,0.000000</coordinates>
+    </Point>
+  </Placemark>
+  <Placemark>
+    <name>UCSD Nimitz Marine Facility</name>
+    <description><![CDATA[]]></description>
+    <styleUrl>#style109</styleUrl>
+    <Point>
+      <coordinates>-117.239037,32.707775,0.000000</coordinates>
+    </Point>
+  </Placemark>
+</Document>
+</kml>

@@ -18,8 +18,14 @@
 # Output files from R CMD check
 /*.Rcheck/
 
+# Extra Data
+full_range_cabezon.csv
+
 # RStudio files
 .Rproj.user/
+cabezon_constrained_model.Rmd
+cabezon_environmental_analysis.Rmd
+Jan-Only_sens-check.R
 
 # produced vignettes
 vignettes/*.html
