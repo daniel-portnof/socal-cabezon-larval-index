@@ -5,7 +5,7 @@ Using sdmTMB to derive a larval abundance index from CalCOFI data to be compared
 
 ### Notes (07-06-2026):
 
-- `cabezon_analysis.R` is the canonical script for all analyses, and runs roughly as follows:
+`cabezon_analysis.R` is the canonical script for all analyses, and runs roughly as follows:
 
 Introduction & Contents
   0. Setup and check SCS STAR output plots
