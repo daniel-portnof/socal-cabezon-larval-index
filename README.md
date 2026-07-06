@@ -1,60 +1,60 @@
 # socal-cabezon-larval-index
-Using sdmTMB to derive a larval abundance index from CalCOFI data to be compared with existing federal stock metrics for cabezon in Southern California.
+Using sdmTMB to derive a larval abundance index from CalCOFI data to be compared with existing federal stock metrics for cabezon in Southern California, followed by analysis of larval presence as a response to overall larval occurrence in CalCOFI tows and environmental covariates. All analyses scripted sequentially in `cabezon_analysis.R`, which contains all code for this research.
 
-*NOTE:* You will need to download the `Cab_SCS_BC_STAR/` folder, `cabezon_calcofi_data.csv`, and `bottle_data.csv` into your working directory to run the scripts.
+*NOTE:* It is recommended that you clone/download this repo in its entirety to a working directory, as data files (including the SCS stock assessment outputs), figures, and R scripts are all contained.
 
-### Notes (04-22-2026):
-- Currently working from `cabezon_constrained_model.Rmd` and `cabezon_environmental_analysis.Rmd`.
-  
-- `cabezon_constrained_model.Rmd` roughly runs as follows:
-  
-  1. Setup and check STAR output plots
-  2. CalCOFI data import and QA/QC
-  3. Data cuts and visualization of observed patterns
-  4. Model construction and comparison
-  5. Residual checks and derive abundance index
-  6. Test against STAR outputs via CCF
-  7. Regression analysis on significant correlation(s)
-    
-- Currently, there are no major patterns detected. The strongest result is a weak (and biologically implausible) negative relationship between larval abundance and recruitment metrics, in which recruitment metrics *lead* abundance by one year. This is spurious.
-- Further investigation also reveals little to no relationship between larval abundance indices and SSB.
-- Curious if a finer-grade data source on adult cabezon abundance (e.g., catch if there was a strong enough dataset) would track better with these indices.
+### Notes (07-06-2026):
 
-- `cabezon_environmental_analysis.Rmd` is checking for how oceanographic data collected via CalCOFI bottle samples (`bottle_data.csv`) relates to larval presence/absence (using the same manta net tow data `cabezon_calcofi_data.csv`) and positive density. It roughly runs as follows:
+- `cabezon_analysis.R` is the canonical script for all analyses, and runs roughly as follows:
 
-  1. Setup and data import & QA/QC
-  2. Join and standardize bottle and larval data
-  3. Run candidate presence/absence GLMMs and compare (station/location as random effect)
-  4. Run candidate presence/absence sdm's and compare
-  5. Refit best models with hurdle component
-  6. Check summaries and residuals
+Introduction & Contents
+  0. Setup and check SCS STAR output plots
+  1. CalCOFI data import, exploration, and QA/QC
+  2. Data cuts/paring and exploration of observed patterns
+  3. Candidate sdmTMB index models
+  4. Preferred model diagnostics and abundance index
+  5. Comparisons and cross correlations with stock assessment outputs
+  6. Regression analyses of index against stock assessment outputs
+  7. Publication figure and table generation
+  8. Environmental covariate analyses
+  9. Appendix: supplemental models, sensitivity checks, diagnostics, etc. 
+
+TL;DR
+- We have concluded that there are no reportable relationships between stock assessment outputs and our preferred abundance index. This is caveated by several features that likely make these time series difficult to compare in the first place, such as fundamentally different constructions (single fishery-independent survey source vs. integrated catch-at-age models in SS), ecological first principles (cabezon life stages and gear selectivity of manta tows), and statistical power (comparing 34 years of time series, particularly notable when assessing potential lagged relationships). 
+- We have found, however, significant effects of environmental covariates on larval presence as a response variable. Specifically, a negative effect of temperature and a positive effect of dissolved oxygen. These effects carry across several model specifications, including a random effect of site as well as a random spatial field specified in sdmTMB. These results are also of a piece with other research (Thompson et al. 2017) suggesting similar response patterns in other species of groundfish.
   
 ## Repository Contents
 
 | File / Folder | Description |
 |---|---|
-| `cabezon_constrained_model.Rmd` | Analysis on constrained dataset; spawning season only, coastal shelf stations only — knit to reproduce report |
-| `cabezon_environmental_analysis.Rmd` | Analysis of environmental covariates from CalCOFI bottle data and constrained larval dataset; spawning season only, coastal shelf stations only — knit to reproduce report |
-| `cabezon_calcofi_data.csv` | CalCOFI larval survey data (1981–2015) |
-| `bottle_data.csv` | CalCOFI oceanographic bottle survey data (1954—2021) |
+| `cabezon_analysis.R` | full analyses on all data; inclusive of novel abundance index generation and environmental covariate analysis. Runs sequentially. |
 | `Cab_SCS_BC_STAR/` | Stock Synthesis model outputs (STAR panel assessment) |
-| `cabezon_appendix.Rmd` | Appendix containing experimental models, code chunks, and other ephemera |
-| `cabezon_primary_analysis.R` | Standalone script — **currently outdated** |
-| `cabezon_primary_analysis.Rmd` | All analyses, inclusive of the full and constrained datasets and appendix materials — knit to reproduce report -- **currently outdated** |
-| `cabezon_full_model.Rmd` | Analysis on full CalCOFI dataset; all years, all stations — knit to reproduce report -- **currently outdated** |
+| `data/` | Contains all data used in analyses, including: CalCOFI larval survey data (1981–2015), CalCOFI oceanographic bottle survey data (1954—2021), and CalCOFI .kml station data for generating map figures |
+| `figures/` | Contains all figures currently generated by the `cabezon_analysis.R` script, including all those featured in the current mauscript draft |
+| `cabezon.Rproj` | R project file to be used |
 
 ## Requirements
-
-*Assuming you are running both `cabezon_constrained_model.Rmd` and `cabezon_environmental_analysis.Rmd`*
 
 **R Version:** 4.4.3 (2025-02-28 ucrt)
 
 ### Key packages
+
+This list should be exhaustive, including all packages used to generate publication figures.
+
 - `tidyverse` 2.0.0 (includes `ggplot2`, `dplyr`, `tidyr`, `readr`, `tibble`, `stringr`, `forcats`, `purrr`)
 - `sdmTMB` 1.0.0
 - `funtimes` 10.0
-- `lme4` 1.1-38
+- `lme4` 1.1
 - `corrplot` 0.95
 - `fmesher` 0.6.1
-- `r4ss` 2.1.6
-- `DHARMa` 0.4.7
+- `r4ss` 1.44.0
+- `visreg` 2.8.0
+- `patchwork` 1.3.2
+- `flextable` 0.9.11
+- `scales` 1.4.0
+- `sf` 1.0
+- `terra` 1.8
+- `rnaturalearth` 1.1.0
+- `rnaturalearthdata` 1.0.0
+- `marmap` 1.0.12
+- `viridis` 0.6.5
