@@ -209,7 +209,7 @@ mean(cabezon$larvae_100m3 == 0)
 
 
 # -==============================================================================-
-# ==== 2.  DATA PARING (SPAWNING SEASON + SHELF) & EXPLORATION ====
+# ==== 2.  DATA PARING (SPAWNING SEASON + SCB) & EXPLORATION ====
 # -==============================================================================-
 
 
