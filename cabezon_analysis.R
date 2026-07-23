@@ -1106,7 +1106,7 @@ ggplot(ss_dln3_combined_obs %>% filter(year >= 1984, year <= 2015),
 
 # Let's look closer at SSB to see if different span specifications change the relationship to our index. Specifically, what proportion of variance in our SSB is attributable to a smooth, long-term trend across three span sensitivities?
 ssb_smooth_5 <- loess(ssb ~ year, data = ss_dln3_combined, span = 0.5)$fitted
-var(ssb_smooth) / var(ss_dln3_combined$ssb)
+var(ssb_smooth_5) / var(ss_dln3_combined$ssb)
 
 idx_smooth_5 <- loess(larvae_index ~ year, data = ss_dln3_combined, span = 0.5)$fitted
 var(idx_smooth_5) / var(ss_dln3_combined$larvae_index)
@@ -2494,8 +2494,8 @@ ft <- flextable(aic_table) |>
     AIC = "AIC",
     delta_AIC = "\u0394AIC"
   ) |>
-  align(j = c("AIC", "delta_AIC"), align = "right", part = "all") |>
-  align(j = c("Intercept", "Spatial", "ST_binomial", "ST_lognormal"),
+  flextable::align(j = c("AIC", "delta_AIC"), align = "right", part = "all") |>
+  flextable::align(j = c("Intercept", "Spatial", "ST_binomial", "ST_lognormal"),
         align = "center", part = "all") |>
   bold(i = 1) |>  # bold the top (best) row
   add_footer_lines(
@@ -2510,6 +2510,141 @@ ft <- flextable(aic_table) |>
 ft
 
 save_as_docx(ft, path = "Figures/model_selection_table.docx")
+
+
+## ---- Relative larval abundance/distributiion prediction plot ---------------------------------------
+
+# California state polygon
+ca_state <- ne_states(
+  country = "United States of America",
+  returnclass = "sf"
+) %>%
+  filter(name == "California")
+
+# Mexico country polygon
+mexico <- ne_countries(
+  country = "Mexico",
+  scale = "medium",
+  returnclass = "sf"
+)
+
+# Combine and project
+land_sf <- bind_rows(
+  ca_state %>% mutate(label_name = "California"),
+  mexico %>% mutate(label_name = "Mexico")
+) %>%
+  st_make_valid() %>%
+  st_transform(utm_crs)
+
+label_pts <- tibble::tibble(
+  name = "California",
+  lon = -119.0,
+  lat = 34.7
+) %>%
+  st_as_sf(coords = c("lon", "lat"), crs = 4326) %>%
+  st_transform(utm_crs)
+
+x_range <- range(pred_plot$X_m, na.rm = TRUE)
+y_range <- range(pred_plot$Y_m, na.rm = TRUE)
+
+x_buffer <- diff(x_range) * 0.06
+y_buffer <- diff(y_range) * 0.06
+
+xlim_common <- c(x_range[1] - x_buffer, x_range[2] + x_buffer)
+ylim_common <- c(y_range[1] - y_buffer, y_range[2] + y_buffer)
+
+map_theme_shared <- theme_minimal(base_size = 14) +
+  theme(
+    panel.border = element_rect(color = "grey65", fill = NA, linewidth = 0.6),
+    panel.grid.major = element_line(color = "grey90", linewidth = 0.2),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold", size = 17),
+    plot.subtitle = element_text(size = 12, color = "grey35"),
+    axis.text = element_text(size = 10),
+    axis.title = element_blank(),
+    legend.title = element_text(size = 11),
+    legend.text = element_text(size = 10),
+    plot.margin = margin(10, 14, 10, 10)
+  )
+
+p_model <- ggplot() +
+  geom_raster(
+    data = pred_plot,
+    aes(x = X_m, y = Y_m, fill = log1p(est))
+  ) +
+  geom_sf(
+    data = land_sf,
+    inherit.aes = FALSE,
+    fill = "#E8E5D0",
+    color = "grey35",
+    linewidth = 0.3
+  ) +
+  #  geom_sf(
+  #    data = calcofi_lines,
+  #    inherit.aes = FALSE,
+  #    color = "white",
+  #    linewidth = 0.45,
+  #    alpha = 1
+  #  ) +
+  #    geom_sf(
+  #    data = calcofi_lines,
+  #    inherit.aes = FALSE,
+  #    color = "white",
+  #    linewidth = 0.65,
+  #    alpha = 1
+  #  ) +
+  #  geom_point(
+  #    data = obs_aggregate %>% filter(ever_positive),
+  #    aes(x = X_m, y = Y_m),
+  #    size = 3,
+  #    color = "white",
+  #    alpha = 0.75
+  #  ) +
+  geom_sf_text(
+    data = label_pts,
+    aes(label = name),
+    color = "grey30",
+    size = 5,
+    fontface = "italic"
+  ) +
+  coord_sf(
+    crs = st_crs(utm_crs),
+    xlim = xlim_common,
+    ylim = ylim_common,
+    expand = FALSE,
+    clip = "on"
+  ) +
+  scale_fill_viridis_c(
+    option = "rocket",
+    name = "log(1 + predicted\nlarvae / 100 m³)"
+  ) +
+  labs(
+    title = "Persistent spatial structure in modeled larval abundance",
+    subtitle = "Log-transformed expected abundance from delta-lognormal index model"
+  ) +
+  map_theme_shared +
+  theme(
+    legend.position = c(0.95, 0.95),
+    legend.justification = c(1, 1),
+    legend.background = element_rect(
+      fill = scales::alpha("white", 0.78),
+      color = "grey75",
+      linewidth = 0.3
+    ),
+    legend.key.height = unit(0.5, "cm"),
+    legend.key.width = unit(0.38, "cm")
+  )
+
+p_model
+
+ggsave(
+  "Figures/abundance-distribution-heatmap-plot.png",
+  p_grid,
+  width = 16,
+  height = 11,
+  units = "in",
+  dpi = 300
+)
 
 
 # -==============================================================================-
@@ -4731,3 +4866,119 @@ run_sweep <- function(index_ts, assess_ts, lag = 0,
 # 6. Run it
 set.seed(my.seed)
 run_sweep(index_ts, assess_ts, lag = 0)    # repeat per assessment quantity and lag as needed
+
+
+
+
+# -==============================================================================-
+## ==== A.6.  sdmTMB MODEL SENSITIVITY CHECK WITH PENALIZED COMPLEXITY PRIORS ====
+# -==============================================================================-
+
+library(purrr)
+set.seed(my.seed)
+
+
+fit_candidate <- function(formula, st_bin, st_pos, data, mesh, priors = sdmTMBpriors()) {
+  
+  sdmTMB(
+    formula = formula,
+    data = data,
+    mesh = mesh,
+    family = delta_lognormal(),
+    time = "year",
+    spatial = list("on", "on"),
+    spatiotemporal = list(st_bin, st_pos),
+    offset = NULL,
+    extra_time = 1982,
+    priors = priors
+  )
+}
+
+f_int <- larvae_100m3 ~ 1
+f_year <- larvae_100m3 ~ 0 + fyear
+
+specs <- tribble(
+  ~id,   ~formula,   ~st_bin,   ~st_pos,   ~label,
+  "dln0",   f_int,   "off",   "off",   "Global intercept, ST off",
+  "dln1",   f_int,   "ar1",   "ar1",   "Global intercept, ST AR1/AR1",
+  "dln2",   f_int,   "ar1",   "iid",   "Global intercept, ST AR1/IID",
+  "dln3",   f_int,   "iid",   "off",   "Global intercept, ST IID/off",
+  "dln7",   f_int,   "ar1",   "off",   "Global intercept, ST AR1/off",
+  "dln4",   f_year,   "off",   "off",   "Fixed year effect, ST off",
+  "dln5",   f_year,   "iid",   "iid",   "Fixed year effect, ST IID/IID",
+  "dln6",   f_year,   "iid",   "off",   "Fixed year effect, ST IID/off"
+)
+
+pc <- sdmTMBpriors(matern_s = pc_matern(range_gt = 5, sigma_lt = 1))
+
+runs <- specs |>
+  crossing(prior_set = c("none", "pc")) |>
+  mutate(
+    priors = map(prior_set, ~ if (.x == "pc") pc else sdmTMBpriors()),
+    run_id = paste(id, prior_set, sep = "_")
+  )
+
+fit_safely <- possibly(fit_candidate, otherwise = NULL)
+
+runs$fit <- pmap(
+  select(runs, formula, st_bin, st_pos, priors),
+  fit_safely,
+  data = cabezon_shelf_spawn,
+  mesh = ss_cab_mesh
+)
+
+runs <- runs |>
+  mutate(
+    converged = map_lgl(fit, ~ !is.null(.x)),
+    sane      = map_lgl(fit, ~ if (is.null(.x)) FALSE else
+      isTRUE(sanity(.x, silent = TRUE)$all_ok)),
+      aic       = map_dbl(fit, ~ if (is.null(.x)) NA_real_ else AIC(.x))
+    )
+
+saveRDS(runs, "outputs/candidate_runs.rds")
+
+# ---- no priors AIC comparison table
+
+aic_table <- runs |>
+  filter(prior_set == "none") |>
+  select(id, label, aic) |>
+  arrange(aic) |>
+  mutate(delta_aic = aic - min(aic, na.rm = TRUE))
+
+aic_table
+
+saveRDS(aic_table, "outputs/aic_table.rds")
+# readRDS("outputs/aic_table.rds")
+
+# Same table using PC priors
+aic_table_pc <- runs |>
+  filter(prior_set == "pc") |>
+  select(id, label, aic) |>
+  arrange(aic) |>
+  mutate(delta_aic = aic - min(aic, na.rm = TRUE))
+
+aic_table_pc
+
+saveRDS(aic_table_pc, "outputs/aic_table_pc.rds")
+# readRDS("outputs/aic_table_pc.rds")
+
+# ---- Random-effect parameters
+
+ran_pars <- runs |>
+  filter(converged) |>
+  mutate(
+    pars = map(fit, ~ bind_rows(
+      tidy(.x, effects = "ran_pars", model = 1, conf.int = TRUE) |>
+        mutate(component = "binomial"),
+      tidy(.x, effects = "ran_pars", model = 2, conf.int = TRUE) |>
+        mutate(component = "lognormal")
+    ))
+  ) |>
+  select(run_id, id, prior_set, pars) |>
+  unnest(pars)
+
+ran_pars |>
+  filter(id == "dln3", term == "range") |>
+  select(prior_set, component, estimate, std.error, conf.low, conf.high)
+
+
