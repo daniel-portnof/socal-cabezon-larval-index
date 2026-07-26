@@ -2639,7 +2639,7 @@ p_model
 
 ggsave(
   "Figures/abundance-distribution-heatmap-plot.png",
-  p_grid,
+  p_model,
   width = 16,
   height = 11,
   units = "in",
