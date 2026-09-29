@@ -5088,7 +5088,7 @@ runs <- runs |>
       aic       = map_dbl(fit, ~ if (is.null(.x)) NA_real_ else AIC(.x))
     )
 
-saveRDS(runs, "outputs/candidate_runs.rds")
+saveRDS(runs, "tables/candidate_runs.rds")
 
 # ---- no priors AIC comparison table
 
@@ -5100,8 +5100,8 @@ aic_table <- runs |>
 
 aic_table
 
-saveRDS(aic_table, "outputs/aic_table.rds")
-# readRDS("outputs/aic_table.rds")
+saveRDS(aic_table, "tables/aic_table.rds")
+# readRDS("tables/aic_table.rds")
 
 # Same table using PC priors
 aic_table_pc <- runs |>
@@ -5112,8 +5112,8 @@ aic_table_pc <- runs |>
 
 aic_table_pc
 
-saveRDS(aic_table_pc, "outputs/aic_table_pc.rds")
-# readRDS("outputs/aic_table_pc.rds")
+saveRDS(aic_table_pc, "tables/aic_table_pc.rds")
+# readRDS("tables/aic_table_pc.rds")
 
 # ---- Random-effect parameters
 
