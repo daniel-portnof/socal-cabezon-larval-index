@@ -208,6 +208,22 @@ cabezon %>%
 mean(cabezon$larvae_100m3 == 0)
 
 
+# ---- Monthly sampling effort and larval occurrence, full calendar year
+monthly_coverage <- cabezon %>%
+  group_by(month) %>%
+  summarise(
+    n_tows       = n(),
+    n_positive   = sum(larvae_100m3 > 0, na.rm = TRUE),
+    pct_positive = round(100 * n_positive / n_tows, 1),
+    mean_density = round(mean(larvae_100m3, na.rm = TRUE), 3),
+    mean_pos_density = round(mean(larvae_100m3[larvae_100m3 > 0], na.rm = TRUE), 3),
+    .groups = "drop"
+  ) %>%
+  mutate(month_name = month.abb[month]) %>%
+  arrange(month)
+
+print(monthly_coverage, n = Inf)
+
 # -==============================================================================-
 # ==== 2.  DATA PARING (SPAWNING SEASON + SCB) & EXPLORATION ====
 # -==============================================================================-
@@ -964,7 +980,7 @@ ss_dln3_pred_grid <- expand.grid(
   X = seq(min(cabezon_shelf_spawn$X), max(cabezon_shelf_spawn$X), by = 5),
   Y = seq(min(cabezon_shelf_spawn$Y), max(cabezon_shelf_spawn$Y), by = 5)
 ) %>%
-  tidyr::crossing(year = as.integer(sort(unique(cabezon_shelf_spawn$year)))) %>%
+  tidyr::crossing(year = as.integer(sort(union(unique(cabezon_shelf_spawn$year), 1982)))) %>%
   mutate(fyear = as.factor(year))
 
 ss_dln3_cab_map <- predict(ss_cab_fit_dln3, newdata = ss_dln3_pred_grid, return_tmb_object = TRUE)
@@ -1950,16 +1966,22 @@ contour_lines <- terra::as.contour(bathy_terra, levels = contour_levels) |>
   sf::st_set_crs(4326) |>
   sf::st_transform(st_crs(utm_crs))
 
-# Plot
 p_effort_grid <- ggplot() +
-  # 200m isobath
+  # 200/1000/2000 m isobaths
   geom_sf(
     data = contour_lines,
-    aes(alpha = factor(level)),
+    aes(linetype = factor(level)),
     color = contour_color,
-    linewidth = 0.3,
-    linetype = "dashed",
-    show.legend = FALSE
+    linewidth = 0.4,
+    show.legend = TRUE
+  ) +
+  scale_linetype_manual(
+    name = "Isobath (m)",
+    values = c("-200" = "solid", "-1000" = "dashed", "-2000" = "dotted"),
+    labels = c("-200" = "200", "-1000" = "1000", "-2000" = "2000"),
+    guide = guide_legend(
+      override.aes = list(color = contour_color, linewidth = 0.5)
+    )
   ) +
   # Land
   geom_sf(
@@ -2038,6 +2060,100 @@ ggsave(
   dpi = 300
 )
 
+
+# Add occurrence rate to the aggregate
+obs_aggregate <- obs_aggregate %>%
+  mutate(pct_positive = 100 * n_positive / n_visits)
+
+p_occurrence_grid <- ggplot() +
+  # 200/1000/2000 m isobaths
+  geom_sf(
+    data = contour_lines,
+    aes(linetype = factor(level)),
+    color = contour_color,
+    linewidth = 0.4,
+    show.legend = TRUE
+  ) +
+  scale_linetype_manual(
+    name = "Isobath (m)",
+    values = c("-200" = "solid", "-1000" = "dashed", "-2000" = "dotted"),
+    labels = c("-200" = "200", "-1000" = "1000", "-2000" = "2000"),
+    guide = guide_legend(
+      override.aes = list(color = contour_color, linewidth = 0.5)
+    )
+  ) +
+  # Land
+  geom_sf(
+    data = na_coast,
+    inherit.aes = FALSE,
+    fill = land_color,
+    color = "grey40",
+    linewidth = 0.3
+  ) +
+  # CalCOFI grid lines
+  geom_sf(
+    data = calcofi_lines,
+    inherit.aes = FALSE,
+    color = "grey75",
+    linewidth = 0.25
+  ) +
+  # All stations, colored by % positive, sized by effort
+  geom_point(
+    data = obs_aggregate,
+    aes(x = X_m, y = Y_m, color = pct_positive, size = n_visits),
+    alpha = 0.85
+  ) +
+  scale_color_viridis_c(
+    name = "Positive tows (%)",
+    option = "mako",
+    direction = -1,
+    limits = c(0, NA)
+  ) +
+  scale_size_continuous(
+    name = "Tows (effort)",
+    range = c(1, 6)
+  ) +
+  # Region labels
+  annotate("text",
+           x = X_california_label, y = Y_california_label,
+           label = "California",
+           color = "grey25", size = 4, fontface = "italic"
+  ) +
+  annotate("text",
+           x = X_mexico_label, y = Y_mexico_label,
+           label = "Mexico",
+           color = "grey25", size = 4, fontface = "italic"
+  ) +
+  coord_sf(
+    crs = st_crs(utm_crs),
+    xlim = xlim_padded,
+    ylim = ylim_padded,
+    expand = FALSE
+  ) +
+  labs(
+    title = "Cabezon larval occurrence by CalCOFI station",
+    subtitle = "Percentage of tows with larvae present, aggregated by station, 1981\u20132015",
+    x = NULL,
+    y = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    panel.background = element_rect(fill = ocean_color, color = NA),
+    panel.grid.major = element_line(color = "white", linewidth = 0.2),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold", size = 14),
+    plot.subtitle = element_text(color = "grey40", size = 10, margin = margin(b = 10)),
+    legend.position = "right"
+  )
+
+ggsave(
+  "Figures/core-grid-study-region-occurrence.png",
+  p_occurrence_grid,
+  width = 16,
+  height = 11,
+  units = "in",
+  dpi = 300
+)
 
 ## ---- Preferred larval index figure -------------------------------------
 
@@ -2512,7 +2628,9 @@ ft
 save_as_docx(ft, path = "Figures/model_selection_table.docx")
 
 
-## ---- Relative larval abundance/distributiion prediction plot ---------------------------------------
+## ---- Relative larval abundance/distribution prediction plot ---------------------------------------
+
+fill_range <- range(log1p(pred_plot$est), na.rm = TRUE)
 
 # California state polygon
 ca_state <- ne_states(
@@ -2553,17 +2671,17 @@ y_buffer <- diff(y_range) * 0.06
 xlim_common <- c(x_range[1] - x_buffer, x_range[2] + x_buffer)
 ylim_common <- c(y_range[1] - y_buffer, y_range[2] + y_buffer)
 
-map_theme_shared <- theme_minimal(base_size = 14) +
+map_theme_shared <- theme_minimal(base_size = 18) +
   theme(
     panel.border = element_rect(color = "grey65", fill = NA, linewidth = 0.6),
     panel.grid.major = element_line(color = "grey90", linewidth = 0.2),
     panel.grid.minor = element_blank(),
-    plot.title = element_text(face = "bold", size = 17),
-    plot.subtitle = element_text(size = 12, color = "grey35"),
-    axis.text = element_text(size = 10),
+    plot.title = element_text(face = "bold", size = 28),
+    plot.subtitle = element_text(size = 20, color = "grey35"),
+    axis.text = element_text(size = 17),
     axis.title = element_blank(),
-    legend.title = element_text(size = 11),
-    legend.text = element_text(size = 10),
+    legend.title = element_text(size = 14),
+    legend.text = element_text(size = 14),
     plot.margin = margin(10, 14, 10, 10)
   )
 
@@ -2579,27 +2697,27 @@ p_model <- ggplot() +
     color = "grey35",
     linewidth = 0.3
   ) +
-  #  geom_sf(
-  #    data = calcofi_lines,
-  #    inherit.aes = FALSE,
-  #    color = "white",
-  #    linewidth = 0.45,
-  #    alpha = 1
-  #  ) +
-  #    geom_sf(
-  #    data = calcofi_lines,
-  #    inherit.aes = FALSE,
-  #    color = "white",
-  #    linewidth = 0.65,
-  #    alpha = 1
-  #  ) +
-  #  geom_point(
-  #    data = obs_aggregate %>% filter(ever_positive),
-  #    aes(x = X_m, y = Y_m),
-  #    size = 3,
-  #    color = "white",
-  #    alpha = 0.75
-  #  ) +
+    geom_sf(
+      data = calcofi_lines,
+      inherit.aes = FALSE,
+      color = "white",
+      linewidth = 0.45,
+      alpha = 1
+    ) +
+      geom_sf(
+      data = calcofi_lines,
+      inherit.aes = FALSE,
+      color = "white",
+      linewidth = 0.65,
+      alpha = 1
+    ) +
+    geom_point(
+      data = obs_aggregate %>% filter(ever_positive),
+      aes(x = X_m, y = Y_m),
+      size = 3,
+      color = "white",
+      alpha = 0.75
+    ) +
   geom_sf_text(
     data = label_pts,
     aes(label = name),
@@ -2616,11 +2734,19 @@ p_model <- ggplot() +
   ) +
   scale_fill_viridis_c(
     option = "rocket",
-    name = "log(1 + predicted\nlarvae / 100 m³)"
+    name = "log(1 + predicted\nlarvae / 100 m³)",
+    breaks = fill_range,
+    labels = scales::label_number(accuracy = 0.1)(fill_range),
+    guide = guide_colorbar(
+      ticks = TRUE,
+      ticks.colour = "grey20",
+      frame.colour = "grey40",
+      label.hjust = 0
+    )
   ) +
   labs(
     title = "Persistent spatial structure in modeled larval abundance",
-    subtitle = "Log-transformed expected abundance from delta-lognormal index model"
+    subtitle = "Log-transformed expected abundance from preferred Dln-IID index model"
   ) +
   map_theme_shared +
   theme(
@@ -3382,8 +3508,35 @@ ccf_boot(
 ggplot(cabezon_env_complete, aes(x = o2_surf_z, y = temp_surf_z, color = cabezon_present)) +
   geom_point()
 
+cabezon_mean_env <- cabezon_env_complete %>%
+  filter(cabezon_present == 1) %>%
+  summarize(
+    mean_o2 = mean(o2_surf, na.rm = TRUE),
+    mean_temp = mean(temp_surf, na.rm = TRUE)
+  )
+
 ggplot(cabezon_env_complete, aes(x = o2_surf, y = temp_surf, color = cabezon_present)) +
-  geom_point()
+  geom_point(
+    data = . %>% filter(cabezon_present == 0),
+    shape = 1, color = "grey55", alpha = 0.5, size = 1.6, stroke = 0.4
+  ) +
+  geom_point(
+    data = . %>% filter(cabezon_present == 1),
+    shape = 16, color = "dodgerblue4", alpha = 0.75, size = 1.8
+  ) +
+  geom_density_2d(color = "grey35", linewidth = 0.25, bins = 12) +
+  labs(title = "Temperature vs. Oxygen -- Cabezon Larval Presence",
+       subtitle = "Filled = larvae present | Open = absent",
+       x = "Surface Dissolved Oxygen (mL/L)",
+       y = "Surface Temperature (ºC)") +
+  geom_point(
+    data = cabezon_mean_env,
+    aes(x = mean_o2, y = mean_temp),
+    shape = 21, fill = "gold", color = "black",
+    size = 4, stroke = 0.6
+  ) +
+  theme_minimal(base_size = 12) 
+  
 
 
 
@@ -4982,3 +5135,527 @@ ran_pars |>
   select(prior_set, component, estimate, std.error, conf.low, conf.high)
 
 
+
+# -==============================================================================-
+## ==== A.7.  Checking CalCOFI-derived preferred index against CCFRP + CPFV ====
+# -==============================================================================-
+
+# ---- Load SS3 output
+wd <- "Cab_SCS_BC_STAR"
+pp <- SS_output(wd)
+
+# ---- Inspect the index data structure
+# pp$cpue holds observed and expected index values for every fleet
+str(pp$cpue)
+unique(pp$cpue$Fleet_name)   # confirm exact fleet name strings before filtering
+
+# ---- Extract CCFRP and CPFV indices
+cpfv_index <- pp$cpue %>%
+  filter(Fleet_name %in% "CPFV")
+
+# ---- Restrict to overlap window (1981-1999
+cpfv_overlap <- cpfv_index %>%
+  filter(Yr >= 1981, Yr <= 1999) %>%
+  select(Yr, Exp) %>%
+  arrange(Yr)
+
+index_overlap <- ss_dln3_cab_index %>%
+  filter(year >= 1981, year <= 1999) %>%
+  arrange(year)
+
+index_overlap$Yr <- index_overlap$year
+
+# Confirm no year gaps before joining - CPFV and larval sampling don't
+# necessarily share the same annual coverage
+setdiff(1981:1999, cpfv_overlap$Yr)
+setdiff(1981:1999, index_overlap$Yr)
+
+# ---- Join and log-transform
+compare_df <- inner_join(cpfv_overlap, index_overlap, by = "Yr") %>%
+  mutate(
+    log_cpfv  = log(Exp),
+    log_index = log(est)  # swap "est" for whatever your index column is named
+  )
+
+# ---- Z-score both series
+compare_df <- compare_df %>%
+  mutate(
+    z_cpfv  = as.numeric(scale(log_cpfv)),
+    z_index = as.numeric(scale(log_index))
+  )
+
+# ---- Raw CCF (bootstrapped, given n=19
+library(funtimes)
+
+ccf_cpfv <- ccf_boot(
+  compare_df$z_index,
+  compare_df$z_cpfv,
+  lag.max = 5,
+  plot = "Spearman",
+  B = 2000
+)
+
+print(ccf_cpfv)
+plot(ccf_cpfv)
+
+# ---- Visualize both series on a shared z-score axis
+compare_long <- compare_df %>%
+  select(Yr, z_index, z_cpfv) %>%
+  pivot_longer(cols = c(z_index, z_cpfv), names_to = "series", values_to = "z_value") %>%
+  mutate(series = recode(series,
+                         z_index = "Larval index (DLn-IID)",
+                         z_cpfv  = "CPFV (Obs)"))
+
+ggplot(compare_long, aes(x = Yr, y = z_value, color = series)) +
+  geom_line() +
+  geom_point() +
+  labs(x = "Year", y = "Standardized (z-score)",
+       title = "Larval index vs. CPFV index, 1981-1999 overlap",
+       color = NULL) +
+  theme_minimal()
+
+
+# ---- LOESS detrending
+loess_index <- loess(z_index ~ Yr, data = compare_df, span = 0.75)
+loess_cpfv  <- loess(z_cpfv  ~ Yr, data = compare_df, span = 0.75)
+
+compare_df <- compare_df %>%
+  mutate(
+    trend_index  = predict(loess_index),
+    trend_cpfv   = predict(loess_cpfv),
+    resid_index  = z_index - trend_index,
+    resid_cpfv   = z_cpfv  - trend_cpfv
+  )
+
+# ---- Visual check: raw series with fitted trend overlaid
+compare_long_trend <- compare_df %>%
+  select(Yr, z_index, z_cpfv, trend_index, trend_cpfv) %>%
+  pivot_longer(-Yr, names_to = "series", values_to = "value") %>%
+  mutate(
+    type   = ifelse(grepl("trend", series), "LOESS trend", "raw z-score"),
+    series = case_when(
+      grepl("index", series) ~ "Larval index (DLn-IID)",
+      grepl("cpfv", series)  ~ "CPFV (Obs)"
+    )
+  )
+
+ggplot(compare_long_trend, aes(x = Yr, y = value, color = series, linetype = type)) +
+  geom_line() +
+  labs(x = "Year", y = "Standardized (z-score)",
+       title = "Raw series with LOESS trend, 1981-1999",
+       color = NULL, linetype = NULL) +
+  theme_minimal()
+
+compare_long_trend %>%
+  filter(type == "LOESS trend") %>%
+  ggplot(aes(x = Yr, y = value, color = series)) +
+  geom_line(linewidth = 1) +
+  labs(x = "Year", y = "Standardized (z-score)",
+       title = "LOESS-smoothed trends, 1981-1999",
+       color = NULL) +
+  theme_minimal()
+
+# ---- CCF on de-trended residuals
+ccf_cpfv_loess <- ccf_boot(
+  compare_df$resid_index,
+  compare_df$resid_cpfv,
+  lag.max = 5,
+  B = 2000
+)
+
+print(ccf_cpfv_loess)
+plot(ccf_cpfv_loess)
+
+
+# ---- Inspect environmental data structure
+str(temp_data)
+str(o2_data)
+
+# ---- Restrict to CPFV overlap window (1984-1999, since env data starts 1984
+temp_annual <- temp_data %>%
+  filter(year >= 1984, year <= 1999) %>%
+  arrange(year)
+temp_annual$temp_mean <- temp_annual$mean
+
+o2_annual <- o2_data %>%
+  filter(year >= 1984, year <= 1999) %>%
+  arrange(year)
+o2_annual$o2_mean <- o2_annual$mean
+
+cpfv_env_overlap <- cpfv_index %>%
+  filter(Yr >= 1984, Yr <= 1999) %>%
+  select(Yr, Obs) %>%
+  arrange(Yr)
+
+# Confirm no year gaps across all three before joining
+setdiff(1984:1999, temp_annual$year)
+setdiff(1984:1999, o2_annual$year)
+setdiff(1984:1999, cpfv_env_overlap$Yr)
+
+# ---- Join and standardize
+compare_env_df <- cpfv_env_overlap %>%
+  rename(year = Yr) %>%
+  inner_join(temp_annual, by = "year") %>%
+  inner_join(o2_annual, by = "year") %>%
+  mutate(
+    log_cpfv = log(Obs),
+    z_cpfv   = as.numeric(scale(log_cpfv)),
+    z_temp   = as.numeric(scale(temp_mean)),  # replace with real column name
+    z_o2     = as.numeric(scale(o2_mean))     # replace with real column name
+  )
+
+# ---- Raw CCF: CPFV vs. temperature
+ccf_cpfv_temp <- ccf_boot(compare_env_df$z_temp, compare_env_df$z_cpfv, lag.max = 5, B = 2000)
+print(ccf_cpfv_temp)
+plot(ccf_cpfv_temp)
+
+# ---- Raw CCF: CPFV vs. dissolved oxygen
+ccf_cpfv_o2 <- ccf_boot(compare_env_df$z_o2, compare_env_df$z_cpfv, lag.max = 5, B = 2000)
+print(ccf_cpfv_o2)
+plot(ccf_cpfv_o2)
+
+
+
+# ---- Extract temp and o2 annual means from env_summary
+temp_data <- env_summary %>% filter(variable == "temp_surf") %>% select(year, temp_mean = mean)
+o2_data   <- env_summary %>% filter(variable == "o2_surf")   %>% select(year, o2_mean   = mean)
+
+# ---- Restrict to overlap window
+# env_summary covers 1984-2015 based on your plotting code; confirm the true floor:
+range(env_summary$year)
+
+cpfv_env_overlap <- cpfv_index %>%
+  filter(Yr >= 1984, Yr <= 1999) %>%
+  select(year = Yr, Obs) %>%
+  arrange(year)
+
+# ---- Join and standardize
+compare_env_df <- cpfv_env_overlap %>%
+  inner_join(temp_data, by = "year") %>%
+  inner_join(o2_data, by = "year") %>%
+  mutate(
+    log_cpfv = log(Obs),
+    z_cpfv   = as.numeric(scale(log_cpfv)),
+    z_temp   = as.numeric(scale(temp_mean)),
+    z_o2     = as.numeric(scale(o2_mean))
+  )
+
+# ---- Raw CCF: CPFV vs. temperature
+ccf_cpfv_temp <- ccf_boot(compare_env_df$z_temp, compare_env_df$z_cpfv, lag.max = 5, B = 2000)
+print(ccf_cpfv_temp)
+plot(ccf_cpfv_temp)
+
+# ---- Raw CCF: CPFV vs. dissolved oxygen
+ccf_cpfv_o2 <- ccf_boot(compare_env_df$z_o2, compare_env_df$z_cpfv, lag.max = 5, B = 2000)
+print(ccf_cpfv_o2)
+plot(ccf_cpfv_o2)
+
+# -==============================================================================-
+## ==== A.8. Sensitivity Analysis checking alternative "extended winter" and full, 12-month data windows against the originally chosen Jan-Mar expected peak spawning season  ====
+# -==============================================================================-
+
+library(tidyverse)
+library(sdmTMB)
+library(fmesher)
+library(funtimes)
+
+# One function that runs all three major analyses (index standardization, STAR comparisons, and separate environmental analysis) for a given month window.
+# Returns a list of the objects needed for comparison against the base run.
+
+
+run_window <- function(months, label, cabezon, bottle_clean,
+                       STAR_SSB, STAR_recdevs, STAR_age0, seed = 666) {
+  
+  set.seed(seed)
+  message("\n==== Running window: ", label,
+          "  (months ", paste(months, collapse = ","), ") ====")
+  
+  # ---- 1. Pare: SAME spatial filter, only the month set changes
+  dat <- cabezon %>%
+    filter(month %in% months, station <= 60.0) %>%
+    mutate(station_id = paste(line, station, sep = "_"))
+  
+  # UTM coords (km), matching add_utm_columns default in the base script
+  if (!all(c("X", "Y") %in% names(dat))) {
+    dat <- sdmTMB::add_utm_columns(dat, ll_names = c("longitude", "latitude"))
+  }
+  dat$fyear <- as.factor(dat$year)
+  
+  # ---- Empty-year handling is done dynamically, as hard-coding 1982 was the solution for the Jan-Mar window where we knew that year was missing
+  # Any year in the overall span with zero retained tows must be declared as extra_time so the annual index has an unbroken sequence.
+  full_span   <- min(dat$year):max(dat$year)
+  years_with_data <- sort(unique(dat$year))
+  empty_years <- setdiff(full_span, years_with_data)
+  message("  Years with no data (extra_time): ",
+          if (length(empty_years)) paste(empty_years, collapse = ", ") else "none")
+  
+  # ---- 2. Mesh: identical settings to base
+  mesh_raw <- fm_mesh_2d(
+    loc      = dat[, c("X", "Y")],
+    cutoff   = 20,
+    max.edge = c(75, 150),
+    offset   = c(45, 120)
+  )
+  mesh <- make_mesh(data = dat, c("X", "Y"), mesh = mesh_raw)
+  
+  # ---- 3. Analysis 1: preferred index model (DLn3 or DLn-IID
+  # DLn-IID: global intercept, spatial on both, IID spatiotemporal on binomial
+  fit <- sdmTMB(
+    larvae_100m3 ~ 1,
+    data           = dat,
+    mesh           = mesh,
+    time           = "year",
+    family         = delta_lognormal(),
+    spatial        = list("on", "on"),
+    spatiotemporal = list("iid", "off"),
+    offset         = NULL,
+    extra_time     = if (length(empty_years)) empty_years else NULL
+  )
+  san <- sanity(fit)
+  
+  # Regular-grid index (matches base ss_dln3_cab_index construction)
+  pred_grid <- expand.grid(
+    X = seq(min(dat$X), max(dat$X), by = 5),
+    Y = seq(min(dat$Y), max(dat$Y), by = 5)
+  ) %>%
+    tidyr::crossing(year = as.integer(sort(union(years_with_data, empty_years)))) %>%
+    mutate(fyear = as.factor(year))
+  
+  pred    <- predict(fit, newdata = pred_grid, return_tmb_object = TRUE)
+  index   <- get_index(pred, area = 1, bias_correct = TRUE)
+  
+  # ---- 4. Analysis 2: STAR comparison
+  combined <- index %>%
+    dplyr::select(year, est, lwr, upr) %>%
+    rename(larvae_index = est) %>%
+    left_join(STAR_SSB     %>% rename(ssb = value,     ssb_lo = lo,     ssb_hi = hi),     by = "year") %>%
+    left_join(STAR_recdevs %>% rename(rec_dev = value, rec_dev_lo = lo, rec_dev_hi = hi), by = "year") %>%
+    left_join(STAR_age0    %>% rename(age0 = value,    age0_lo = lo,    age0_hi = hi),    by = "year")
+  
+  combined_obs <- combined %>% filter(!is.na(larvae_index))
+  
+  # Peak-lag Spearman CCF against each STAR quantity (bootstrapped),
+  # captured as objects so we can report them rather than only plotting.
+  safe_ccf <- function(x, y) {
+    ok <- is.finite(x) & is.finite(y)
+    if (sum(ok) < 8) return(NULL)
+    tryCatch(
+      funtimes::ccf_boot(x = x[ok], y = y[ok], lag.max = 5, plot = "none", B = 1000),
+      error = function(e) NULL
+    )
+  }
+  ccf_age0    <- safe_ccf(combined_obs$larvae_index, combined_obs$age0)
+  ccf_recdev  <- safe_ccf(combined_obs$larvae_index, combined_obs$rec_dev)
+  ccf_ssb     <- safe_ccf(combined_obs$larvae_index, combined_obs$ssb)
+  
+  # ---- 5. Analysis 3: environmental model
+  # Rebuild the surface-bottle join for THIS month set, then refit the preferred inferential model (m2_hurdle_ln spec).
+  annual_cpue <- dat %>%
+    group_by(year) %>%
+    summarize(mean_cpue = mean(larvae_100m3, na.rm = TRUE), .groups = "drop")
+  
+  dat <- dat %>% mutate(line = round(line, 1), sta = round(station, 1))
+  
+  bottle_surface <- bottle_clean %>%
+    filter(Depthm <= 10, month %in% months) %>%
+    group_by(line, sta, year, month) %>%
+    summarize(
+      temp_surf = mean(T_degC,  na.rm = TRUE),
+      sal_surf  = mean(Salnty,  na.rm = TRUE),
+      o2_surf   = mean(O2ml_L,  na.rm = TRUE),
+      chla_surf = mean(ChlorA,  na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    mutate(line = round(line, 1), sta = round(sta, 1))
+  
+  env <- dat %>%
+    left_join(bottle_surface, by = c("line", "sta", "year", "month")) %>%
+    mutate(cabezon_present = as.integer(larvae_100m3 > 0),
+           sta_id = paste(line, sta, sep = "_")) %>%
+    mutate(across(c(temp_surf, sal_surf, o2_surf, chla_surf), scale,
+                  .names = "{.col}_z")) %>%
+    left_join(annual_cpue, by = "year") %>%
+    mutate(mean_cpue_z = scale(mean_cpue))
+  
+  env_complete <- env %>%
+    filter(complete.cases(temp_surf_z, sal_surf_z, o2_surf_z, mean_cpue_z))
+  env_complete$fyear <- as.factor(env_complete$year)
+  if (!all(c("X", "Y") %in% names(env_complete))) {
+    env_complete <- sdmTMB::add_utm_columns(env_complete, ll_names = c("longitude", "latitude"))
+  }
+  
+  env_mesh_raw <- fm_mesh_2d(
+    loc = env_complete[, c("X", "Y")],
+    cutoff = 20, max.edge = c(75, 150), offset = c(45, 120)
+  )
+  env_mesh <- make_mesh(data = env_complete, c("X", "Y"), mesh = env_mesh_raw)
+  
+  env_fit <- sdmTMB(
+    larvae_100m3 ~ temp_surf_z + sal_surf_z + o2_surf_z + mean_cpue_z,
+    data           = env_complete,
+    mesh           = env_mesh,
+    family         = delta_lognormal(),
+    spatial        = list("on", "on"),
+    spatiotemporal = "off"
+  )
+  
+  env_coefs <- bind_rows(
+    tidy(env_fit, effects = "fixed", model = 1, conf.int = TRUE) %>% mutate(component = "binomial"),
+    tidy(env_fit, effects = "fixed", model = 2, conf.int = TRUE) %>% mutate(component = "lognormal")
+  ) %>% mutate(window = label)
+  
+  list(
+    label        = label,
+    n_rows       = nrow(dat),
+    empty_years  = empty_years,
+    sanity_ok    = isTRUE(san$all_ok),
+    fit          = fit,
+    index        = index %>% mutate(window = label),
+    combined_obs = combined_obs,
+    ccf          = list(age0 = ccf_age0, rec_dev = ccf_recdev, ssb = ccf_ssb),
+    env_fit      = env_fit,
+    env_coefs    = env_coefs
+  )
+}
+
+# ---- Run the two alternative windows
+
+res_extwin <- run_window(
+  months = c(11, 12, 1, 2, 3, 4), label = "Nov-Apr (extended winter)",
+  cabezon = cabezon, bottle_clean = bottle_clean,
+  STAR_SSB = STAR_SSB, STAR_recdevs = STAR_recdevs, STAR_age0 = STAR_age0,
+  seed = my.seed
+)
+
+res_annual <- run_window(
+  months = 1:12, label = "Full year",
+  cabezon = cabezon, bottle_clean = bottle_clean,
+  STAR_SSB = STAR_SSB, STAR_recdevs = STAR_recdevs, STAR_age0 = STAR_age0,
+  seed = my.seed
+)
+
+# ---- Comparison 1: index-vs-index correlation + overlay
+
+# Base Jan-Mar index (already in environment as ss_dln3_cab_index)
+idx_base <- ss_dln3_cab_index %>%
+  dplyr::select(year, est) %>% rename(base = est)
+
+idx_join <- idx_base %>%
+  left_join(res_extwin$index %>% dplyr::select(year, est) %>% rename(extwin = est), by = "year") %>%
+  left_join(res_annual$index %>% dplyr::select(year, est) %>% rename(annual = est), by = "year")
+
+# Correlations on the raw and z-scored series (z-scored is the headline:
+# adding months shifts the level but we care about trajectory)
+cor_tbl <- tibble(
+  comparison = c("Jan-Mar vs Nov-Apr", "Jan-Mar vs Full year"),
+  pearson_raw = c(
+    cor(idx_join$base, idx_join$extwin, use = "complete.obs"),
+    cor(idx_join$base, idx_join$annual, use = "complete.obs")
+  ),
+  pearson_z = c(
+    cor(scale(idx_join$base), scale(idx_join$extwin), use = "complete.obs"),
+    cor(scale(idx_join$base), scale(idx_join$annual), use = "complete.obs")
+  ),
+  spearman = c(
+    cor(idx_join$base, idx_join$extwin, method = "spearman", use = "complete.obs"),
+    cor(idx_join$base, idx_join$annual, method = "spearman", use = "complete.obs")
+  )
+)
+print(cor_tbl)
+
+# Overlay figure (z-scored so all three sit on a common scale)
+overlay_df <- idx_join %>%
+  mutate(across(c(base, extwin, annual), ~ as.numeric(scale(.)))) %>%
+  pivot_longer(c(base, extwin, annual), names_to = "window", values_to = "z_index") %>%
+  mutate(window = recode(window,
+                         base = "Jan-Mar (base)",
+                         extwin = "Nov-Apr",
+                         annual = "Full year"))
+
+p_overlay <- ggplot(overlay_df, aes(year, z_index, color = window)) +
+  geom_line(linewidth = 0.8, na.rm = TRUE) +
+  geom_point(size = 1.4, na.rm = TRUE) +
+  scale_color_manual(values = c("Jan-Mar (base)" = "#2C5F8D",
+                                "Nov-Apr" = "#C25B3F",
+                                "Full year" = "#4C8C6B"),
+                     name = "Seasonal window") +
+  labs(title = "Larval abundance index is robust to seasonal window",
+       subtitle = "Annual index (z-scored) under three month filters, 1981-2015",
+       x = NULL, y = "Index (z-scored)") +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "bottom")
+
+ggsave("Figures/seasonal-window-index-overlay.png", p_overlay,
+       width = 10, height = 6, units = "in", dpi = 300)
+
+# ---- Comparison 2: environmental coefficient stability
+
+env_base_coefs <- bind_rows(
+  tidy(m2_hurdle_ln, effects = "fixed", model = 1, conf.int = TRUE) %>% mutate(component = "binomial"),
+  tidy(m2_hurdle_ln, effects = "fixed", model = 2, conf.int = TRUE) %>% mutate(component = "lognormal")
+) %>% mutate(window = "Jan-Mar (base)")
+
+env_coef_compare <- bind_rows(env_base_coefs, res_extwin$env_coefs, res_annual$env_coefs) %>%
+  filter(term != "(Intercept)") %>%
+  dplyr::select(window, component, term, estimate, conf.low, conf.high)
+
+print(env_coef_compare, n = Inf)
+
+# Coefficient plot: same sign/magnitude across windows = robust
+p_env_coefs <- env_coef_compare %>%
+  ggplot(aes(x = estimate, y = term, color = window)) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "grey60") +
+  geom_pointrange(aes(xmin = conf.low, xmax = conf.high),
+                  position = position_dodge(width = 0.5)) +
+  facet_wrap(~ component, scales = "free_x") +
+  labs(title = "Environmental effects are stable across seasonal windows",
+       x = "Coefficient estimate (95% CI)", y = NULL, color = "Window") +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "bottom")
+
+ggsave("Figures/seasonal-window-env-coefs.png", p_env_coefs,
+       width = 10, height = 6, units = "in", dpi = 300)
+
+# ---- Comparison 3: STAR null holds under each window
+
+# ccf_boot objects carry the per-lag correlations and bootstrap CIs; a null
+# result = no lag with a CI excluding zero. Print peak |correlation| per series.
+
+summarise_ccf <- function(ccf_obj, series, window) {
+  if (is.null(ccf_obj)) return(tibble(window = window, series = series,
+                                      peak_lag = NA, peak_r = NA, any_sig = NA))
+  df <- as.data.frame(ccf_obj)
+  # funtimes::ccf_boot returns columns: Lag, r_S (Spearman), lower, upper (names
+  # can vary by version); grab correlation + CI columns robustly.
+  rcol  <- grep("^r", names(df), value = TRUE)[1]
+  locol <- grep("lower|LB|ci.*l", names(df), ignore.case = TRUE, value = TRUE)[1]
+  hicol <- grep("upper|UB|ci.*u", names(df), ignore.case = TRUE, value = TRUE)[1]
+  lagcol <- grep("lag", names(df), ignore.case = TRUE, value = TRUE)[1]
+  df$sig <- if (!is.na(locol) && !is.na(hicol)) (df[[locol]] > 0 | df[[hicol]] < 0) else NA
+  peak <- df[which.max(abs(df[[rcol]])), ]
+  tibble(window = window, series = series,
+         peak_lag = peak[[lagcol]], peak_r = round(peak[[rcol]], 3),
+         any_sig  = if (all(is.na(df$sig))) NA else any(df$sig, na.rm = TRUE))
+}
+
+ccf_summary <- bind_rows(
+  summarise_ccf(res_extwin$ccf$age0,    "age0",    "Nov-Apr"),
+  summarise_ccf(res_extwin$ccf$rec_dev, "rec_dev", "Nov-Apr"),
+  summarise_ccf(res_extwin$ccf$ssb,     "ssb",     "Nov-Apr"),
+  summarise_ccf(res_annual$ccf$age0,    "age0",    "Full year"),
+  summarise_ccf(res_annual$ccf$rec_dev, "rec_dev", "Full year"),
+  summarise_ccf(res_annual$ccf$ssb,     "ssb",     "Full year")
+)
+print(ccf_summary, n = Inf)
+
+
+# ---- Compact console summary
+
+cat("\n=== SEASONAL-WINDOW SENSITIVITY SUMMARY ===\n")
+cat("\nIndex correlations vs. Jan-Mar base:\n"); print(cor_tbl)
+cat("\nEnvironmental coefficient signs (should match base):\n")
+print(env_coef_compare %>%
+        mutate(sign = ifelse(estimate > 0, "+", "-")) %>%
+        dplyr::select(window, component, term, sign) %>%
+        pivot_wider(names_from = window, values_from = sign))
+cat("\nSTAR CCF peaks (null = any_sig FALSE):\n"); print(ccf_summary)
